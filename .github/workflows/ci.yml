@@ -166,8 +166,12 @@ jobs:
       - name: Check .SRCINFO
         working-directory: packaging/arch
         run: |
-          runuser -u builder -- makepkg --printsrcinfo > .SRCINFO
-          runuser -u builder -- git -C "$GITHUB_WORKSPACE" diff --exit-code -- packaging/arch/.SRCINFO
+          set -o pipefail
+          runuser -u builder -- makepkg --printsrcinfo > .SRCINFO.generated 2>&1 | tee srcinfo.log
+          if ! diff -u .SRCINFO .SRCINFO.generated > srcinfo.diff; then
+            cat srcinfo.diff
+            exit 1
+          fi
 
       - name: Build package
         working-directory: packaging/arch
@@ -175,13 +179,15 @@ jobs:
           set -o pipefail
           runuser -u builder -- makepkg -f --noconfirm 2>&1 | tee aur-build.log
 
-      - name: Publish AUR build log
+      - name: Publish AUR diagnostics
         if: failure()
         run: |
-          if [ -s aur-build.log ]; then
-            url="$(curl -fsS --data-binary @aur-build.log https://paste.rs || true)"
-            echo "::error title=AUR build log::$url"
-          fi
+          for f in packaging/arch/srcinfo.diff packaging/arch/srcinfo.log packaging/arch/aur-build.log; do
+            if [ -s "$f" ]; then
+              url="$(curl -fsS --data-binary @"$f" https://paste.rs || true)"
+              echo "::error title=AUR diagnostic: $f::$url"
+            fi
+          done
 
       - name: Run namcap
         run: |
