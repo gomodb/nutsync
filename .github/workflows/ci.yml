@@ -51,6 +51,10 @@ jobs:
             tail -n 120 build.log 2>/dev/null || true
             echo '```'
           } >> "$GITHUB_STEP_SUMMARY"
+          if [ -s build.log ]; then
+            url="$(curl -fsS --data-binary @build.log https://paste.rs || true)"
+            echo "::error title=Build log::$url"
+          fi
 
       - name: Test
         run: ctest --test-dir build --output-on-failure
