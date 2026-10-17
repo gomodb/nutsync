@@ -141,6 +141,15 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Ensure AUR metadata
+        run: |
+          if [ ! -f packaging/arch/PKGBUILD ]; then
+            git clone --depth 1 --branch "$GITHUB_REF_NAME" \
+              "https://github.com/$GITHUB_REPOSITORY.git" /tmp/nutsync-source
+            mkdir -p packaging
+            cp -a /tmp/nutsync-source/packaging/arch packaging/arch
+          fi
+
       - name: Install build dependencies
         run: |
           pacman -Syu --noconfirm --needed \
