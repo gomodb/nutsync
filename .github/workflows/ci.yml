@@ -38,7 +38,19 @@ jobs:
           -DBUILD_TESTING=ON
 
       - name: Build
-        run: cmake --build build --parallel
+        run: |
+          set -o pipefail
+          cmake --build build --parallel 2>&1 | tee build.log
+
+      - name: Build failure summary
+        if: failure()
+        run: |
+          {
+            echo '### Build log'
+            echo '```'
+            tail -n 120 build.log 2>/dev/null || true
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Test
         run: ctest --test-dir build --output-on-failure
@@ -73,7 +85,19 @@ jobs:
           -DBUILD_TESTING=ON
 
       - name: Build
-        run: cmake --build build --parallel
+        run: |
+          set -o pipefail
+          cmake --build build --parallel 2>&1 | tee build.log
+
+      - name: Build failure summary
+        if: failure()
+        run: |
+          {
+            echo '### Build log'
+            echo '```'
+            tail -n 120 build.log 2>/dev/null || true
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Test
         run: ctest --test-dir build --output-on-failure
