@@ -144,7 +144,7 @@ jobs:
       - name: Install build dependencies
         run: |
           pacman -Syu --noconfirm --needed \
-            cmake ninja git python fakeroot namcap \
+            cmake ninja git python fakeroot namcap sudo curl \
             qt6-base qt6-svg qtkeychain-qt6 \
             kstatusnotifieritem knotifications
 
@@ -158,26 +158,34 @@ jobs:
             exit 1
           fi
 
+      - name: Diagnose workspace
+        run: |
+          pwd
+          echo "GITHUB_WORKSPACE=$GITHUB_WORKSPACE"
+          ls -la
+          ls -la "$GITHUB_WORKSPACE" | head
+          command -v runuser makepkg sudo || true
+
       - name: Prepare builder
         run: |
           useradd -m builder
           chown -R builder:builder "$GITHUB_WORKSPACE"
 
       - name: Check .SRCINFO
-        working-directory: packaging/arch
         run: |
+          cd "$GITHUB_WORKSPACE/packaging/arch"
           set -o pipefail
-          runuser -u builder -- makepkg --printsrcinfo > .SRCINFO.generated 2>&1 | tee srcinfo.log
+          sudo -u builder makepkg --printsrcinfo > .SRCINFO.generated 2>&1 | tee srcinfo.log
           if ! diff -u .SRCINFO .SRCINFO.generated > srcinfo.diff; then
             cat srcinfo.diff
             exit 1
           fi
 
       - name: Build package
-        working-directory: packaging/arch
         run: |
+          cd "$GITHUB_WORKSPACE/packaging/arch"
           set -o pipefail
-          runuser -u builder -- makepkg -f --noconfirm 2>&1 | tee aur-build.log
+          sudo -u builder makepkg -f --noconfirm 2>&1 | tee aur-build.log
 
       - name: Publish AUR diagnostics
         if: failure()
