@@ -144,7 +144,7 @@ jobs:
       - name: Ensure AUR metadata
         run: |
           if [ ! -f packaging/arch/PKGBUILD ]; then
-            git clone --depth 1 --branch "$GITHUB_REF_NAME" \
+            git clone --depth 1 \
               "https://github.com/$GITHUB_REPOSITORY.git" /tmp/nutsync-source
             mkdir -p packaging
             cp -a /tmp/nutsync-source/packaging/arch packaging/arch
