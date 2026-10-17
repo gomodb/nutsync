@@ -1,0 +1,86 @@
+# SPDX-FileCopyrightText: NutSync contributors
+# SPDX-License-Identifier: GPL-3.0-or-later
+#
+# NutSync C++ formatting: Qt/KDE-inspired 4-space style.
+# Reference: https://clang.llvm.org/docs/ClangFormatStyleOptions.html
+---
+Language: Cpp
+BasedOnStyle: WebKit
+
+Standard: c++20
+IndentWidth: 4
+TabWidth: 4
+UseTab: Never
+ColumnLimit: 100
+
+# Keep access modifiers aligned with the class declaration, not its members.
+AccessModifierOffset: -4
+NamespaceIndentation: None
+FixNamespaceComments: true
+ShortNamespaceLines: 1
+
+# Attach braces for control flow and lambdas, but put function, class, struct,
+# enum, and namespace braces on their own line.
+BreakBeforeBraces: Custom
+BraceWrapping:
+  AfterClass: true
+  AfterControlStatement: false
+  AfterEnum: false
+  AfterFunction: true
+  AfterNamespace: false
+  AfterStruct: true
+  AfterUnion: false
+  AfterExternBlock: false
+  BeforeCatch: false
+  BeforeElse: false
+  BeforeLambdaBody: false
+  BeforeWhile: false
+  IndentBraces: false
+  SplitEmptyFunction: true
+  SplitEmptyRecord: true
+  SplitEmptyNamespace: true
+
+# Qt/KDE pointer style: QString *value, const QString &value.
+DerivePointerAlignment: false
+PointerAlignment: Right
+ReferenceAlignment: Pointer
+
+# Keep the project's existing continuation and initializer layout.
+ContinuationIndentWidth: 4
+ConstructorInitializerIndentWidth: 4
+BreakConstructorInitializers: BeforeComma
+PackConstructorInitializers: Never
+
+AlignAfterOpenBracket: Align
+BinPackArguments: true
+BinPackParameters: true
+BreakBeforeBinaryOperators: NonAssignment
+BreakBeforeTernaryOperators: true
+BreakTemplateDeclarations: Yes
+
+AllowShortFunctionsOnASingleLine: Inline
+AllowShortLambdasOnASingleLine: Empty
+AllowShortIfStatementsOnASingleLine: Never
+AllowShortLoopsOnASingleLine: false
+AllowShortBlocksOnASingleLine: Never
+AllowShortEnumsOnASingleLine: false
+
+SpaceAfterTemplateKeyword: false
+SpaceBeforeParens: ControlStatements
+SpaceAfterCStyleCast: false
+SpaceBeforeCpp11BracedList: false
+Cpp11BracedListStyle: true
+IndentCaseLabels: false
+IndentPPDirectives: None
+MaxEmptyLinesToKeep: 1
+KeepEmptyLinesAtTheStartOfBlocks: false
+AlignTrailingComments: true
+SpacesBeforeTrailingComments: 1
+
+# Include order is maintained manually in logical groups.
+SortIncludes: Never
+IncludeBlocks: Preserve
+ReflowComments: false
+QualifierAlignment: Leave
+
+...

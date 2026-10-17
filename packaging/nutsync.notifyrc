@@ -1,0 +1,22 @@
+[Global]
+IconName=nutsync
+Name=NutSync
+Name[zh_CN]=NutSync
+Comment=NutSync WebDAV synchronization notifications
+Comment[zh_CN]=NutSync WebDAV 同步通知
+
+[Event/nutsync-sync]
+Name=Sync finished
+Name[zh_CN]=同步完成
+Comment=A synchronization run finished
+Comment[zh_CN]=一次同步已完成
+Action=Popup
+IconName=dialog-information
+
+[Event/nutsync-error]
+Name=Sync failed
+Name[zh_CN]=同步失败
+Comment=A synchronization run failed
+Comment[zh_CN]=一次同步失败
+Action=Popup
+IconName=dialog-error

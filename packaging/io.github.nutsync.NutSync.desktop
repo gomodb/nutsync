@@ -1,0 +1,16 @@
+[Desktop Entry]
+Type=Application
+Name=NutSync
+Name[zh_CN]=NutSync
+GenericName=WebDAV Two-Way Sync
+GenericName[zh_CN]=WebDAV 双向同步
+Comment=Synchronize folders with a WebDAV server
+Comment[zh_CN]=在本地文件夹与 WebDAV 目录之间进行双向同步
+Exec=nutsync
+Icon=nutsync
+Terminal=false
+Categories=Network;KDE;Qt;
+Keywords=WebDAV;sync;synchronization;Nextcloud;ownCloud;cloud;
+StartupNotify=true
+StartupWMClass=io.github.nutsync.NutSync
+X-KDE-StartupNotify=true

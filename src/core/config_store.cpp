@@ -1,0 +1,223 @@
+#include "core/config_store.h"
+
+#include "core/app_paths.h"
+
+#include <QDir>
+#include <QFile>
+#include <QFileInfo>
+#include <QJsonArray>
+#include <QJsonDocument>
+#include <QJsonObject>
+#include <QObject>
+#include <QSaveFile>
+#include <QSet>
+#include <QUrl>
+#include <QUuid>
+
+namespace NutSync {
+
+namespace {
+
+QJsonObject pairToJson(const SyncPair &pair)
+{
+    QJsonObject obj;
+    obj.insert(QStringLiteral("id"), pair.id);
+    obj.insert(QStringLiteral("name"), pair.name);
+    obj.insert(QStringLiteral("localPath"), pair.localPath);
+    QUrl remoteUrl(pair.remoteUrl);
+    if (remoteUrl.isValid() && !remoteUrl.scheme().isEmpty())
+        remoteUrl.setUserInfo({});
+    obj.insert(QStringLiteral("remoteUrl"), remoteUrl.toString());
+    obj.insert(QStringLiteral("backendType"), pair.backendType);
+    obj.insert(QStringLiteral("username"), pair.username);
+    obj.insert(QStringLiteral("rememberPassword"), pair.rememberPassword);
+    obj.insert(QStringLiteral("excludePatterns"), QJsonArray::fromStringList(pair.excludePatterns));
+    obj.insert(QStringLiteral("conflictPolicy"), conflictPolicyToString(pair.conflictPolicy));
+    obj.insert(QStringLiteral("intervalMinutes"), pair.intervalMinutes);
+    obj.insert(QStringLiteral("rateLimitEnabled"), pair.rateLimitEnabled);
+    obj.insert(QStringLiteral("rateLimitWindowMinutes"), pair.rateLimitWindowMinutes);
+    obj.insert(QStringLiteral("rateLimitMaxRequests"), pair.rateLimitMaxRequests);
+    obj.insert(QStringLiteral("watchLocalChanges"), pair.watchLocalChanges);
+    obj.insert(QStringLiteral("syncDeletions"), pair.syncDeletions);
+    obj.insert(QStringLiteral("enabled"), pair.enabled);
+    obj.insert(QStringLiteral("syncOnStartup"), pair.syncOnStartup);
+    obj.insert(QStringLiteral("lastStatus"), pair.lastStatus);
+    obj.insert(QStringLiteral("lastMessage"), pair.lastMessage);
+    obj.insert(QStringLiteral("lastSync"),
+               pair.lastSync.isValid() ? pair.lastSync.toUTC().toString(Qt::ISODateWithMs)
+                                       : QString());
+    obj.insert(QStringLiteral("lastError"), pair.lastError);
+    return obj;
+}
+
+SyncPair pairFromJson(const QJsonObject &obj)
+{
+    SyncPair pair;
+    pair.id = obj.value(QStringLiteral("id")).toString();
+    if (pair.id.isEmpty())
+        pair.id = QUuid::createUuid().toString(QUuid::WithoutBraces);
+    pair.name = obj.value(QStringLiteral("name")).toString();
+    pair.localPath = obj.value(QStringLiteral("localPath")).toString();
+    pair.remoteUrl = obj.value(QStringLiteral("remoteUrl")).toString();
+    pair.backendType = obj.value(QStringLiteral("backendType")).toString();
+    if (pair.backendType.isEmpty())
+        pair.backendType = QStringLiteral("webdav");
+    pair.username = obj.value(QStringLiteral("username")).toString();
+    QUrl remoteUrl(pair.remoteUrl);
+    if (!remoteUrl.userName().isEmpty() || !remoteUrl.password().isEmpty()) {
+        if (pair.username.isEmpty())
+            pair.username = remoteUrl.userName();
+        pair.password = remoteUrl.password();
+        remoteUrl.setUserInfo({});
+        pair.remoteUrl = remoteUrl.toString();
+    }
+    pair.rememberPassword = obj.value(QStringLiteral("rememberPassword")).toBool(true);
+    const QJsonArray excludes = obj.value(QStringLiteral("excludePatterns")).toArray();
+    for (const auto &value : excludes) {
+        const QString pattern = value.toString().trimmed();
+        if (!pattern.isEmpty())
+            pair.excludePatterns.append(pattern);
+    }
+    pair.conflictPolicy = conflictPolicyFromString(
+        obj.value(QStringLiteral("conflictPolicy")).toString());
+    pair.intervalMinutes = obj.value(QStringLiteral("intervalMinutes")).toInt(15);
+    if (pair.intervalMinutes < 0)
+        pair.intervalMinutes = 0;
+    pair.rateLimitEnabled = obj.value(QStringLiteral("rateLimitEnabled")).toBool(false);
+    pair.rateLimitWindowMinutes =
+        obj.value(QStringLiteral("rateLimitWindowMinutes")).toInt(60);
+    pair.rateLimitMaxRequests =
+        obj.value(QStringLiteral("rateLimitMaxRequests")).toInt(10);
+    pair.rateLimitWindowMinutes = qBound(1, pair.rateLimitWindowMinutes, 10080);
+    pair.rateLimitMaxRequests = qBound(1, pair.rateLimitMaxRequests, 100000);
+    pair.watchLocalChanges =
+        obj.value(QStringLiteral("watchLocalChanges")).toBool(true);
+    pair.syncDeletions = obj.value(QStringLiteral("syncDeletions")).toBool(false);
+    pair.enabled = obj.value(QStringLiteral("enabled")).toBool(true);
+    pair.syncOnStartup = obj.value(QStringLiteral("syncOnStartup")).toBool(true);
+    pair.lastStatus = obj.value(QStringLiteral("lastStatus")).toString();
+    pair.lastMessage = obj.value(QStringLiteral("lastMessage")).toString();
+    const QString lastSync = obj.value(QStringLiteral("lastSync")).toString();
+    if (!lastSync.isEmpty())
+        pair.lastSync = QDateTime::fromString(lastSync, Qt::ISODateWithMs);
+    pair.lastError = obj.value(QStringLiteral("lastError")).toString();
+    return pair;
+}
+
+QJsonObject settingsToJson(const AppSettings &settings)
+{
+    QJsonObject obj;
+    obj.insert(QStringLiteral("notifications"), settings.notifications);
+    obj.insert(QStringLiteral("closeToTray"), settings.closeToTray);
+    obj.insert(QStringLiteral("autoSyncOnStartup"), settings.autoSyncOnStartup);
+    obj.insert(QStringLiteral("startMinimized"), settings.startMinimized);
+    return obj;
+}
+
+AppSettings settingsFromJson(const QJsonObject &obj)
+{
+    AppSettings settings;
+    settings.notifications = obj.value(QStringLiteral("notifications")).toBool(true);
+    settings.closeToTray = obj.value(QStringLiteral("closeToTray")).toBool(true);
+    settings.autoSyncOnStartup = obj.value(QStringLiteral("autoSyncOnStartup")).toBool(true);
+    settings.startMinimized = obj.value(QStringLiteral("startMinimized")).toBool(false);
+    return settings;
+}
+
+} // namespace
+
+ConfigStore::ConfigStore(QString filePath)
+    : m_filePath(filePath.isEmpty() ? AppPaths::configFile() : std::move(filePath))
+{
+}
+
+QString ConfigStore::filePath() const
+{
+    return m_filePath;
+}
+
+bool ConfigStore::load(AppConfig *config, QString *error) const
+{
+    if (!config)
+        return false;
+    *config = AppConfig {};
+
+    QFile file(m_filePath);
+    if (!file.exists())
+        return true;
+
+    if (!file.open(QIODevice::ReadOnly)) {
+        if (error)
+            *error = QObject::tr("无法读取配置文件 %1：%2")
+                         .arg(m_filePath, file.errorString());
+        return false;
+    }
+
+    QJsonParseError parseError {};
+    const QJsonDocument doc = QJsonDocument::fromJson(file.readAll(), &parseError);
+    if (parseError.error != QJsonParseError::NoError) {
+        if (error)
+            *error = QObject::tr("配置文件格式错误（偏移 %1）：%2")
+                         .arg(parseError.offset)
+                         .arg(parseError.errorString());
+        return false;
+    }
+    if (!doc.isObject()) {
+        if (error)
+            *error = QObject::tr("配置文件根元素不是 JSON 对象");
+        return false;
+    }
+
+    const QJsonObject root = doc.object();
+    config->settings = settingsFromJson(root.value(QStringLiteral("settings")).toObject());
+    const QJsonArray pairs = root.value(QStringLiteral("pairs")).toArray();
+    QSet<QString> seenIds;
+    for (const auto &value : pairs) {
+        if (!value.isObject())
+            continue;
+        SyncPair pair = pairFromJson(value.toObject());
+        if (pair.id.isEmpty() || seenIds.contains(pair.id)) {
+            pair.id = QUuid::createUuid().toString(QUuid::WithoutBraces);
+        }
+        seenIds.insert(pair.id);
+        config->pairs.append(pair);
+    }
+    return true;
+}
+
+bool ConfigStore::save(const AppConfig &config, QString *error) const
+{
+    QJsonArray pairs;
+    for (const SyncPair &pair : config.pairs)
+        pairs.append(pairToJson(pair));
+
+    QJsonObject root;
+    root.insert(QStringLiteral("version"), 1);
+    root.insert(QStringLiteral("settings"), settingsToJson(config.settings));
+    root.insert(QStringLiteral("pairs"), pairs);
+
+    const QString dir = QFileInfo(m_filePath).absolutePath();
+    if (!QDir().mkpath(dir)) {
+        if (error)
+            *error = QObject::tr("无法创建配置目录 %1").arg(dir);
+        return false;
+    }
+
+    QSaveFile file(m_filePath);
+    if (!file.open(QIODevice::WriteOnly)) {
+        if (error)
+            *error = QObject::tr("无法写入配置文件 %1：%2")
+                         .arg(m_filePath, file.errorString());
+        return false;
+    }
+    file.setPermissions(QFileDevice::ReadOwner | QFileDevice::WriteOwner);
+    file.write(QJsonDocument(root).toJson(QJsonDocument::Indented));
+    if (!file.commit()) {
+        if (error)
+            *error = QObject::tr("保存配置文件失败：%1").arg(file.errorString());
+        return false;
+    }
+    return true;
+}
+
+} // namespace NutSync

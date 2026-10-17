@@ -1,0 +1,74 @@
+# CMake / Ninja build output
+/build/
+/build-*/
+/cmake-build-*/
+/out/
+/CMakeFiles/
+/CMakeCache.txt
+/CTestTestfile.cmake
+/Testing/
+/install_manifest.txt
+/compile_commands.json
+/CMakeUserPresets.json
+*.ninja
+.ninja_deps
+.ninja_log
+
+# Local caches and generated language-tooling data
+/.cache/
+/.clangd/
+/.idea/
+/.vscode/
+/.direnv/
+*.kdev4
+.kdev4/
+CMakeLists.txt.user*
+*.user
+*.user.*
+*.autosave
+*.kate-swp
+*~
+*.swp
+*.swo
+
+# Runtime state and logs
+*.log
+state.db
+state.db-*
+rate_limits.json
+*.gcda
+*.gcno
+*.profraw
+*.profdata
+coverage/
+coverage.*
+
+# Python test helpers
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+venv/
+
+# Compiled artifacts outside build directories
+*.o
+*.obj
+*.a
+*.so
+*.so.*
+*.dylib
+*.dll
+*.exe
+*.AppImage
+
+# OS/desktop metadata
+.DS_Store
+Thumbs.db
+.directory
+.Trash-*
+
+# Arch Linux packaging artifacts
+packaging/arch/src/
+packaging/arch/pkg/
+packaging/arch/*.tar.gz
+packaging/arch/*.pkg.tar.*

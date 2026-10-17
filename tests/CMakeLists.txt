@@ -1,0 +1,40 @@
+add_executable(nutsync_tests
+    test_main.cpp
+    test_autostart.cpp
+    test_autostart.h
+    test_config_store.cpp
+    test_config_store.h
+    test_local_change_monitor.cpp
+    test_local_change_monitor.h
+    test_rate_limiter.cpp
+    test_rate_limiter.h
+    mock_remote_backend.cpp
+    mock_remote_backend.h
+    test_path_utils.cpp
+    test_path_utils.h
+    test_sync_planner.cpp
+    test_sync_planner.h
+    test_sync_engine.cpp
+    test_sync_engine.h
+    test_webdav_backend.cpp
+    test_webdav_backend.h
+    test_sync_controller.cpp
+    test_sync_controller.h
+)
+
+target_link_libraries(nutsync_tests PRIVATE
+    nutsync_core
+    Qt6::Test
+    Qt6::Concurrent
+)
+
+target_compile_definitions(nutsync_tests PRIVATE
+    NUTSYNC_TEST_DATA_DIR="${CMAKE_CURRENT_BINARY_DIR}/data"
+    NUTSYNC_WEBDAV_SERVER="${CMAKE_CURRENT_SOURCE_DIR}/mock_webdav_server.py"
+)
+
+add_test(NAME nutsync_tests COMMAND nutsync_tests)
+set_tests_properties(nutsync_tests PROPERTIES
+    ENVIRONMENT "QT_QPA_PLATFORM=offscreen;XDG_CACHE_HOME=${CMAKE_CURRENT_BINARY_DIR}/test-cache"
+    TIMEOUT 180
+)

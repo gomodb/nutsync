@@ -1,0 +1,41 @@
+# Maintainer: sunhowcn <sunhowcn@outlook.com>
+# SPDX-License-Identifier: 0BSD
+
+pkgname=nutsync
+pkgver=0.2.1
+pkgrel=1
+pkgdesc='Two-way WebDAV synchronization client for the KDE desktop'
+arch=('x86_64')
+url='https://github.com/gomodb/nutsync'
+license=('GPL-3.0-or-later')
+depends=(
+    'qt6-base'
+    'qt6-svg'
+    'qtkeychain-qt6'
+    'kstatusnotifieritem'
+    'knotifications'
+)
+makedepends=('cmake' 'ninja')
+checkdepends=('python')
+source=("$pkgname-$pkgver.tar.gz::https://github.com/gomodb/nutsync/archive/refs/tags/v$pkgver.tar.gz")
+sha256sums=('SKIP')
+
+build() {
+    cmake -S "$srcdir/$pkgname-$pkgver" -B build \
+        -G Ninja \
+        -DCMAKE_BUILD_TYPE=None \
+        -DCMAKE_INSTALL_PREFIX=/usr \
+        -DBUILD_TESTING=ON \
+        -Wno-dev
+    cmake --build build
+}
+
+check() {
+    ctest --test-dir build --output-on-failure
+}
+
+package() {
+    DESTDIR="$pkgdir" cmake --install build
+    install -Dm644 "$srcdir/$pkgname-$pkgver/LICENSE" \
+        "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
+}

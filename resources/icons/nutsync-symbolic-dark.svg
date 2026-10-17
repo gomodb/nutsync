@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256">
+  <g transform="translate(128 128) scale(1.1) translate(-128 -128)">
+  <g fill="none" stroke="#ffffff" stroke-width="16" stroke-linecap="round"
+     stroke-linejoin="round">
+    <path d="M61 112a70 70 0 0 1 118-42"/>
+    <path d="M184 51l-3 31-30-5"/>
+    <path d="M195 144a70 70 0 0 1-118 42"/>
+    <path d="M72 205l3-31 30 5"/>
+  </g>
+  <path fill="#ffffff" fill-rule="evenodd"
+        d="M128 82l35 20v40l-35 20-35-20v-40z
+           M128 106a16 16 0 1 0 0 32 16 16 0 0 0 0-32Z"/>
+  </g>
+</svg>

@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>io.github.nutsync.NutSync</id>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>GPL-3.0-or-later</project_license>
+  <name>NutSync</name>
+  <summary>Two-way WebDAV synchronization for the KDE desktop</summary>
+  <description>
+    <p>
+      NutSync keeps a local folder and a WebDAV directory in sync in both
+      directions. It records the last synchronized state of every entry so it
+      can distinguish local changes, remote changes, and conflicts.
+    </p>
+    <ul>
+      <li>Two-way synchronization with optional local-deletion propagation</li>
+      <li>Content-aware uploads that avoid redundant transfers and overwrites</li>
+      <li>Conflict copies by default, with local/remote/newest policy options</li>
+      <li>KDE system tray integration with theme-aware monochrome icons</li>
+      <li>Desktop notifications</li>
+      <li>Optional start at login through a standard XDG autostart entry</li>
+      <li>Passwords stored in KWallet / Secret Service</li>
+      <li>Exclude patterns for caches, build output, and other local-only data</li>
+      <li>Per-pair automatic synchronization intervals</li>
+      <li>Linux inotify monitoring for immediate local-change syncs</li>
+      <li>Optional per-pair limits on how often automatic syncs may start</li>
+    </ul>
+    <p>
+      The synchronization backend is abstract, so additional protocols can be
+      added without changing the synchronization engine.
+    </p>
+  </description>
+  <launchable type="desktop-id">io.github.nutsync.NutSync.desktop</launchable>
+  <provides>
+    <binary>nutsync</binary>
+  </provides>
+  <categories>
+    <category>Network</category>
+  </categories>
+  <url type="homepage">https://github.com/gomodb/nutsync</url>
+  <url type="bugtracker">https://github.com/gomodb/nutsync/issues</url>
+  <developer id="io.github.gomodb">
+    <name>NutSync contributors</name>
+  </developer>
+  <releases>
+    <release version="0.2.1" date="2026-10-18">
+      <description>
+        <p>Adds content comparison before uploads to avoid redundant transfers,
+        theme-aware monochrome tray icons, and KDE-compatible taskbar icon padding.</p>
+      </description>
+    </release>
+    <release version="0.2.0" date="2026-10-18">
+      <description>
+        <p>Adds recursive inotify monitoring, per-pair synchronization rate limits,
+        configurable local deletion propagation, and optional start at login.</p>
+      </description>
+    </release>
+    <release version="0.1.0" date="2026-10-18">
+      <description>
+        <p>Initial release with WebDAV two-way synchronization.</p>
+      </description>
+    </release>
+  </releases>
+  <content_rating type="oars-1.1"/>
+</component>

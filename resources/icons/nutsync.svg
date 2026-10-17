@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256">
+  <defs>
+    <linearGradient id="bg" x1="32" y1="20" x2="224" y2="236" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#2e8bd6"/>
+      <stop offset="1" stop-color="#165a9c"/>
+    </linearGradient>
+    <linearGradient id="nut" x1="96" y1="76" x2="160" y2="180" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="1" stop-color="#d8ecff"/>
+    </linearGradient>
+  </defs>
+  <rect x="20" y="20" width="216" height="216" rx="52" fill="url(#bg)"/>
+  <path d="M61 112a70 70 0 0 1 118-42" fill="none" stroke="#a8d8ff" stroke-width="15"
+        stroke-linecap="round"/>
+  <path d="M184 51l-3 31-30-5" fill="none" stroke="#a8d8ff" stroke-width="15"
+        stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M195 144a70 70 0 0 1-118 42" fill="none" stroke="#ffffff" stroke-width="15"
+        stroke-linecap="round"/>
+  <path d="M72 205l3-31 30 5" fill="none" stroke="#ffffff" stroke-width="15"
+        stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M128 82l35 20v40l-35 20-35-20v-40z" fill="url(#nut)"/>
+  <circle cx="128" cy="122" r="16" fill="#1b6db4"/>
+  <path d="M128 106v32M112 122h32" stroke="#ffffff" stroke-width="6"
+        stroke-linecap="round"/>
+</svg>
