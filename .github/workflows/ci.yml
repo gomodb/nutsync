@@ -158,17 +158,22 @@ jobs:
             exit 1
           fi
 
+      - name: Prepare builder
+        run: |
+          useradd -m builder
+          chown -R builder:builder "$GITHUB_WORKSPACE"
+
+      - name: Check .SRCINFO
+        working-directory: packaging/arch
+        run: |
+          runuser -u builder -- makepkg --printsrcinfo > .SRCINFO
+          runuser -u builder -- git -C "$GITHUB_WORKSPACE" diff --exit-code -- packaging/arch/.SRCINFO
+
       - name: Build package
+        working-directory: packaging/arch
         run: |
           set -o pipefail
-          {
-            useradd -m builder
-            chown -R builder:builder "$GITHUB_WORKSPACE"
-            su - builder -c "cd '$GITHUB_WORKSPACE/packaging/arch' && \
-              makepkg --printsrcinfo > .SRCINFO && \
-              git -C '$GITHUB_WORKSPACE' diff --exit-code -- packaging/arch/.SRCINFO && \
-              makepkg -f --noconfirm"
-          } 2>&1 | tee aur-build.log
+          runuser -u builder -- makepkg -f --noconfirm 2>&1 | tee aur-build.log
 
       - name: Publish AUR build log
         if: failure()
