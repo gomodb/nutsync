@@ -18,7 +18,7 @@ depends=(
 makedepends=('cmake' 'ninja')
 checkdepends=('python')
 source=("$pkgname-$pkgver.tar.gz::https://github.com/gomodb/nutsync/archive/refs/tags/v$pkgver.tar.gz")
-sha256sums=('SKIP')
+sha256sums=('6ccad0a67e13d85fefbac8f177d8e32adfff1f61ded40baca69628a716200072')
 
 build() {
     cmake -S "$srcdir/$pkgname-$pkgver" -B build \
