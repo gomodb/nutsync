@@ -77,7 +77,7 @@ void TestPathUtils::buildsRemoteUrls()
 
 void TestPathUtils::buildsConflictNames()
 {
-    const QDateTime timestamp(QDate(2026, 10, 18), QTime(2, 15, 0), QTimeZone::UTC);
+    const QDateTime timestamp(QDate(2026, 10, 18), QTime(2, 15, 0), QTimeZone::utc());
     QCOMPARE(PathUtils::conflictRelativePath(QStringLiteral("docs/report.txt"), timestamp),
              QStringLiteral("docs/report.conflict-20261018-021500.txt"));
     QCOMPARE(PathUtils::conflictRelativePath(QStringLiteral(".bashrc"), timestamp),

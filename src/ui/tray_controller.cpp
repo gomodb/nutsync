@@ -102,6 +102,7 @@ void TrayController::setStatus(const QString &title, const QString &subtitle,
     m_item->setToolTip(iconName, title, subtitle);
     m_item->setTitle(title);
 #else
+    Q_UNUSED(iconName)
     m_tray->setToolTip(QStringLiteral("%1\n%2").arg(title, subtitle));
 #endif
 }
