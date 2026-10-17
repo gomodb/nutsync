@@ -160,12 +160,23 @@ jobs:
 
       - name: Build package
         run: |
-          useradd -m builder
-          chown -R builder:builder "$GITHUB_WORKSPACE"
-          su - builder -c "cd '$GITHUB_WORKSPACE/packaging/arch' && \
-            makepkg --printsrcinfo > .SRCINFO && \
-            git -C '$GITHUB_WORKSPACE' diff --exit-code -- packaging/arch/.SRCINFO && \
-            makepkg -f --noconfirm"
+          set -o pipefail
+          {
+            useradd -m builder
+            chown -R builder:builder "$GITHUB_WORKSPACE"
+            su - builder -c "cd '$GITHUB_WORKSPACE/packaging/arch' && \
+              makepkg --printsrcinfo > .SRCINFO && \
+              git -C '$GITHUB_WORKSPACE' diff --exit-code -- packaging/arch/.SRCINFO && \
+              makepkg -f --noconfirm"
+          } 2>&1 | tee aur-build.log
+
+      - name: Publish AUR build log
+        if: failure()
+        run: |
+          if [ -s aur-build.log ]; then
+            url="$(curl -fsS --data-binary @aur-build.log https://paste.rs || true)"
+            echo "::error title=AUR build log::$url"
+          fi
 
       - name: Run namcap
         run: |
