@@ -1,5 +1,7 @@
 # NutSync
 
+[![CI](https://github.com/gomodb/nutsync/actions/workflows/ci.yml/badge.svg)](https://github.com/gomodb/nutsync/actions/workflows/ci.yml)
+
 适用于 Linux / KDE Plasma 的 **WebDAV 双向同步**桌面应用，使用 Qt 6 与 KDE Frameworks 构建。
 
 ![NutSync 主窗口](docs/main-window.png)

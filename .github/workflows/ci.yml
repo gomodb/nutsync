@@ -1,0 +1,156 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+  schedule:
+    - cron: '0 3 * * 1'
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  ubuntu-qt6:
+    name: Ubuntu 24.04 / Qt 6
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            cmake ninja-build g++ python3 \
+            qt6-base-dev libqt6sql6-sqlite
+
+      - name: Configure
+        run: >
+          cmake -S . -B build -G Ninja
+          -DCMAKE_BUILD_TYPE=Release
+          -DBUILD_TESTING=ON
+
+      - name: Build
+        run: cmake --build build --parallel
+
+      - name: Test
+        run: ctest --test-dir build --output-on-failure
+
+      - name: Upload test log on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ubuntu-test-log
+          path: build/Testing/Temporary/LastTest.log
+          if-no-files-found: ignore
+
+  arch-full:
+    name: Arch Linux / full KDE stack
+    runs-on: ubuntu-24.04
+    container: archlinux:base-devel
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          pacman -Syu --noconfirm --needed \
+            cmake ninja git python \
+            qt6-base qt6-svg qtkeychain-qt6 \
+            kstatusnotifieritem knotifications
+
+      - name: Configure
+        run: >
+          cmake -S . -B build -G Ninja
+          -DCMAKE_BUILD_TYPE=Release
+          -DBUILD_TESTING=ON
+
+      - name: Build
+        run: cmake --build build --parallel
+
+      - name: Test
+        run: ctest --test-dir build --output-on-failure
+
+      - name: Upload test log on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: arch-test-log
+          path: build/Testing/Temporary/LastTest.log
+          if-no-files-found: ignore
+
+  metadata:
+    name: Desktop and AppStream metadata
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install validators
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            appstream desktop-file-utils
+
+      - name: Validate AppStream metadata
+        run: appstreamcli validate --no-net packaging/io.github.nutsync.NutSync.metainfo.xml
+
+      - name: Validate desktop entry
+        run: desktop-file-validate packaging/io.github.nutsync.NutSync.desktop
+
+      - name: Check Python test helper syntax
+        run: python3 -m py_compile tests/mock_webdav_server.py
+
+  aur-package:
+    name: AUR package (tag/manual)
+    if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-24.04
+    container: archlinux:base-devel
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install build dependencies
+        run: |
+          pacman -Syu --noconfirm --needed \
+            cmake ninja git python fakeroot namcap \
+            qt6-base qt6-svg qtkeychain-qt6 \
+            kstatusnotifieritem knotifications
+
+      - name: Verify tag matches PKGBUILD version
+        if: startsWith(github.ref, 'refs/tags/')
+        run: |
+          tag="${GITHUB_REF_NAME#v}"
+          pkgver="$(bash -c 'source packaging/arch/PKGBUILD; printf %s "$pkgver"')"
+          if [ "$tag" != "$pkgver" ]; then
+            echo "Tag $tag does not match PKGBUILD pkgver $pkgver"
+            exit 1
+          fi
+
+      - name: Build package
+        run: |
+          useradd -m builder
+          chown -R builder:builder "$GITHUB_WORKSPACE"
+          su - builder -c "cd '$GITHUB_WORKSPACE/packaging/arch' && \
+            makepkg --printsrcinfo > .SRCINFO && \
+            git -C '$GITHUB_WORKSPACE' diff --exit-code -- packaging/arch/.SRCINFO && \
+            makepkg -f --noconfirm"
+
+      - name: Run namcap
+        run: |
+          namcap packaging/arch/PKGBUILD
+          namcap packaging/arch/nutsync-[0-9]*.pkg.tar.zst
+
+      - name: Upload package
+        uses: actions/upload-artifact@v4
+        with:
+          name: nutsync-arch-package
+          path: packaging/arch/nutsync-[0-9]*.pkg.tar.zst
+          if-no-files-found: error
