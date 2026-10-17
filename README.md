@@ -143,7 +143,7 @@ makepkg -si
 makepkg -f
 ```
 
-上游源码归档通过 `.gitattributes` 的 `export-ignore` 排除 `packaging/arch/`，AUR 仓库单独保存 PKGBUILD、`.SRCINFO` 和 0BSD 打包许可证。应用源码继续使用 GPL-3.0-or-later，AUR 打包文件使用 0BSD。
+AUR 仓库单独保存 PKGBUILD、`.SRCINFO` 和 0BSD 打包许可证。应用源码继续使用 GPL-3.0-or-later，AUR 打包文件使用 0BSD。
 
 AUR 首次发布版本为 `0.2.1-1`。发布新版本时更新 `pkgver`、`source` 和 `sha256sums`，再执行：
 
