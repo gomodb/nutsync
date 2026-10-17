@@ -146,7 +146,7 @@ QDateTime parseHttpDate(const QString &value)
         return {};
 
     if (date.timeSpec() == Qt::LocalTime)
-        date.setTimeZone(QTimeZone::UTC);
+        date.setTimeZone(QTimeZone::utc());
     return date.toUTC();
 }
 
