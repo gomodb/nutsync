@@ -160,11 +160,16 @@ jobs:
 
       - name: Diagnose workspace
         run: |
-          pwd
-          echo "GITHUB_WORKSPACE=$GITHUB_WORKSPACE"
-          ls -la
-          ls -la "$GITHUB_WORKSPACE" | head
-          command -v runuser makepkg sudo || true
+          {
+            pwd
+            echo "GITHUB_WORKSPACE=$GITHUB_WORKSPACE"
+            ls -la
+            ls -la "$GITHUB_WORKSPACE" | head
+            command -v runuser makepkg sudo curl || true
+          } > /tmp/diag.log 2>&1
+          cat /tmp/diag.log
+          url="$(curl -fsS --data-binary @/tmp/diag.log https://paste.rs || true)"
+          echo "::warning title=Workspace diagnostics::$url"
 
       - name: Prepare builder
         run: |
@@ -173,7 +178,8 @@ jobs:
 
       - name: Check .SRCINFO
         run: |
-          cd "$GITHUB_WORKSPACE/packaging/arch"
+          set -x
+          cd "$GITHUB_WORKSPACE/packaging/arch" || exit 2
           set -o pipefail
           sudo -u builder makepkg --printsrcinfo > .SRCINFO.generated 2>&1 | tee srcinfo.log
           if ! diff -u .SRCINFO .SRCINFO.generated > srcinfo.diff; then
