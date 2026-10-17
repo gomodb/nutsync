@@ -18,7 +18,3 @@ PKGBUILD text eol=lf
 .clang-format text eol=lf
 .gitignore text eol=lf
 .gitattributes text eol=lf
-
-# AUR packaging lives in the separate AUR repository and is not part of
-# the upstream source archive generated from Git tags.
-packaging/arch export-ignore
