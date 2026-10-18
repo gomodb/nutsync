@@ -18,10 +18,12 @@
 #include <QAction>
 #include <QBrush>
 #include <QApplication>
+#include <cmath>
 #include <QCheckBox>
 #include <QComboBox>
 #include <QCloseEvent>
 #include <QDateTime>
+#include <QElapsedTimer>
 #include <QDir>
 #include <QDesktopServices>
 #include <QDialog>
@@ -76,6 +78,17 @@
 #include <utility>
 
 namespace NutSync {
+
+namespace {
+QString formatDuration(int seconds)
+{
+    if (seconds < 60)
+        return QObject::tr("%1 秒").arg(seconds);
+    if (seconds < 3600)
+        return QObject::tr("%1 分 %2 秒").arg(seconds / 60).arg(seconds % 60);
+    return QObject::tr("%1 小时 %2 分").arg(seconds / 3600).arg((seconds % 3600) / 60);
+}
+} // namespace
 
 namespace {
 
@@ -1242,6 +1255,7 @@ void MainWindow::onPairStarted(const QString &pairId)
     if (LocalChangeMonitor *monitor = m_localMonitors.value(pairId))
         monitor->setSuppressed(true);
     m_deferredAutoSyncs.remove(pairId);
+    m_progressTimer.start();
     updatePairRow(*pair);
     if (selectedPairId() == pairId) {
         m_progress->setRange(0, 0);
@@ -1285,10 +1299,21 @@ void MainWindow::onProgress(const QString &pairId, int completed, int total, con
     m_progress->setRange(0, total);
     m_progress->setValue(completed);
     m_progress->setVisible(true);
+
+    QString detail;
+    if (m_progressTimer.isValid() && m_progressTimer.elapsed() >= 1000 && completed > 0) {
+        const double rate = completed * 1000.0 / m_progressTimer.elapsed();
+        const int remainingSeconds =
+            rate > 0 ? static_cast<int>(std::ceil((total - completed) / rate)) : 0;
+        detail = tr("%1 项/秒，剩余 %2")
+                     .arg(QString::number(rate, 'f', 1), formatDuration(remainingSeconds));
+    }
+    QString text = detail.isEmpty()
+        ? tr("正在处理 %1/%2").arg(completed).arg(total)
+        : tr("正在处理 %1/%2（%3）").arg(completed).arg(total).arg(detail);
     if (!path.isEmpty())
-        m_statsLabel->setText(tr("正在处理 %1/%2：%3").arg(completed).arg(total).arg(path));
-    else
-        m_statsLabel->setText(tr("正在处理 %1/%2").arg(completed).arg(total));
+        text += tr("：%1").arg(path);
+    m_statsLabel->setText(text);
 }
 
 void MainWindow::onPairFinished(const SyncSummary &summary)

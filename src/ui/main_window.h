@@ -5,6 +5,7 @@
 #include "core/sync_rate_limiter.h"
 #include "core/sync_types.h"
 
+#include <QElapsedTimer>
 #include <QHash>
 #include <QMainWindow>
 #include <QSet>
@@ -151,6 +152,7 @@ private:
 
     QTimer *m_scheduler = nullptr;
     QTimer *m_networkSyncTimer = nullptr;
+    QElapsedTimer m_progressTimer;
     QFileSystemWatcher *m_themeWatcher = nullptr;
     SyncRateLimiter m_rateLimiter;
     QHash<QString, LocalChangeMonitor *> m_localMonitors;

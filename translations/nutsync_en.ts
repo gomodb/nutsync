@@ -461,7 +461,7 @@ Only NutSync's configuration and synchronization baseline are deleted, not local
     </message>
     <message>
       <source>正在处理 %1/%2：%3</source>
-      <translation>Processing %1/%2: %3</translation>
+      <translation type="vanished">Processing %1/%2: %3</translation>
     </message>
     <message>
       <source>正在处理 %1/%2</source>
@@ -922,6 +922,18 @@ Only effective for the current user; unchecking will delete the entry.</translat
     <message>
       <source>同步正在进行</source>
       <translation>Sync in progress</translation>
+    </message>
+    <message>
+      <source>%1 项/秒，剩余 %2</source>
+      <translation>%1 items/s, %2 remaining</translation>
+    </message>
+    <message>
+      <source>正在处理 %1/%2（%3）</source>
+      <translation>Processing %1/%2 (%3)</translation>
+    </message>
+    <message>
+      <source>：%1</source>
+      <translation>: %1</translation>
     </message>
     <message>
       <source>导出诊断信息</source>
@@ -2015,6 +2027,18 @@ Projects/notes.md</translation>
 请使用系统托盘中的图标打开主窗口。</source>
       <translation>Another NutSync instance has been started.
 Please use the icon in the system tray to open the main window.</translation>
+    </message>
+    <message>
+      <source>%1 秒</source>
+      <translation>%1 seconds</translation>
+    </message>
+    <message>
+      <source>%1 分 %2 秒</source>
+      <translation>%1 min %2 s</translation>
+    </message>
+    <message>
+      <source>%1 小时 %2 分</source>
+      <translation>%1 h %2 min</translation>
     </message>
     <message>
       <source>同步中…</source>
