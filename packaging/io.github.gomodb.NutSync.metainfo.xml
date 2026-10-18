@@ -19,6 +19,7 @@
       <li>Conflict copies by default, with local/remote/newest policy options and direct conflict resolution</li>
       <li>Configurable recycle bin with deletion backups, restore, and retention</li>
       <li>Configuration export and import without exposing passwords</li>
+      <li>Redacted diagnostics export for troubleshooting</li>
       <li>KDE system tray integration with theme-aware monochrome icons</li>
       <li>Desktop notifications</li>
       <li>Optional start at login through a standard XDG autostart entry</li>

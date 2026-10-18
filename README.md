@@ -277,6 +277,10 @@ Network options are available in **Preferences → Network**:
 
 Proxy and CA changes take effect after restart. The log level is applied immediately.
 
+## Diagnostics
+
+**Help → Export diagnostics** writes a text report with the NutSync/Qt versions, OS, architecture, locale, sanitized settings, per-pair summary, and the tail of the log. Passwords, usernames, remote URL paths, and proxy credentials are redacted. Review the log tail before sharing it, since it may contain local paths or server error text.
+
 ## Configuration export and import
 
 The **File** menu can export the current configuration to JSON and import it on another machine or after reinstalling. Passwords are never included in the export; existing keychain entries are reused by sync-pair ID. Import can either replace the current configuration or merge the imported sync pairs.

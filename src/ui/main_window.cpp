@@ -7,6 +7,7 @@
 #include "core/logger.h"
 #include "core/path_utils.h"
 #include "core/conflict_resolver.h"
+#include "core/diagnostics.h"
 #include "core/sync_state_store.h"
 #include "core/trash_manager.h"
 #include "core/webdav_backend.h"
@@ -52,6 +53,7 @@
 #include <QScrollArea>
 #include <QSslCertificate>
 #include <QScrollBar>
+#include <QSaveFile>
 #include <QPushButton>
 #include <QSignalBlocker>
 #include <QSpinBox>
@@ -259,8 +261,10 @@ void MainWindow::buildActions()
                                      tr("清空同步基线…"), this);
     m_exportConfigAction = new QAction(tr("导出配置…"), this);
     m_importConfigAction = new QAction(tr("导入配置…"), this);
+    m_exportDiagnosticsAction = new QAction(tr("导出诊断信息…"), this);
     connect(m_exportConfigAction, &QAction::triggered, this, &MainWindow::exportConfig);
     connect(m_importConfigAction, &QAction::triggered, this, &MainWindow::importConfig);
+    connect(m_exportDiagnosticsAction, &QAction::triggered, this, &MainWindow::exportDiagnostics);
 
     m_syncAction =
         new QAction(QIcon::fromTheme(QStringLiteral("view-refresh")), tr("立即同步"), this);
@@ -337,6 +341,8 @@ void MainWindow::buildUi()
     editMenu->addAction(m_settingsAction);
 
     auto *helpMenu = menuBar()->addMenu(tr("帮助(&H)"));
+    helpMenu->addAction(m_exportDiagnosticsAction);
+    helpMenu->addSeparator();
     auto *aboutAction =
         helpMenu->addAction(QIcon::fromTheme(QStringLiteral("help-about")), tr("关于 NutSync"));
     connect(aboutAction, &QAction::triggered, this, &MainWindow::showAbout);
@@ -2029,6 +2035,37 @@ void MainWindow::openSettings()
         QMessageBox::information(this, tr("语言已更改"),
                                  tr("界面语言将在下次启动 NutSync 时生效。"));
     }
+}
+
+void MainWindow::exportDiagnostics()
+{
+    QString path = QFileDialog::getSaveFileName(
+        this, tr("导出诊断信息"),
+        QDir::homePath() + QStringLiteral("/nutsync-diagnostics-")
+            + QDateTime::currentDateTime().toString(QStringLiteral("yyyyMMdd-HHmmss"))
+            + QStringLiteral(".txt"),
+        tr("诊断报告 (*.txt);;所有文件 (*)"));
+    if (path.isEmpty())
+        return;
+    if (QFileInfo(path).suffix().isEmpty())
+        path += QStringLiteral(".txt");
+
+    QString report = NutSync::Diagnostics::buildReport(m_config);
+    report += QStringLiteral("\n\n--- log tail (may contain local paths) ---\n");
+    report += NutSync::Diagnostics::readLogTail(Logger::logFilePath());
+
+    QSaveFile file(path);
+    if (!file.open(QIODevice::WriteOnly)) {
+        QMessageBox::warning(this, tr("导出诊断信息失败"), file.errorString());
+        return;
+    }
+    file.setPermissions(QFileDevice::ReadOwner | QFileDevice::WriteOwner);
+    file.write(report.toUtf8());
+    if (!file.commit()) {
+        QMessageBox::warning(this, tr("导出诊断信息失败"), file.errorString());
+        return;
+    }
+    appendSystemStatus(tr("诊断信息已导出：%1").arg(PathUtils::nativePath(path)));
 }
 
 void MainWindow::showAbout()

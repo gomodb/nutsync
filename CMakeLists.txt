@@ -52,6 +52,8 @@ add_library(nutsync_core STATIC
     src/core/conflict_resolver.h
     src/core/credential_store.cpp
     src/core/credential_store.h
+    src/core/diagnostics.cpp
+    src/core/diagnostics.h
     src/core/local_change_monitor.cpp
     src/core/local_change_monitor.h
     src/core/language.cpp

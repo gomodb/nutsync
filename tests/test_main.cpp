@@ -1,5 +1,6 @@
 #include "test_autostart.h"
 #include "test_config_store.h"
+#include "test_diagnostics.h"
 #include "test_conflict_resolver.h"
 #include "test_credential_store.h"
 #include "test_language.h"
@@ -31,6 +32,10 @@ int main(int argc, char *argv[])
     }
     {
         NutSync::Test::TestConfigStore test;
+        status |= QTest::qExec(&test, argc, argv);
+    }
+    {
+        NutSync::Test::TestDiagnostics test;
         status |= QTest::qExec(&test, argc, argv);
     }
     {

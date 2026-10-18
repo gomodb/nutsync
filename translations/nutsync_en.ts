@@ -66,6 +66,10 @@
       <translation>Import configuration…</translation>
     </message>
     <message>
+      <source>导出诊断信息…</source>
+      <translation>Export diagnostics…</translation>
+    </message>
+    <message>
       <source>立即同步</source>
       <translation>Sync Now</translation>
     </message>
@@ -902,6 +906,22 @@ Only effective for the current user; unchecking will delete the entry.</translat
     <message>
       <source>同步正在进行</source>
       <translation>Sync in progress</translation>
+    </message>
+    <message>
+      <source>导出诊断信息</source>
+      <translation>Export diagnostics</translation>
+    </message>
+    <message>
+      <source>诊断报告 (*.txt);;所有文件 (*)</source>
+      <translation>Diagnostics report (*.txt);;All files (*)</translation>
+    </message>
+    <message>
+      <source>导出诊断信息失败</source>
+      <translation>Could not export diagnostics</translation>
+    </message>
+    <message>
+      <source>诊断信息已导出：%1</source>
+      <translation>Diagnostics exported: %1</translation>
     </message>
     <message>
       <source>仍有同步任务正在运行。确定要退出并中断同步吗？</source>
