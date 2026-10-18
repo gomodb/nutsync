@@ -35,6 +35,27 @@ bool runJob(Job &job, QString *error)
     }
     return true;
 }
+QString readPasswordFromService(const QString &service, const QString &key,
+                                bool *found, QString *error)
+{
+    QKeychain::ReadPasswordJob job(service);
+    job.setKey(key);
+    if (!runJob(job, error)) {
+        if (job.error() == QKeychain::EntryNotFound) {
+            if (found)
+                *found = false;
+            if (error)
+                error->clear();
+            return {};
+        }
+        if (found)
+            *found = false;
+        return {};
+    }
+    if (found)
+        *found = true;
+    return job.textData();
+}
 #endif
 } // namespace
 
@@ -44,6 +65,11 @@ CredentialStore::CredentialStore()
 }
 
 QString CredentialStore::serviceName()
+{
+    return QStringLiteral("io.github.gomodb.NutSync");
+}
+
+QString CredentialStore::legacyServiceName()
 {
     return QStringLiteral("io.github.nutsync.NutSync");
 }
@@ -60,17 +86,27 @@ bool CredentialStore::isAvailable() const
 QString CredentialStore::readPassword(const QString &key, QString *error) const
 {
 #ifdef NUTSYNC_HAVE_KEYCHAIN
-    QKeychain::ReadPasswordJob job(m_service);
-    job.setKey(key);
-    if (!runJob(job, error)) {
-        if (job.error() == QKeychain::EntryNotFound) {
-            if (error)
-                error->clear();
-            return {};
-        }
+    bool found = false;
+    const QString password = readPasswordFromService(m_service, key, &found, error);
+    if (found)
+        return password;
+    if (error && !error->isEmpty())
         return {};
+
+    QString legacyError;
+    bool legacyFound = false;
+    const QString legacyPassword = readPasswordFromService(
+        legacyServiceName(), key, &legacyFound, &legacyError);
+    if (legacyFound) {
+        if (!legacyPassword.isEmpty()) {
+            QString migrationError;
+            writePassword(key, legacyPassword, &migrationError);
+        }
+        return legacyPassword;
     }
-    return job.textData();
+    if (error)
+        *error = legacyError;
+    return {};
 #else
     Q_UNUSED(key)
     if (error)
@@ -103,10 +139,16 @@ bool CredentialStore::deletePassword(const QString &key, QString *error) const
     job.setKey(key);
     if (!runJob(job, error)) {
         // Deleting a non-existent entry is not an error for our purposes.
-        if (job.error() == QKeychain::EntryNotFound)
-            return true;
-        return false;
+        if (job.error() != QKeychain::EntryNotFound)
+            return false;
+        if (error)
+            error->clear();
     }
+
+    QKeychain::DeletePasswordJob legacyJob(legacyServiceName());
+    legacyJob.setKey(key);
+    if (!runJob(legacyJob, nullptr) && legacyJob.error() != QKeychain::EntryNotFound)
+        return false;
     return true;
 #else
     Q_UNUSED(key)

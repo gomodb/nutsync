@@ -17,7 +17,7 @@ void TestAutostart::disabledByDefault()
     QVERIFY(!manager.isEnabled());
     QVERIFY(!QFileInfo::exists(manager.desktopFilePath()));
     QCOMPARE(manager.desktopFilePath(),
-             configDir.filePath(QStringLiteral("autostart/io.github.nutsync.NutSync.desktop")));
+             configDir.filePath(QStringLiteral("autostart/io.github.gomodb.NutSync.desktop")));
 }
 
 void TestAutostart::enablesAndDisablesDesktopEntry()
@@ -46,6 +46,26 @@ void TestAutostart::enablesAndDisablesDesktopEntry()
     QVERIFY(!manager.isEnabled());
     QVERIFY(!QFileInfo::exists(manager.desktopFilePath()));
     QVERIFY2(manager.setEnabled(false, &error), qPrintable(error));
+}
+
+void TestAutostart::migratesLegacyDesktopEntry()
+{
+    QTemporaryDir configDir;
+    QVERIFY(configDir.isValid());
+    const QString autostartDir = configDir.filePath(QStringLiteral("autostart"));
+    QVERIFY(QDir().mkpath(autostartDir));
+    const QString legacy = QDir(autostartDir)
+        .filePath(QStringLiteral("io.github.nutsync.NutSync.desktop"));
+    QFile file(legacy);
+    QVERIFY(file.open(QIODevice::WriteOnly));
+    file.write("[Desktop Entry]\n");
+    file.close();
+
+    AutostartManager manager(configDir.path());
+    QVERIFY(manager.isEnabled());
+    QVERIFY(!QFileInfo::exists(legacy));
+    QCOMPARE(manager.desktopFilePath(), QDir(autostartDir)
+        .filePath(QStringLiteral("io.github.gomodb.NutSync.desktop")));
 }
 
 } // namespace NutSync::Test

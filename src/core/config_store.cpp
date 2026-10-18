@@ -108,6 +108,14 @@ QJsonObject settingsToJson(const AppSettings &settings)
 {
     QJsonObject obj;
     obj.insert(QStringLiteral("language"), settings.language);
+    obj.insert(QStringLiteral("proxyMode"), settings.proxyMode);
+    obj.insert(QStringLiteral("proxyHost"), settings.proxyHost);
+    obj.insert(QStringLiteral("proxyPort"), settings.proxyPort);
+    obj.insert(QStringLiteral("proxyUser"), settings.proxyUser);
+    obj.insert(QStringLiteral("caBundlePath"), settings.caBundlePath);
+    obj.insert(QStringLiteral("logLevel"), settings.logLevel);
+    obj.insert(QStringLiteral("retryCount"), settings.retryCount);
+    obj.insert(QStringLiteral("retryDelaySeconds"), settings.retryDelaySeconds);
     obj.insert(QStringLiteral("notifications"), settings.notifications);
     obj.insert(QStringLiteral("closeToTray"), settings.closeToTray);
     obj.insert(QStringLiteral("autoSyncOnStartup"), settings.autoSyncOnStartup);
@@ -123,6 +131,24 @@ AppSettings settingsFromJson(const QJsonObject &obj)
                          || language == QLatin1String("zh_CN"))
         ? language
         : QStringLiteral("system");
+    const QString proxyMode = obj.value(QStringLiteral("proxyMode")).toString();
+    settings.proxyMode = (proxyMode == QLatin1String("none")
+                          || proxyMode == QLatin1String("manual"))
+        ? proxyMode
+        : QStringLiteral("system");
+    settings.proxyHost = obj.value(QStringLiteral("proxyHost")).toString();
+    settings.proxyPort = qBound(1, obj.value(QStringLiteral("proxyPort")).toInt(8080), 65535);
+    settings.proxyUser = obj.value(QStringLiteral("proxyUser")).toString();
+    settings.caBundlePath = obj.value(QStringLiteral("caBundlePath")).toString();
+    const QString logLevel = obj.value(QStringLiteral("logLevel")).toString();
+    settings.logLevel = (logLevel == QLatin1String("debug")
+                         || logLevel == QLatin1String("warning")
+                         || logLevel == QLatin1String("error"))
+        ? logLevel
+        : QStringLiteral("info");
+    settings.retryCount = qBound(0, obj.value(QStringLiteral("retryCount")).toInt(2), 5);
+    settings.retryDelaySeconds =
+        qBound(5, obj.value(QStringLiteral("retryDelaySeconds")).toInt(30), 600);
     settings.notifications = obj.value(QStringLiteral("notifications")).toBool(true);
     settings.closeToTray = obj.value(QStringLiteral("closeToTray")).toBool(true);
     settings.autoSyncOnStartup = obj.value(QStringLiteral("autoSyncOnStartup")).toBool(true);

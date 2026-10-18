@@ -10,5 +10,6 @@ class TestAutostart : public QObject
 private slots:
     void disabledByDefault();
     void enablesAndDisablesDesktopEntry();
+    void migratesLegacyDesktopEntry();
 };
 } // namespace NutSync::Test

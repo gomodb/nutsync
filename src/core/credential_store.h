@@ -15,6 +15,7 @@ public:
     bool deletePassword(const QString &key, QString *error = nullptr) const;
 
     static QString serviceName();
+    static QString legacyServiceName();
 
 private:
     QString m_service;

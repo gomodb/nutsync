@@ -24,16 +24,19 @@
 #include <QDialogButtonBox>
 #include <QFile>
 #include <QFileInfo>
+#include <QFileDialog>
 #include <QFileSystemWatcher>
 #include <QFont>
 #include <QFontDatabase>
 #include <QFormLayout>
+#include <QGroupBox>
 #include <QFrame>
 #include <QGridLayout>
 #include <QHBoxLayout>
 #include <QHeaderView>
 #include <QIcon>
 #include <QKeySequence>
+#include <QLineEdit>
 #include <QLabel>
 #include <QMenu>
 #include <QMenuBar>
@@ -41,9 +44,11 @@
 #include <QPlainTextEdit>
 #include <QPointer>
 #include <QProgressBar>
+#include <QScrollArea>
 #include <QScrollBar>
 #include <QPushButton>
 #include <QSignalBlocker>
+#include <QSpinBox>
 #include <QSplitter>
 #include <QStackedWidget>
 #include <QStandardPaths>
@@ -1071,8 +1076,10 @@ void MainWindow::requestSync(const QString &id, bool manual)
         }
     }
 
-    if (manual)
+    if (manual) {
+        m_autoRetryAttempts.remove(id);
         m_notifyOnSuccess.insert(id);
+    }
     m_controller->enqueue(*pair);
     if (pair->rateLimitEnabled) {
         QString error;
@@ -1250,6 +1257,30 @@ void MainWindow::onPairFinished(const SyncSummary &summary)
                                      tr("“%1”：%2").arg(pair->name, detail), false);
         }
     }
+    const bool manualSync = m_notifyOnSuccess.contains(summary.pairId);
+    if (summary.success) {
+        m_autoRetryAttempts.remove(summary.pairId);
+    } else if (!summary.cancelled && !manualSync && pair->enabled
+               && m_config.settings.retryCount > 0) {
+        const int attempt = m_autoRetryAttempts.value(summary.pairId) + 1;
+        if (attempt <= m_config.settings.retryCount) {
+            m_autoRetryAttempts.insert(summary.pairId, attempt);
+            const int delay = qMin(600, m_config.settings.retryDelaySeconds
+                                            * (1 << (attempt - 1)));
+            appendLog(summary.pairId,
+                      tr("同步失败，%1 秒后重试（%2/%3）")
+                          .arg(delay)
+                          .arg(attempt)
+                          .arg(m_config.settings.retryCount));
+            QTimer::singleShot(delay * 1000, this, [this, pairId = summary.pairId]() {
+                const SyncPair *current = findPair(pairId);
+                if (current && current->enabled && !m_controller->contains(pairId))
+                    requestSync(pairId, false);
+            });
+        } else {
+            m_autoRetryAttempts.remove(summary.pairId);
+        }
+    }
     m_notifyOnSuccess.remove(summary.pairId);
     updateActions();
 
@@ -1366,11 +1397,20 @@ void MainWindow::openSettings()
 {
     QDialog dialog(this);
     dialog.setWindowTitle(tr("NutSync 首选项"));
-    auto *layout = new QVBoxLayout(&dialog);
+    auto *outerLayout = new QVBoxLayout(&dialog);
+    outerLayout->setContentsMargins(0, 0, 0, 0);
+    outerLayout->setSpacing(0);
+    auto *scroll = new QScrollArea(&dialog);
+    scroll->setWidgetResizable(true);
+    scroll->setFrameShape(QFrame::NoFrame);
+    auto *content = new QWidget(scroll);
+    auto *layout = new QVBoxLayout(content);
     layout->setContentsMargins(20, 18, 20, 18);
     layout->setSpacing(14);
+    scroll->setWidget(content);
+    outerLayout->addWidget(scroll, 1);
 
-    auto *heading = new QLabel(tr("常规"), &dialog);
+    auto *heading = new QLabel(tr("常规"), content);
     QFont headingFont = heading->font();
     headingFont.setBold(true);
     headingFont.setPointSize(headingFont.pointSize() + 2);
@@ -1393,6 +1433,20 @@ void MainWindow::openSettings()
     languageNote->setWordWrap(true);
     makeMuted(languageNote, true);
     layout->addWidget(languageNote);
+
+    auto *logLevelRow = new QHBoxLayout();
+    auto *logLevelLabel = new QLabel(tr("日志级别"), &dialog);
+    auto *logLevel = new QComboBox(&dialog);
+    logLevel->addItem(tr("调试"), QStringLiteral("debug"));
+    logLevel->addItem(tr("信息"), QStringLiteral("info"));
+    logLevel->addItem(tr("警告"), QStringLiteral("warning"));
+    logLevel->addItem(tr("错误"), QStringLiteral("error"));
+    const int logLevelIndex = logLevel->findData(m_config.settings.logLevel);
+    if (logLevelIndex >= 0)
+        logLevel->setCurrentIndex(logLevelIndex);
+    logLevelRow->addWidget(logLevelLabel);
+    logLevelRow->addWidget(logLevel, 1);
+    layout->addLayout(logLevelRow);
 
     auto *notifications = new QCheckBox(tr("显示桌面通知"), &dialog);
     notifications->setChecked(m_config.settings.notifications);
@@ -1418,6 +1472,67 @@ void MainWindow::openSettings()
     layout->addWidget(autoStartup);
     layout->addWidget(startMinimized);
     layout->addWidget(autostart);
+
+    auto *networkGroup = new QGroupBox(tr("网络"), &dialog);
+    auto *networkForm = new QFormLayout(networkGroup);
+    auto *proxyMode = new QComboBox(networkGroup);
+    proxyMode->addItem(tr("使用系统代理"), QStringLiteral("system"));
+    proxyMode->addItem(tr("不使用代理"), QStringLiteral("none"));
+    proxyMode->addItem(tr("手动代理"), QStringLiteral("manual"));
+    const int proxyIndex = proxyMode->findData(m_config.settings.proxyMode);
+    if (proxyIndex >= 0)
+        proxyMode->setCurrentIndex(proxyIndex);
+    auto *proxyHost = new QLineEdit(m_config.settings.proxyHost, networkGroup);
+    auto *proxyPort = new QSpinBox(networkGroup);
+    proxyPort->setRange(1, 65535);
+    proxyPort->setValue(m_config.settings.proxyPort);
+    auto *proxyUser = new QLineEdit(m_config.settings.proxyUser, networkGroup);
+    auto *proxyPassword = new QLineEdit(networkGroup);
+    proxyPassword->setEchoMode(QLineEdit::Password);
+    proxyPassword->setPlaceholderText(tr("留空则保留已保存的密码"));
+    auto *caPath = new QLineEdit(m_config.settings.caBundlePath, networkGroup);
+    auto *browseCa = new QPushButton(tr("浏览…"), networkGroup);
+    auto *caRow = new QWidget(networkGroup);
+    auto *caLayout = new QHBoxLayout(caRow);
+    caLayout->setContentsMargins(0, 0, 0, 0);
+    caLayout->addWidget(caPath, 1);
+    caLayout->addWidget(browseCa);
+
+    networkForm->addRow(tr("代理模式"), proxyMode);
+    networkForm->addRow(tr("主机"), proxyHost);
+    networkForm->addRow(tr("端口"), proxyPort);
+    networkForm->addRow(tr("代理用户名"), proxyUser);
+    networkForm->addRow(tr("代理密码"), proxyPassword);
+    networkForm->addRow(tr("CA 证书文件"), caRow);
+    auto *retryCount = new QSpinBox(networkGroup);
+    retryCount->setRange(0, 5);
+    retryCount->setValue(m_config.settings.retryCount);
+    retryCount->setSpecialValueText(tr("不重试"));
+    auto *retryDelay = new QSpinBox(networkGroup);
+    retryDelay->setRange(5, 600);
+    retryDelay->setSuffix(tr(" 秒"));
+    retryDelay->setValue(m_config.settings.retryDelaySeconds);
+    networkForm->addRow(tr("失败重试次数"), retryCount);
+    networkForm->addRow(tr("重试基础间隔"), retryDelay);
+    layout->addWidget(networkGroup);
+
+    auto updateProxyFields = [=]() {
+        const bool manual = proxyMode->currentData().toString() == QLatin1String("manual");
+        proxyHost->setEnabled(manual);
+        proxyPort->setEnabled(manual);
+        proxyUser->setEnabled(manual);
+        proxyPassword->setEnabled(manual);
+    };
+    connect(proxyMode, &QComboBox::currentIndexChanged, &dialog,
+            [updateProxyFields](int) { updateProxyFields(); });
+    updateProxyFields();
+    connect(browseCa, &QPushButton::clicked, &dialog, [&]() {
+        const QString file = QFileDialog::getOpenFileName(
+            &dialog, tr("选择 CA 证书文件"), caPath->text(),
+            tr("证书文件 (*.pem *.crt *.cer);;所有文件 (*)"));
+        if (!file.isEmpty())
+            caPath->setText(file);
+    });
 
     auto *autostartNote = new QLabel(
         tr("用户级 XDG autostart 条目：\n%1\n"
@@ -1454,7 +1569,7 @@ void MainWindow::openSettings()
                                          &dialog);
     buttons->button(QDialogButtonBox::Ok)->setText(tr("确定"));
     buttons->button(QDialogButtonBox::Cancel)->setText(tr("取消"));
-    layout->addWidget(buttons);
+    outerLayout->addWidget(buttons);
     connect(buttons, &QDialogButtonBox::accepted, &dialog, [&]() {
         if (autostart->isChecked() != autostartManager.isEnabled()) {
             QString error;
@@ -1467,17 +1582,34 @@ void MainWindow::openSettings()
     });
     connect(buttons, &QDialogButtonBox::rejected, &dialog, &QDialog::reject);
 
+    dialog.resize(560, 760);
     if (dialog.exec() != QDialog::Accepted)
         return;
 
     const QString previousLanguage = m_config.settings.language;
     m_config.settings.language = language->currentData().toString();
+    m_config.settings.proxyMode = proxyMode->currentData().toString();
+    m_config.settings.proxyHost = proxyHost->text().trimmed();
+    m_config.settings.proxyPort = proxyPort->value();
+    m_config.settings.proxyUser = proxyUser->text().trimmed();
+    m_config.settings.caBundlePath = caPath->text().trimmed();
+    m_config.settings.logLevel = logLevel->currentData().toString();
+    m_config.settings.retryCount = retryCount->value();
+    m_config.settings.retryDelaySeconds = retryDelay->value();
     m_config.settings.notifications = notifications->isChecked();
     m_config.settings.closeToTray = closeToTray->isChecked();
     m_config.settings.autoSyncOnStartup = autoStartup->isChecked();
     m_config.settings.startMinimized = startMinimized->isChecked();
     if (m_tray)
         m_tray->setNotificationsEnabled(m_config.settings.notifications);
+    if (!proxyPassword->text().isEmpty()) {
+        QString passwordError;
+        if (!m_credentials.writePassword(QStringLiteral("proxy-password"),
+                                         proxyPassword->text(), &passwordError)) {
+            QMessageBox::warning(this, tr("无法保存代理密码"), passwordError);
+        }
+    }
+    Logger::setLevel(m_config.settings.logLevel);
     saveConfig(true);
     appendSystemStatus(tr("首选项已保存"));
     if (m_config.settings.language != previousLanguage) {

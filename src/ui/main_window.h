@@ -143,6 +143,7 @@ private:
     QSet<QString> m_deferredAutoSyncs;
     QSet<QString> m_monitorStartFailures;
     QHash<QString, qint64> m_rateLimitNoticeMs;
+    QHash<QString, int> m_autoRetryAttempts;
     bool m_busy = false;
     bool m_autoSyncPaused = false;
     bool m_quitting = false;

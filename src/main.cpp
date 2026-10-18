@@ -1,6 +1,8 @@
 #include "core/app_paths.h"
+#include "core/autostart_manager.h"
 #include "core/config_store.h"
 #include "core/language.h"
+#include "core/network_settings.h"
 #include "core/logger.h"
 #include "ui/main_window.h"
 
@@ -10,6 +12,7 @@
 #include <QIcon>
 #include <QLockFile>
 #include <QTranslator>
+#include "core/credential_store.h"
 #include <QMessageBox>
 
 int main(int argc, char *argv[])
@@ -20,7 +23,7 @@ int main(int argc, char *argv[])
     QApplication::setOrganizationName(QStringLiteral("NutSync"));
     QApplication::setOrganizationDomain(QStringLiteral("gomodb.github.io"));
     QApplication::setApplicationVersion(QStringLiteral(NUTSYNC_VERSION));
-    QApplication::setDesktopFileName(QStringLiteral("io.github.nutsync.NutSync"));
+    QApplication::setDesktopFileName(QStringLiteral("io.github.gomodb.NutSync"));
     QApplication::setWindowIcon(QIcon(QStringLiteral(":/resources/icons/nutsync.svg")));
 
     NutSync::AppConfig startupConfig;
@@ -46,7 +49,20 @@ int main(int argc, char *argv[])
     parser.process(application);
 
     NutSync::Logger::install();
+    NutSync::Logger::setLevel(startupConfig.settings.logLevel);
     NutSync::AppPaths::ensureDirectories();
+    NutSync::AutostartManager::migrateLegacy();
+
+    NutSync::CredentialStore startupCredentials;
+    const QString proxyPassword =
+        startupConfig.settings.proxyMode == QLatin1String("manual")
+        ? startupCredentials.readPassword(QStringLiteral("proxy-password"))
+        : QString();
+    QString networkError;
+    if (!NutSync::NetworkSettings::apply(startupConfig.settings, proxyPassword,
+                                         &networkError)) {
+        qWarning().noquote() << networkError;
+    }
 
     QLockFile lockFile(NutSync::AppPaths::configDir() + QStringLiteral("/nutsync.lock"));
     lockFile.setStaleLockTime(30000);

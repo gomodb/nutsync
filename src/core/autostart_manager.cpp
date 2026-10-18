@@ -14,7 +14,8 @@
 namespace NutSync {
 
 namespace {
-constexpr auto kDesktopFileName = "io.github.nutsync.NutSync.desktop";
+constexpr auto kDesktopFileName = "io.github.gomodb.NutSync.desktop";
+constexpr auto kLegacyDesktopFileName = "io.github.nutsync.NutSync.desktop";
 
 QString quoteExecArgument(QString value)
 {
@@ -73,6 +74,38 @@ QString desktopFileContents()
 AutostartManager::AutostartManager(QString configDir)
     : m_configDir(configDir.isEmpty() ? defaultConfigDir() : std::move(configDir))
 {
+    migrateLegacyEntry();
+}
+
+void AutostartManager::migrateLegacy()
+{
+    AutostartManager manager;
+    Q_UNUSED(manager)
+}
+
+void AutostartManager::migrateLegacyEntry() const
+{
+    const QString current = desktopFilePath();
+    const QString legacy = QDir(m_configDir).filePath(
+        QStringLiteral("autostart/") + QString::fromLatin1(kLegacyDesktopFileName));
+    QFile currentFile(current);
+    if (currentFile.exists()) {
+        QFile::remove(legacy);
+        return;
+    }
+
+    QFile legacyFile(legacy);
+    if (!legacyFile.exists())
+        return;
+
+    const QString directory = QFileInfo(current).absolutePath();
+    if (!QDir().mkpath(directory))
+        return;
+    if (QFile::rename(legacy, current))
+        return;
+    if (legacyFile.copy(current)) {
+        QFile::remove(legacy);
+    }
 }
 
 QString AutostartManager::defaultConfigDir()

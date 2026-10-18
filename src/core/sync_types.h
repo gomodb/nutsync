@@ -94,6 +94,14 @@ struct SyncPair
 struct AppSettings
 {
     QString language = QStringLiteral("system");
+    QString proxyMode = QStringLiteral("system");
+    QString proxyHost;
+    int proxyPort = 8080;
+    QString proxyUser;
+    QString caBundlePath;
+    QString logLevel = QStringLiteral("info");
+    int retryCount = 2;
+    int retryDelaySeconds = 30;
     bool notifications = true;
     bool closeToTray = true;
     bool autoSyncOnStartup = true;

@@ -456,6 +456,10 @@ Only NutSync's configuration and synchronization baseline are deleted, not local
       <translation>"%1": %2</translation>
     </message>
     <message>
+      <source>同步失败，%1 秒后重试（%2/%3）</source>
+      <translation>Sync failed; retrying in %1 seconds (%2/%3)</translation>
+    </message>
+    <message>
       <source>自动同步已暂停</source>
       <translation>Auto-sync is paused</translation>
     </message>
@@ -488,6 +492,26 @@ Only NutSync's configuration and synchronization baseline are deleted, not local
       <translation>Restart NutSync for the language change to take effect.</translation>
     </message>
     <message>
+      <source>日志级别</source>
+      <translation>Log level</translation>
+    </message>
+    <message>
+      <source>调试</source>
+      <translation>Debug</translation>
+    </message>
+    <message>
+      <source>信息</source>
+      <translation>Info</translation>
+    </message>
+    <message>
+      <source>警告</source>
+      <translation>Warning</translation>
+    </message>
+    <message>
+      <source>错误</source>
+      <translation>Error</translation>
+    </message>
+    <message>
       <source>显示桌面通知</source>
       <translation>Show desktop notifications</translation>
     </message>
@@ -510,6 +534,78 @@ Only NutSync's configuration and synchronization baseline are deleted, not local
     <message>
       <source>创建用户级 XDG autostart 条目，以 --hidden 参数启动；如果系统托盘不可用，则仍会显示主窗口。</source>
       <translation>Creates a user-level XDG autostart entry, launched with the --hidden parameter; if the system tray is not available, the main window will still be displayed.</translation>
+    </message>
+    <message>
+      <source>网络</source>
+      <translation>Network</translation>
+    </message>
+    <message>
+      <source>使用系统代理</source>
+      <translation>Use system proxy</translation>
+    </message>
+    <message>
+      <source>不使用代理</source>
+      <translation>No proxy</translation>
+    </message>
+    <message>
+      <source>手动代理</source>
+      <translation>Manual proxy</translation>
+    </message>
+    <message>
+      <source>留空则保留已保存的密码</source>
+      <translation>Leave blank to keep the saved password</translation>
+    </message>
+    <message>
+      <source>浏览…</source>
+      <translation>Browse…</translation>
+    </message>
+    <message>
+      <source>代理模式</source>
+      <translation>Proxy mode</translation>
+    </message>
+    <message>
+      <source>主机</source>
+      <translation>Host</translation>
+    </message>
+    <message>
+      <source>端口</source>
+      <translation>Port</translation>
+    </message>
+    <message>
+      <source>代理用户名</source>
+      <translation>Proxy username</translation>
+    </message>
+    <message>
+      <source>代理密码</source>
+      <translation>Proxy password</translation>
+    </message>
+    <message>
+      <source>CA 证书文件</source>
+      <translation>CA certificate file</translation>
+    </message>
+    <message>
+      <source>不重试</source>
+      <translation>Never retry</translation>
+    </message>
+    <message>
+      <source> 秒</source>
+      <translation> seconds</translation>
+    </message>
+    <message>
+      <source>失败重试次数</source>
+      <translation>Retry attempts</translation>
+    </message>
+    <message>
+      <source>重试基础间隔</source>
+      <translation>Retry base delay</translation>
+    </message>
+    <message>
+      <source>选择 CA 证书文件</source>
+      <translation>Choose CA certificate file</translation>
+    </message>
+    <message>
+      <source>证书文件 (*.pem *.crt *.cer);;所有文件 (*)</source>
+      <translation>Certificate files (*.pem *.crt *.cer);;All files (*)</translation>
     </message>
     <message>
       <source>用户级 XDG autostart 条目：
@@ -542,6 +638,10 @@ Only effective for the current user; unchecking will delete the entry.</translat
     <message>
       <source>无法设置开机自启</source>
       <translation>Could not set start at login</translation>
+    </message>
+    <message>
+      <source>无法保存代理密码</source>
+      <translation>Could not save proxy password</translation>
     </message>
     <message>
       <source>首选项已保存</source>
@@ -1527,6 +1627,10 @@ Please use the icon in the system tray to open the main window.</translation>
     <message>
       <source>错误 %1</source>
       <translation>Errors %1</translation>
+    </message>
+    <message>
+      <source>无法读取 CA 证书文件“%1”</source>
+      <translation>Unable to read CA certificate file "%1"</translation>
     </message>
   </context>
 </TS>

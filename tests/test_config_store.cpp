@@ -46,6 +46,11 @@ void TestConfigStore::stripsCredentialsEmbeddedInUrls()
     QCOMPARE(config.pairs.at(0).watchLocalChanges, true);
     QCOMPARE(config.pairs.at(0).syncDeletions, false);
     QCOMPARE(config.settings.language, QStringLiteral("system"));
+    QCOMPARE(config.settings.proxyMode, QStringLiteral("system"));
+    QCOMPARE(config.settings.proxyPort, 8080);
+    QCOMPARE(config.settings.logLevel, QStringLiteral("info"));
+    QCOMPARE(config.settings.retryCount, 2);
+    QCOMPARE(config.settings.retryDelaySeconds, 30);
 
     QVERIFY2(store.save(config, &error), qPrintable(error));
     QVERIFY(file.open(QIODevice::ReadOnly));
@@ -70,6 +75,14 @@ void TestConfigStore::roundTripsPairSettings()
     config.settings.autoSyncOnStartup = false;
     config.settings.startMinimized = true;
     config.settings.language = QStringLiteral("en");
+    config.settings.proxyMode = QStringLiteral("manual");
+    config.settings.proxyHost = QStringLiteral("proxy.example.com");
+    config.settings.proxyPort = 3128;
+    config.settings.proxyUser = QStringLiteral("proxy-user");
+    config.settings.caBundlePath = QStringLiteral("/etc/ssl/custom.pem");
+    config.settings.logLevel = QStringLiteral("warning");
+    config.settings.retryCount = 3;
+    config.settings.retryDelaySeconds = 45;
 
     SyncPair pair;
     pair.id = QStringLiteral("pair-1");
@@ -102,6 +115,14 @@ void TestConfigStore::roundTripsPairSettings()
     QCOMPARE(loaded.settings.autoSyncOnStartup, false);
     QCOMPARE(loaded.settings.startMinimized, true);
     QCOMPARE(loaded.settings.language, QStringLiteral("en"));
+    QCOMPARE(loaded.settings.proxyMode, QStringLiteral("manual"));
+    QCOMPARE(loaded.settings.proxyHost, QStringLiteral("proxy.example.com"));
+    QCOMPARE(loaded.settings.proxyPort, 3128);
+    QCOMPARE(loaded.settings.proxyUser, QStringLiteral("proxy-user"));
+    QCOMPARE(loaded.settings.caBundlePath, QStringLiteral("/etc/ssl/custom.pem"));
+    QCOMPARE(loaded.settings.logLevel, QStringLiteral("warning"));
+    QCOMPARE(loaded.settings.retryCount, 3);
+    QCOMPARE(loaded.settings.retryDelaySeconds, 45);
     QCOMPARE(loaded.pairs.size(), 1);
     const SyncPair &result = loaded.pairs.constFirst();
     QCOMPARE(result.id, pair.id);

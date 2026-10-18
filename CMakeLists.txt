@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.21)
 
 project(NutSync
-    VERSION 0.3.0
+    VERSION 0.4.0
     DESCRIPTION "Two-way WebDAV synchronization for the KDE desktop"
     HOMEPAGE_URL "https://github.com/gomodb/nutsync"
     LANGUAGES CXX
@@ -56,6 +56,8 @@ add_library(nutsync_core STATIC
     src/core/language.h
     src/core/logger.cpp
     src/core/logger.h
+    src/core/network_settings.cpp
+    src/core/network_settings.h
     src/core/path_utils.cpp
     src/core/path_utils.h
     src/core/remote_backend.h
@@ -141,9 +143,9 @@ qt_add_resources(nutsync "nutsync_resources"
 )
 
 install(TARGETS nutsync RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
-install(FILES packaging/io.github.nutsync.NutSync.desktop
+install(FILES packaging/io.github.gomodb.NutSync.desktop
     DESTINATION ${CMAKE_INSTALL_DATADIR}/applications)
-install(FILES packaging/io.github.nutsync.NutSync.metainfo.xml
+install(FILES packaging/io.github.gomodb.NutSync.metainfo.xml
     DESTINATION ${CMAKE_INSTALL_DATADIR}/metainfo)
 install(FILES packaging/nutsync.notifyrc
     DESTINATION ${CMAKE_INSTALL_DATADIR}/knotifications6)

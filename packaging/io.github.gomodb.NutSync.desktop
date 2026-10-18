@@ -12,5 +12,5 @@ Terminal=false
 Categories=Network;KDE;Qt;
 Keywords=WebDAV;sync;synchronization;Nextcloud;ownCloud;cloud;
 StartupNotify=true
-StartupWMClass=io.github.nutsync.NutSync
+StartupWMClass=io.github.gomodb.NutSync
 X-KDE-StartupNotify=true

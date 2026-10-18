@@ -36,6 +36,8 @@ Every sync compares both sides against that baseline before deciding whether to 
 - **Exclusion rules**: supports patterns such as `.git`, `node_modules`, `*.tmp`, and `cache/`. Excluded remote content blocks recursive deletion of its parent directory and is not watched by inotify.
 - **KDE integration**: KStatusNotifierItem tray, KNotification desktop notifications, KWallet / Secret Service password storage, and optional per-user start at login.
 - **Languages**: English and Simplified Chinese interface. The initial language follows the system locale; Chinese systems use Simplified Chinese and all other/unknown locales fall back to English. The choice can be overridden in Preferences and takes effect after restart.
+- **Network configuration**: system, direct, or manual HTTP proxy with optional credentials; custom PEM CA bundle; TLS verification is never disabled.
+- **Reliability controls**: configurable automatic retry count with exponential backoff for failed automatic syncs, plus selectable log levels.
 - **Monochrome panel icons**: the system tray uses a monochrome NutSync icon that follows the active KDE dark or light color scheme, including live theme changes.
 - **Automatic synchronization**: per-pair intervals, sync on application startup, and recursive Linux inotify monitoring with debounce.
 - **Request rate limiting**: each pair can allow at most a configurable number of sync starts per time window. The limit is disabled by default. Scheduled, inotify, and startup syncs consume the quota; manual syncs are always allowed but still consume it. Quota history is persisted across restarts.
@@ -131,7 +133,7 @@ AUR metadata lives in [packaging/arch/PKGBUILD](packaging/arch/PKGBUILD). The pa
 The package source is the GitHub tag archive:
 
 ```text
-https://github.com/gomodb/nutsync/archive/refs/tags/v0.3.0.tar.gz
+https://github.com/gomodb/nutsync/archive/refs/tags/v0.4.0.tar.gz
 ```
 
 Build from the project directory:
@@ -149,7 +151,7 @@ makepkg -f
 
 The AUR repository separately contains the `PKGBUILD`, `.SRCINFO`, and the 0BSD packaging license. Application source remains GPL-3.0-or-later; AUR packaging files are 0BSD.
 
-The first AUR release for this version is `0.3.0-1`. For a new release, update `pkgver`, `source`, and `sha256sums`, then run:
+The first AUR release for this version is `0.4.0-1`. For a new release, update `pkgver`, `source`, and `sha256sums`, then run:
 
 ```bash
 makepkg --printsrcinfo > .SRCINFO
@@ -165,9 +167,9 @@ NutSync follows the XDG directory specification:
 | Sync state database | `~/.local/share/nutsync/state.db` |
 | Log | `~/.local/share/nutsync/nutsync.log` |
 | Rate-limit history | `~/.local/share/nutsync/rate_limits.json` |
-| Autostart entry | `~/.config/autostart/io.github.nutsync.NutSync.desktop` |
+| Autostart entry | `~/.config/autostart/io.github.gomodb.NutSync.desktop` |
 | Temporary conflict downloads | `~/.cache/nutsync/` |
-| Passwords | KWallet / Secret Service (`io.github.nutsync.NutSync`) |
+| Passwords | KWallet / Secret Service (`io.github.gomodb.NutSync`) |
 
 The state database is SQLite and isolates state by sync-pair ID. If a pair's local or remote location changes, NutSync asks to clear that pair's baseline without deleting files. The baseline can also be reset from the context menu or **Edit → Clear sync baseline…**.
 
@@ -225,6 +227,18 @@ References:
 - [Qt Coding Style](https://wiki.qt.io/Qt_Coding_Style)
 - [KDE Frameworks Coding Style](https://community.kde.org/Policies/Frameworks_Coding_Style)
 
+## Network and logging
+
+Network options are available in **Preferences → Network**:
+
+- **Proxy mode**: system proxy, no proxy, or a manual HTTP proxy with host, port, username, and password.
+- **Proxy password**: stored in the system keychain, never in `config.json`.
+- **CA certificate file**: an additional PEM bundle appended to the system CA certificates. Certificate verification is always enforced.
+- **Retry attempts / base delay**: failed automatic syncs retry with exponential backoff (30 s, 60 s, 120 s, ... up to 10 minutes). Manual syncs are never retried automatically.
+- **Log level**: Debug, Info, Warning, or Error.
+
+Proxy and CA changes take effect after restart. The log level is applied immediately.
+
 ## Language
 
 The interface language follows the system locale:
@@ -239,7 +253,7 @@ The language can be overridden in **Preferences → Language** with **System def
 The preferences dialog contains global options for desktop notifications, close-to-tray behavior, sync on startup, and start at login. Start at login uses a standard XDG autostart entry in the current user's configuration directory and launches NutSync with `--hidden`:
 
 ```text
-~/.config/autostart/io.github.nutsync.NutSync.desktop
+~/.config/autostart/io.github.gomodb.NutSync.desktop
 ```
 
 The option is disabled by default. It takes effect at the next login, and disabling it removes the autostart entry.
