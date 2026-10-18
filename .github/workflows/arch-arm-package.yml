@@ -116,13 +116,13 @@ jobs:
           fi
           test -n "$target"
           ls -l dist
-          if ! gh release view "$target" > /tmp/release-view.log 2>&1; then
+          if ! gh release view "$target" --repo "$GITHUB_REPOSITORY" > /tmp/release-view.log 2>&1; then
             tail -n 20 /tmp/release-view.log | while IFS= read -r line; do echo "::error::${line}"; done
             exit 1
           fi
           cd dist
           sha256sum *.pkg.tar.* > SHA256SUMS-aarch64
-          if ! gh release upload "$target" ./*.pkg.tar.* SHA256SUMS-aarch64 --clobber > /tmp/release-upload.log 2>&1; then
+          if ! gh release upload "$target" --repo "$GITHUB_REPOSITORY" ./*.pkg.tar.* SHA256SUMS-aarch64 --clobber > /tmp/release-upload.log 2>&1; then
             tail -n 20 /tmp/release-upload.log | while IFS= read -r line; do echo "::error::${line}"; done
             exit 1
           fi
