@@ -155,6 +155,30 @@ The first AUR release for this version is `0.4.2-2`. The repository is prepared 
 
 For automated publishing, configure the repository secret `AUR_SSH_PRIVATE_KEY`, create an `aur` environment, and manually run the **Publish to AUR** workflow with the release tag. The workflow also supports creating the AUR repository on its first push.
 
+### Release automation
+
+The helper scripts reduce manual errors:
+
+```bash
+# 1. Prepare CMake, PKGBUILD, README and AppStream versions, with sha256sums=('SKIP')
+scripts/bump-version.sh 0.4.3
+
+# 2. Review the changes, commit, tag and push the tag
+git add -A && git commit -m 'Prepare 0.4.3'
+git tag -a v0.4.3 -m 'NutSync 0.4.3'
+git push origin main v0.4.3
+
+# 3. Download the tag archive, update the AUR checksum and regenerate .SRCINFO
+scripts/update-aur-checksum.sh
+
+# 4. Commit the checksum and validate all release metadata
+git add packaging/arch/PKGBUILD packaging/arch/.SRCINFO
+git commit -m 'Set AUR checksum for 0.4.3'
+scripts/check-release.sh v0.4.3
+```
+
+For a privileged maintainer check, `scripts/clean-chroot-build.sh` builds the AUR package in a `devtools` clean chroot. It requires `sudo` and `devtools`; normal CI intentionally does not run it.
+
 For a new release, update `pkgver`, `source`, and `sha256sums`, then run:
 
 ```bash

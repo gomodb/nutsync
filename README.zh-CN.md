@@ -155,6 +155,30 @@ AUR 本版本发布为 `0.4.2-2`。本地 AUR 仓库准备在 `~/Projects/nutsyn
 
 自动发布需要配置仓库 secret `AUR_SSH_PRIVATE_KEY`，创建 `aur` environment，然后手动运行 **Publish to AUR** workflow 并选择 release tag。该 workflow 也支持首次创建 AUR 仓库。
 
+### 发布自动化
+
+辅助脚本可以减少手工错误：
+
+```bash
+# 1. 更新 CMake、PKGBUILD、README、AppStream 版本，并将 sha256sums 设为 SKIP
+scripts/bump-version.sh 0.4.3
+
+# 2. 检查改动、提交、打 tag 并推送
+git add -A && git commit -m 'Prepare 0.4.3'
+git tag -a v0.4.3 -m 'NutSync 0.4.3'
+git push origin main v0.4.3
+
+# 3. 下载 tag 归档，更新 AUR 校验和并重新生成 .SRCINFO
+scripts/update-aur-checksum.sh
+
+# 4. 提交校验和并检查发布元数据
+git add packaging/arch/PKGBUILD packaging/arch/.SRCINFO
+git commit -m 'Set AUR checksum for 0.4.3'
+scripts/check-release.sh v0.4.3
+```
+
+有权限的维护者可用 `scripts/clean-chroot-build.sh` 在 `devtools` 干净 chroot 中构建 AUR 包。该脚本需要 `sudo` 和 `devtools`，普通 CI 不运行它。
+
 发布新版本时更新 `pkgver`、`source` 和 `sha256sums`，再执行：
 
 ```bash
