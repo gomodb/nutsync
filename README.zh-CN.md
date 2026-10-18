@@ -275,6 +275,10 @@ find src tests -type f \( -name '*.cpp' -o -name '*.h' \) -print0 \
 
 代理与 CA 设置重启后生效，日志级别立即生效。
 
+## 配置导出与导入
+
+“文件”菜单支持把当前配置导出为 JSON，并在另一台机器或重装后导入。导出文件不包含密码；已有钥匙串条目会按同步对 ID 复用。导入时可以选择替换当前配置，或只合并同步对。
+
 ## 安全
 
 安全模型和漏洞报告流程见 [SECURITY.md](SECURITY.md)。HTTP 凭据仅允许 loopback 地址，始终校验 TLS，且不跟随跨 origin 重定向。

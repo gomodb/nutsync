@@ -64,6 +64,8 @@ private:
     void editPair();
     void removePair();
     void resetPairState();
+    void exportConfig();
+    void importConfig();
     void editCurrentPair(const QString &id);
     void removePairById(const QString &id);
     void requestSync(const QString &id, bool manual = true);
@@ -133,6 +135,8 @@ private:
     QAction *m_editAction = nullptr;
     QAction *m_removeAction = nullptr;
     QAction *m_resetStateAction = nullptr;
+    QAction *m_exportConfigAction = nullptr;
+    QAction *m_importConfigAction = nullptr;
     QAction *m_syncAction = nullptr;
     QAction *m_syncAllAction = nullptr;
     QAction *m_cancelAction = nullptr;

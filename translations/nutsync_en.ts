@@ -58,6 +58,14 @@
       <translation>Clear Sync Baseline…</translation>
     </message>
     <message>
+      <source>导出配置…</source>
+      <translation>Export configuration…</translation>
+    </message>
+    <message>
+      <source>导入配置…</source>
+      <translation>Import configuration…</translation>
+    </message>
+    <message>
       <source>立即同步</source>
       <translation>Sync Now</translation>
     </message>
@@ -482,6 +490,54 @@ Only NutSync's configuration and synchronization baseline are deleted, not local
     <message>
       <source>打开所在目录</source>
       <translation>Open containing folder</translation>
+    </message>
+    <message>
+      <source>导出配置</source>
+      <translation>Export configuration</translation>
+    </message>
+    <message>
+      <source>JSON 配置 (*.json);;所有文件 (*)</source>
+      <translation>JSON configuration (*.json);;All files (*)</translation>
+    </message>
+    <message>
+      <source>导出配置失败</source>
+      <translation>Configuration export failed</translation>
+    </message>
+    <message>
+      <source>配置已导出（不含密码）：%1</source>
+      <translation>Configuration exported without passwords: %1</translation>
+    </message>
+    <message>
+      <source>请先等待当前同步完成，或取消同步后再导入配置。</source>
+      <translation>Wait for the current sync to finish, or cancel it before importing a configuration.</translation>
+    </message>
+    <message>
+      <source>导入配置</source>
+      <translation>Import configuration</translation>
+    </message>
+    <message>
+      <source>导入配置失败</source>
+      <translation>Configuration import failed</translation>
+    </message>
+    <message>
+      <source>文件中包含 %1 个同步对。选择导入方式：</source>
+      <translation>The file contains %1 sync pairs. Choose how to import:</translation>
+    </message>
+    <message>
+      <source>密码不会包含在导出文件中；已有钥匙串密码会按同步对 ID 保留。</source>
+      <translation>Passwords are not included in the export. Existing keychain passwords are kept by sync-pair ID.</translation>
+    </message>
+    <message>
+      <source>替换当前配置</source>
+      <translation>Replace current configuration</translation>
+    </message>
+    <message>
+      <source>合并同步对</source>
+      <translation>Merge sync pairs</translation>
+    </message>
+    <message>
+      <source>配置已导入：%1</source>
+      <translation>Configuration imported: %1</translation>
     </message>
     <message>
       <source>回收站</source>

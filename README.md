@@ -277,6 +277,10 @@ Network options are available in **Preferences → Network**:
 
 Proxy and CA changes take effect after restart. The log level is applied immediately.
 
+## Configuration export and import
+
+The **File** menu can export the current configuration to JSON and import it on another machine or after reinstalling. Passwords are never included in the export; existing keychain entries are reused by sync-pair ID. Import can either replace the current configuration or merge the imported sync pairs.
+
 ## Security
 
 See [SECURITY.md](SECURITY.md) for the security model and vulnerability reporting process. In particular, HTTP credentials are accepted only for loopback hosts, TLS verification is always enforced, and cross-origin redirects are not followed.

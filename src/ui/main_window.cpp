@@ -255,6 +255,10 @@ void MainWindow::buildActions()
     m_removeAction = new QAction(QIcon::fromTheme(QStringLiteral("edit-delete")), tr("移除"), this);
     m_resetStateAction = new QAction(QIcon::fromTheme(QStringLiteral("edit-clear-history")),
                                      tr("清空同步基线…"), this);
+    m_exportConfigAction = new QAction(tr("导出配置…"), this);
+    m_importConfigAction = new QAction(tr("导入配置…"), this);
+    connect(m_exportConfigAction, &QAction::triggered, this, &MainWindow::exportConfig);
+    connect(m_importConfigAction, &QAction::triggered, this, &MainWindow::importConfig);
 
     m_syncAction =
         new QAction(QIcon::fromTheme(QStringLiteral("view-refresh")), tr("立即同步"), this);
@@ -310,6 +314,9 @@ void MainWindow::buildUi()
 
     auto *fileMenu = menuBar()->addMenu(tr("文件(&F)"));
     fileMenu->addAction(m_addAction);
+    fileMenu->addSeparator();
+    fileMenu->addAction(m_exportConfigAction);
+    fileMenu->addAction(m_importConfigAction);
     fileMenu->addSeparator();
     fileMenu->addAction(m_quitAction);
 
@@ -1469,6 +1476,93 @@ void MainWindow::showConflicts()
     connect(buttons, &QDialogButtonBox::rejected, &dialog, &QDialog::reject);
     dialog.resize(620, 360);
     dialog.exec();
+}
+
+void MainWindow::exportConfig()
+{
+    QString path = QFileDialog::getSaveFileName(
+        this, tr("导出配置"), QDir::homePath() + QStringLiteral("/nutsync-config.json"),
+        tr("JSON 配置 (*.json);;所有文件 (*)"));
+    if (path.isEmpty())
+        return;
+    if (QFileInfo(path).suffix().isEmpty())
+        path += QStringLiteral(".json");
+
+    ConfigStore store(path);
+    QString error;
+    if (!store.save(m_config, &error)) {
+        QMessageBox::warning(this, tr("导出配置失败"), error);
+        return;
+    }
+    appendSystemStatus(tr("配置已导出（不含密码）：%1").arg(PathUtils::nativePath(path)));
+}
+
+void MainWindow::importConfig()
+{
+    if (m_controller->isBusy()) {
+        QMessageBox::information(this, tr("同步正在进行"),
+                                 tr("请先等待当前同步完成，或取消同步后再导入配置。"));
+        return;
+    }
+    const QString path = QFileDialog::getOpenFileName(this, tr("导入配置"), QDir::homePath(),
+                                                      tr("JSON 配置 (*.json);;所有文件 (*)"));
+    if (path.isEmpty())
+        return;
+
+    ConfigStore store(path);
+    AppConfig imported;
+    QString error;
+    if (!store.load(&imported, &error)) {
+        QMessageBox::warning(this, tr("导入配置失败"), error);
+        return;
+    }
+
+    QMessageBox choice(this);
+    choice.setWindowTitle(tr("导入配置"));
+    choice.setText(tr("文件中包含 %1 个同步对。选择导入方式：").arg(imported.pairs.size()));
+    choice.setInformativeText(tr("密码不会包含在导出文件中；已有钥匙串密码会按同步对 ID 保留。"));
+    auto *replaceButton = choice.addButton(tr("替换当前配置"), QMessageBox::AcceptRole);
+    auto *mergeButton = choice.addButton(tr("合并同步对"), QMessageBox::ActionRole);
+    choice.addButton(QMessageBox::Cancel);
+    choice.exec();
+    if (choice.clickedButton() != replaceButton && choice.clickedButton() != mergeButton)
+        return;
+
+    const QString previousLanguage = m_config.settings.language;
+    const bool replace = choice.clickedButton() == replaceButton;
+    if (replace) {
+        m_config = imported;
+        for (SyncPair &pair : m_config.pairs)
+            pair.password.clear();
+    } else {
+        for (SyncPair pair : std::as_const(imported.pairs)) {
+            pair.password.clear();
+            m_config.pairs.append(pair);
+        }
+    }
+
+    QSet<QString> ids;
+    for (SyncPair &pair : m_config.pairs) {
+        if (pair.id.isEmpty() || ids.contains(pair.id))
+            pair.id = QUuid::createUuid().toString(QUuid::WithoutBraces);
+        ids.insert(pair.id);
+    }
+
+    m_controller->setSettings(m_config.settings);
+    if (m_tray)
+        m_tray->setNotificationsEnabled(m_config.settings.notifications);
+    Logger::setLevel(m_config.settings.logLevel);
+    m_conflictPaths.clear();
+    m_conflictCopies.clear();
+    saveConfig(true);
+    loadPersistedConflicts();
+    refreshPairs();
+    rebuildLocalMonitors();
+    appendSystemStatus(tr("配置已导入：%1").arg(PathUtils::nativePath(path)));
+    if (m_config.settings.language != previousLanguage) {
+        QMessageBox::information(this, tr("语言已更改"),
+                                 tr("界面语言将在下次启动 NutSync 时生效。"));
+    }
 }
 
 void MainWindow::showTrash()
