@@ -14,6 +14,9 @@ struct WebDavOptions
     QString username;
     QString password;
     int timeoutMs = 120000;
+    int retryCount = 3;
+    int retryBaseDelayMs = 500;
+    int retryMaxDelayMs = 30000;
 };
 
 class WebDavBackend final : public RemoteBackend
@@ -27,34 +30,26 @@ public:
     bool testConnection(QString *error) override;
     bool scan(QList<RemoteEntry> *entries, QString *error,
               const CancelledCallback &cancelled) override;
-    bool stat(const QString &path, RemoteEntry *entry, bool *exists,
-              QString *error) override;
-    bool download(const QString &path, const QString &localFile,
-                  DownloadResult *result, QString *error,
-                  const CancelledCallback &cancelled) override;
-    bool upload(const QString &localFile, const QString &path,
-                const QString &expectedEtag, QString *error,
-                const CancelledCallback &cancelled) override;
-    bool makeDirectory(const QString &path, QString *error) override;
-    bool remove(const QString &path, bool recursive, const QString &expectedEtag,
+    bool stat(const QString &path, RemoteEntry *entry, bool *exists, QString *error) override;
+    bool download(const QString &path, const QString &localFile, DownloadResult *result,
+                  QString *error, const CancelledCallback &cancelled) override;
+    bool upload(const QString &localFile, const QString &path, const QString &expectedEtag,
                 QString *error, const CancelledCallback &cancelled) override;
+    bool makeDirectory(const QString &path, QString *error) override;
+    bool remove(const QString &path, bool recursive, const QString &expectedEtag, QString *error,
+                const CancelledCallback &cancelled) override;
 
 private:
     QNetworkRequest requestFor(const QString &path) const;
     QByteArray propfindBody() const;
-    bool listDirectory(const QString &path, QList<RemoteEntry> *entries,
-                       QString *error);
-    bool propfind(const QString &path, int depth, QByteArray *body, int *status,
-                  QString *error);
+    bool listDirectory(const QString &path, QList<RemoteEntry> *entries, QString *error);
+    bool propfind(const QString &path, int depth, QByteArray *body, int *status, QString *error);
     QString httpError(int status, const QByteArray &body, const QString &fallback) const;
-    static QList<RemoteEntry> parseMultiStatus(const QByteArray &xml,
-                                               const QUrl &requestUrl,
-                                               QString *error,
-                                               bool includeSelf = false,
+    static QList<RemoteEntry> parseMultiStatus(const QByteArray &xml, const QUrl &requestUrl,
+                                               QString *error, bool includeSelf = false,
                                                const QString &selfPath = {},
                                                const QString &pathPrefix = {});
-    static QString relativePathFromHref(const QString &href, const QUrl &requestUrl,
-                                        bool *ok);
+    static QString relativePathFromHref(const QString &href, const QUrl &requestUrl, bool *ok);
 
     WebDavOptions m_options;
     SecuredNetworkAccessManager m_network;

@@ -21,8 +21,7 @@ void TestPathUtils::normalizesRelativePaths()
     QVERIFY(!ok);
 
     // A backslash is a valid Linux filename character and must be preserved.
-    QCOMPARE(PathUtils::normalizeRelativePath(QStringLiteral("a\\b"), &ok),
-             QStringLiteral("a\\b"));
+    QCOMPARE(PathUtils::normalizeRelativePath(QStringLiteral("a\\b"), &ok), QStringLiteral("a\\b"));
     QVERIFY(ok);
 }
 

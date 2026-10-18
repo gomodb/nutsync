@@ -58,16 +58,15 @@ QString desktopFileContents()
                "Comment=Start NutSync WebDAV two-way synchronization in the system tray\n"
                "Exec=")
         + command
-        + QStringLiteral(
-              " --hidden\n"
-              "Icon=nutsync\n"
-              "Terminal=false\n"
-              "StartupNotify=false\n"
-              "Categories=Utility;Network;\n"
-              "X-GNOME-Autostart-enabled=true\n"
-              "X-KDE-autostart-after=panel\n"
-              "X-KDE-autostart-phase=2\n"
-              "Hidden=false\n");
+        + QStringLiteral(" --hidden\n"
+                         "Icon=nutsync\n"
+                         "Terminal=false\n"
+                         "StartupNotify=false\n"
+                         "Categories=Utility;Network;\n"
+                         "X-GNOME-Autostart-enabled=true\n"
+                         "X-KDE-autostart-after=panel\n"
+                         "X-KDE-autostart-phase=2\n"
+                         "Hidden=false\n");
 }
 } // namespace
 
@@ -86,8 +85,9 @@ void AutostartManager::migrateLegacy()
 void AutostartManager::migrateLegacyEntry() const
 {
     const QString current = desktopFilePath();
-    const QString legacy = QDir(m_configDir).filePath(
-        QStringLiteral("autostart/") + QString::fromLatin1(kLegacyDesktopFileName));
+    const QString legacy =
+        QDir(m_configDir)
+            .filePath(QStringLiteral("autostart/") + QString::fromLatin1(kLegacyDesktopFileName));
     QFile currentFile(current);
     if (currentFile.exists()) {
         QFile::remove(legacy);
@@ -123,8 +123,8 @@ QString AutostartManager::desktopFileName()
 
 QString AutostartManager::desktopFilePath() const
 {
-    return QDir(m_configDir).filePath(
-        QStringLiteral("autostart/") + QString::fromLatin1(kDesktopFileName));
+    return QDir(m_configDir)
+        .filePath(QStringLiteral("autostart/") + QString::fromLatin1(kDesktopFileName));
 }
 
 bool AutostartManager::isEnabled() const
@@ -140,8 +140,7 @@ bool AutostartManager::setEnabled(bool enabled, QString *error) const
         QFile file(path);
         if (file.exists() && !file.remove()) {
             if (error) {
-                *error = QObject::tr("无法删除开机自启条目“%1”：%2")
-                             .arg(path, file.errorString());
+                *error = QObject::tr("无法删除开机自启条目“%1”：%2").arg(path, file.errorString());
             }
             return false;
         }
@@ -158,13 +157,12 @@ bool AutostartManager::setEnabled(bool enabled, QString *error) const
     QSaveFile file(path);
     if (!file.open(QIODevice::WriteOnly)) {
         if (error) {
-            *error = QObject::tr("无法写入开机自启条目“%1”：%2")
-                         .arg(path, file.errorString());
+            *error = QObject::tr("无法写入开机自启条目“%1”：%2").arg(path, file.errorString());
         }
         return false;
     }
-    file.setPermissions(QFileDevice::ReadOwner | QFileDevice::WriteOwner
-                        | QFileDevice::ReadGroup | QFileDevice::ReadOther);
+    file.setPermissions(QFileDevice::ReadOwner | QFileDevice::WriteOwner | QFileDevice::ReadGroup
+                        | QFileDevice::ReadOther);
     file.write(desktopFileContents().toUtf8());
     if (!file.commit()) {
         if (error) {

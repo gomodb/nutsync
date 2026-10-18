@@ -43,12 +43,11 @@ bool SyncRateLimiter::load(QString *error)
         return false;
     }
 
-    QJsonParseError parseError {};
+    QJsonParseError parseError{};
     const QJsonDocument document = QJsonDocument::fromJson(file.readAll(), &parseError);
     if (parseError.error != QJsonParseError::NoError || !document.isObject()) {
         if (error) {
-            *error = QObject::tr("请求频率记录格式错误：%1")
-                         .arg(parseError.errorString());
+            *error = QObject::tr("请求频率记录格式错误：%1").arg(parseError.errorString());
         }
         return false;
     }
@@ -138,7 +137,9 @@ bool SyncRateLimiter::isAllowed(const SyncPair &pair, const QDateTime &now,
     const qint64 nowMs = now.toMSecsSinceEpoch();
     const qint64 cutoff = nowMs - windowMs;
     recent.erase(std::remove_if(recent.begin(), recent.end(),
-                                [cutoff](qint64 timestamp) { return timestamp <= cutoff; }),
+                                [cutoff](qint64 timestamp) {
+                                    return timestamp <= cutoff;
+                                }),
                  recent.end());
     if (recent.size() < pair.rateLimitMaxRequests)
         return true;
@@ -151,8 +152,7 @@ bool SyncRateLimiter::isAllowed(const SyncPair &pair, const QDateTime &now,
     return false;
 }
 
-bool SyncRateLimiter::recordStart(const SyncPair &pair, const QDateTime &now,
-                                  QString *error)
+bool SyncRateLimiter::recordStart(const SyncPair &pair, const QDateTime &now, QString *error)
 {
     if (!pair.rateLimitEnabled || pair.rateLimitWindowMinutes <= 0
         || pair.rateLimitMaxRequests <= 0) {

@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.21)
 
 project(NutSync
-    VERSION 0.4.1
+    VERSION 0.4.2
     DESCRIPTION "Two-way WebDAV synchronization for the KDE desktop"
     HOMEPAGE_URL "https://github.com/gomodb/nutsync"
     LANGUAGES CXX
@@ -64,6 +64,8 @@ add_library(nutsync_core STATIC
     src/core/secured_network_access_manager.h
     src/core/path_utils.cpp
     src/core/path_utils.h
+    src/core/retry_policy.cpp
+    src/core/retry_policy.h
     src/core/remote_backend.h
     src/core/sync_engine.cpp
     src/core/sync_engine.h

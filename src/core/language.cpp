@@ -22,8 +22,7 @@ QString resolve(const QString &preference, QLocale::Language systemLanguage)
         return QStringLiteral("en");
     if (normalized == QLatin1String("zh_CN"))
         return QStringLiteral("zh_CN");
-    return systemLanguage == QLocale::Chinese ? QStringLiteral("zh_CN")
-                                              : QStringLiteral("en");
+    return systemLanguage == QLocale::Chinese ? QStringLiteral("zh_CN") : QStringLiteral("en");
 }
 
 QString resolve(const QString &preference)
@@ -38,8 +37,7 @@ bool installTranslator(QCoreApplication &application, const QString &language,
         return false;
 
     if (qtTranslator) {
-        const QString translationsPath =
-            QLibraryInfo::path(QLibraryInfo::TranslationsPath);
+        const QString translationsPath = QLibraryInfo::path(QLibraryInfo::TranslationsPath);
         if (qtTranslator->load(QStringLiteral("qtbase_") + language, translationsPath))
             application.installTranslator(qtTranslator);
     }

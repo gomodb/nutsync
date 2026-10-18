@@ -9,6 +9,8 @@ class TestWebDavBackend : public QObject
 
 private slots:
     void backendOperations();
+    void retriesTransientRequests();
+    void resumesTruncatedDownload();
     void engineEndToEnd();
 };
 } // namespace NutSync::Test

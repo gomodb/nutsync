@@ -56,7 +56,7 @@ void TestConfigStore::stripsCredentialsEmbeddedInUrls()
     QVERIFY(file.open(QIODevice::ReadOnly));
     const QByteArray saved = file.readAll();
     QVERIFY(!saved.contains("secret"));
-    QJsonParseError parseError {};
+    QJsonParseError parseError{};
     const QJsonObject root = QJsonDocument::fromJson(saved, &parseError).object();
     QCOMPARE(parseError.error, QJsonParseError::NoError);
     QCOMPARE(root.value(QStringLiteral("pairs")).toArray().size(), 1);

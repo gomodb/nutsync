@@ -30,9 +30,9 @@ QColor kdeWindowColor()
         return {};
 
     const QSettings settings(configPath, QSettings::IniFormat);
-    const QStringList parts =
-        settings.value(QStringLiteral("Colors:Window/BackgroundNormal")).toString().split(
-            QLatin1Char(','));
+    const QStringList parts = settings.value(QStringLiteral("Colors:Window/BackgroundNormal"))
+                                  .toString()
+                                  .split(QLatin1Char(','));
     if (parts.size() < 3)
         return {};
 

@@ -22,16 +22,16 @@ TrayController::TrayController(bool notificationsEnabled, QObject *parent)
     , m_notificationsEnabled(notificationsEnabled)
 {
     m_menu = new QMenu();
-    m_showAction = m_menu->addAction(QIcon::fromTheme(QStringLiteral("window-restore")),
-                                     tr("显示 NutSync"));
-    m_syncAction = m_menu->addAction(QIcon::fromTheme(QStringLiteral("view-refresh")),
-                                     tr("立即同步全部"));
+    m_showAction =
+        m_menu->addAction(QIcon::fromTheme(QStringLiteral("window-restore")), tr("显示 NutSync"));
+    m_syncAction =
+        m_menu->addAction(QIcon::fromTheme(QStringLiteral("view-refresh")), tr("立即同步全部"));
     m_menu->addSeparator();
     m_pauseAction = m_menu->addAction(tr("暂停自动同步"));
     m_pauseAction->setCheckable(true);
     m_menu->addSeparator();
-    m_quitAction = m_menu->addAction(QIcon::fromTheme(QStringLiteral("application-exit")),
-                                     tr("退出"));
+    m_quitAction =
+        m_menu->addAction(QIcon::fromTheme(QStringLiteral("application-exit")), tr("退出"));
 
     connect(m_showAction, &QAction::triggered, this, &TrayController::showRequested);
     connect(m_syncAction, &QAction::triggered, this, &TrayController::syncAllRequested);
@@ -44,12 +44,12 @@ TrayController::TrayController(bool notificationsEnabled, QObject *parent)
     m_item->setStatus(KStatusNotifierItem::Active);
     m_item->setTitle(QStringLiteral("NutSync"));
     m_item->setIconByPixmap(currentIcon());
-    m_item->setToolTip(QStringLiteral("nutsync"), QStringLiteral("NutSync"),
-                       tr("WebDAV 双向同步"));
+    m_item->setToolTip(QStringLiteral("nutsync"), QStringLiteral("NutSync"), tr("WebDAV 双向同步"));
     m_item->setContextMenu(m_menu);
     m_item->setStandardActionsEnabled(false);
-    connect(m_item, &KStatusNotifierItem::activateRequested, this,
-            [this](bool, const QPoint &) { emit showRequested(); });
+    connect(m_item, &KStatusNotifierItem::activateRequested, this, [this](bool, const QPoint &) {
+        emit showRequested();
+    });
     m_available = true;
 #else
     if (QSystemTrayIcon::isSystemTrayAvailable()) {
@@ -112,8 +112,7 @@ void TrayController::setBusy(bool busy)
     m_busy = busy;
     if (m_syncAction)
         m_syncAction->setEnabled(!busy);
-    setStatus(QStringLiteral("NutSync"),
-              busy ? tr("正在同步…") : tr("空闲"),
+    setStatus(QStringLiteral("NutSync"), busy ? tr("正在同步…") : tr("空闲"),
               busy ? QStringLiteral("emblem-synchronizing") : QStringLiteral("nutsync"));
 }
 
@@ -147,13 +146,10 @@ void TrayController::showNotification(const QString &title, const QString &text,
     if (!m_notificationsEnabled)
         return;
 #ifdef NUTSYNC_HAVE_KNOTIFICATIONS
-    KNotification::event(error ? QStringLiteral("nutsync-error")
-                               : QStringLiteral("nutsync-sync"),
-                         title, text,
-                         error ? QStringLiteral("dialog-error")
-                               : QStringLiteral("dialog-information"),
-                         KNotification::CloseOnTimeout,
-                         QStringLiteral("nutsync"));
+    KNotification::event(
+        error ? QStringLiteral("nutsync-error") : QStringLiteral("nutsync-sync"), title, text,
+        error ? QStringLiteral("dialog-error") : QStringLiteral("dialog-information"),
+        KNotification::CloseOnTimeout, QStringLiteral("nutsync"));
 #else
 #ifdef NUTSYNC_HAVE_KSTATUSNOTIFIER
     Q_UNUSED(error)
@@ -162,9 +158,7 @@ void TrayController::showNotification(const QString &title, const QString &text,
 #else
     if (m_tray) {
         m_tray->showMessage(title, text,
-                            error ? QSystemTrayIcon::Critical
-                                  : QSystemTrayIcon::Information,
-                            5000);
+                            error ? QSystemTrayIcon::Critical : QSystemTrayIcon::Information, 5000);
     }
 #endif
 #endif

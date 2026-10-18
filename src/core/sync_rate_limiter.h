@@ -27,8 +27,7 @@ public:
 
     bool isAllowed(const SyncPair &pair, const QDateTime &now,
                    QDateTime *nextAllowed = nullptr) const;
-    bool recordStart(const SyncPair &pair, const QDateTime &now,
-                     QString *error = nullptr);
+    bool recordStart(const SyncPair &pair, const QDateTime &now, QString *error = nullptr);
     int requestCount(const SyncPair &pair, const QDateTime &now) const;
     bool clear(const QString &pairId, QString *error = nullptr);
 

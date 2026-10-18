@@ -72,15 +72,15 @@ void messageHandler(QtMsgType type, const QMessageLogContext &context, const QSt
         break;
     }
 
-    const QString category = context.category ? QString::fromLatin1(context.category)
-                                               : QStringLiteral("default");
+    const QString category =
+        context.category ? QString::fromLatin1(context.category) : QStringLiteral("default");
     const QString line = QStringLiteral("%1 [%2] %3: %4")
                              .arg(QDateTime::currentDateTime().toString(Qt::ISODateWithMs),
                                   QString::fromLatin1(level), category, message);
     const int messageRank = type == QtDebugMsg ? 0
-        : type == QtInfoMsg ? 1
-        : type == QtWarningMsg ? 2
-        : 3;
+        : type == QtInfoMsg                    ? 1
+        : type == QtWarningMsg                 ? 2
+                                               : 3;
     if (!shouldLog(messageRank)) {
         if (type == QtFatalMsg)
             std::abort();
@@ -122,9 +122,9 @@ void Logger::log(const QString &category, const QString &message)
 {
     if (!shouldLog(1))
         return;
-    writeLine(QStringLiteral("%1 [UI] %2: %3")
-                  .arg(QDateTime::currentDateTime().toString(Qt::ISODateWithMs), category,
-                       message));
+    writeLine(
+        QStringLiteral("%1 [UI] %2: %3")
+            .arg(QDateTime::currentDateTime().toString(Qt::ISODateWithMs), category, message));
 }
 
 QString Logger::logFilePath()

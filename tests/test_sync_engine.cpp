@@ -36,15 +36,9 @@ public:
         m_pair.intervalMinutes = 0;
     }
 
-    QString localPath(const QString &relative) const
-    {
-        return QDir(m_local).filePath(relative);
-    }
+    QString localPath(const QString &relative) const { return QDir(m_local).filePath(relative); }
 
-    QString remotePath(const QString &relative) const
-    {
-        return QDir(m_remote).filePath(relative);
-    }
+    QString remotePath(const QString &relative) const { return QDir(m_remote).filePath(relative); }
 
     bool writeLocal(const QString &relative, const QByteArray &content)
     {
@@ -68,7 +62,7 @@ public:
         file.close();
         if (file.open(QIODevice::ReadWrite))
             file.setFileTime(QDateTime::currentDateTime().addMSecs(++m_clock),
-                         QFileDevice::FileModificationTime);
+                             QFileDevice::FileModificationTime);
         return true;
     }
 
@@ -126,14 +120,12 @@ public:
     QStringList listLocal(const QString &relative, const QString &filter = QString()) const
     {
         return QDir(localPath(relative))
-            .entryList(filter.isEmpty() ? QStringList {QStringLiteral("*")}
-                                        : QStringList {filter},
+            .entryList(filter.isEmpty() ? QStringList{QStringLiteral("*")} : QStringList{filter},
                        QDir::Files | QDir::Dirs | QDir::NoDotAndDotDot);
     }
 
     SyncSummary sync(ConflictPolicy policy = ConflictPolicy::KeepBoth,
-                     const QStringList &excludes = {},
-                     bool syncDeletions = true)
+                     const QStringList &excludes = {}, bool syncDeletions = true)
     {
         m_pair.conflictPolicy = policy;
         m_pair.excludePatterns = excludes;
@@ -144,9 +136,12 @@ public:
         });
         SyncSummary result;
         QObject::connect(&engine, &SyncEngine::finished, &engine,
-                         [&result](const SyncSummary &summary) { result = summary; });
-        QObject::connect(&engine, &SyncEngine::logMessage, &engine,
-                         [this](const QString &message) { m_logs.append(message); });
+                         [&result](const SyncSummary &summary) {
+                             result = summary;
+                         });
+        QObject::connect(&engine, &SyncEngine::logMessage, &engine, [this](const QString &message) {
+            m_logs.append(message);
+        });
         engine.run();
         return result;
     }
@@ -313,8 +308,8 @@ void TestSyncEngine::keepsBothConflictCopies()
     QCOMPARE(harness.readLocal(QStringLiteral("doc.txt")), QByteArray("local version"));
     QCOMPARE(harness.readRemote(QStringLiteral("doc.txt")), QByteArray("local version"));
 
-    const QStringList localConflict = harness.listLocal(
-        QString(), QStringLiteral("doc.conflict-*.txt"));
+    const QStringList localConflict =
+        harness.listLocal(QString(), QStringLiteral("doc.conflict-*.txt"));
     QCOMPARE(localConflict.size(), 1);
     const QString conflictName = localConflict.constFirst();
     QCOMPARE(harness.readLocal(conflictName), QByteArray("remote version"));
@@ -365,8 +360,7 @@ void TestSyncEngine::excludedLocalEntriesAreNotUploaded()
     Harness harness;
     QVERIFY(harness.writeLocal(QStringLiteral(".git/config"), "secret"));
     QVERIFY(harness.writeLocal(QStringLiteral("keep.txt"), "keep"));
-    const SyncSummary summary = harness.sync(ConflictPolicy::KeepBoth,
-                                             {QStringLiteral(".git")});
+    const SyncSummary summary = harness.sync(ConflictPolicy::KeepBoth, {QStringLiteral(".git")});
     QVERIFY2(summary.success, qPrintable(harness.diagnostics(summary)));
     QVERIFY(!harness.existsRemote(QStringLiteral(".git/config")));
     QVERIFY(harness.existsRemote(QStringLiteral("keep.txt")));
@@ -448,7 +442,9 @@ void TestSyncEngine::cancelledBeforeStartReportsCancellation()
     });
     SyncSummary result;
     QObject::connect(&engine, &SyncEngine::finished, &engine,
-                     [&result](const SyncSummary &summary) { result = summary; });
+                     [&result](const SyncSummary &summary) {
+                         result = summary;
+                     });
     engine.requestCancel();
     engine.run();
     QVERIFY(result.cancelled);

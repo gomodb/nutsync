@@ -44,6 +44,13 @@
     <name>NutSync contributors</name>
   </developer>
   <releases>
+    <release version="0.4.2" date="2026-10-18">
+      <description>
+        <p>Adds request-level retries with Retry-After handling, resumable
+        downloads, retry and credential regression tests, and a uniform
+        clang-format baseline.</p>
+      </description>
+    </release>
     <release version="0.4.1" date="2026-10-18">
       <description>
         <p>Security release: prevents credentials from being forwarded to a

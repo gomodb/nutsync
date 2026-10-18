@@ -32,9 +32,9 @@ QString fileEtag(const QString &path)
 QString directoryEtag(const QString &path)
 {
     return QString::fromLatin1(
-        QCryptographicHash::hash(QFileInfo(path).lastModified().toUTC().toString(Qt::ISODateWithMs)
-                                     .toUtf8(),
-                                 QCryptographicHash::Md5)
+        QCryptographicHash::hash(
+            QFileInfo(path).lastModified().toUTC().toString(Qt::ISODateWithMs).toUtf8(),
+            QCryptographicHash::Md5)
             .toHex());
 }
 
@@ -62,8 +62,7 @@ QString MockRemoteBackend::root() const
 
 QString MockRemoteBackend::absolutePath(const QString &relativePath) const
 {
-    return relativePath.isEmpty() ? m_root
-                                  : QDir(m_root).filePath(relativePath);
+    return relativePath.isEmpty() ? m_root : QDir(m_root).filePath(relativePath);
 }
 
 bool MockRemoteBackend::testConnection(QString *error)
@@ -130,8 +129,8 @@ bool MockRemoteBackend::scan(QList<RemoteEntry> *entries, QString *error,
     }
 
     QStringList paths;
-    QDirIterator iterator(m_root, QDir::AllEntries | QDir::NoDotAndDotDot | QDir::Hidden
-                                      | QDir::System,
+    QDirIterator iterator(m_root,
+                          QDir::AllEntries | QDir::NoDotAndDotDot | QDir::Hidden | QDir::System,
                           QDirIterator::Subdirectories);
     while (iterator.hasNext()) {
         const QString absolute = iterator.next();
@@ -157,8 +156,7 @@ bool MockRemoteBackend::scan(QList<RemoteEntry> *entries, QString *error,
     return true;
 }
 
-bool MockRemoteBackend::stat(const QString &path, RemoteEntry *entry, bool *exists,
-                             QString *error)
+bool MockRemoteBackend::stat(const QString &path, RemoteEntry *entry, bool *exists, QString *error)
 {
     return entryFor(path, entry, exists, error);
 }
@@ -282,9 +280,8 @@ bool MockRemoteBackend::makeDirectory(const QString &path, QString *error)
     return true;
 }
 
-bool MockRemoteBackend::remove(const QString &path, bool recursive,
-                               const QString &expectedEtag, QString *error,
-                               const CancelledCallback &cancelled)
+bool MockRemoteBackend::remove(const QString &path, bool recursive, const QString &expectedEtag,
+                               QString *error, const CancelledCallback &cancelled)
 {
     if (cancelled && cancelled())
         return false;
@@ -300,9 +297,8 @@ bool MockRemoteBackend::remove(const QString &path, bool recursive,
         return false;
     }
     const QString target = absolutePath(path);
-    const bool removed = current.type == EntryType::Directory
-        ? QDir(target).removeRecursively()
-        : QFile::remove(target);
+    const bool removed = current.type == EntryType::Directory ? QDir(target).removeRecursively()
+                                                              : QFile::remove(target);
     if (!removed && QFileInfo::exists(target)) {
         if (error)
             *error = QStringLiteral("cannot remove remote path");

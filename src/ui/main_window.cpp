@@ -6,6 +6,7 @@
 #include "core/local_change_monitor.h"
 #include "core/logger.h"
 #include "core/path_utils.h"
+#include "core/retry_policy.h"
 #include "core/sync_state_store.h"
 #include "ui/pair_dialog.h"
 #include "ui/sync_controller.h"
@@ -70,22 +71,6 @@
 namespace NutSync {
 
 namespace {
-
-bool hasPermanentHttpError(const SyncSummary &summary)
-{
-    // Network errors and 408/429/5xx are worth retrying. These statuses are
-    // deterministic failures that will simply repeat with the same inputs.
-    static const QList<int> permanentStatuses = {301, 302, 303, 307, 308,
-                                                 400, 401, 403, 404, 405,
-                                                 409, 412, 423, 507};
-    for (const QString &detail : summary.errorDetails) {
-        for (int status : permanentStatuses) {
-            if (detail.contains(QStringLiteral("HTTP %1").arg(status)))
-                return true;
-        }
-    }
-    return false;
-}
 
 QString statusText(const SyncPair &pair, bool current, bool queued)
 {
@@ -212,16 +197,15 @@ MainWindow::MainWindow(QWidget *parent)
         + QStringLiteral("/kdeglobals");
     if (QFileInfo::exists(kdeGlobals))
         m_themeWatcher->addPath(kdeGlobals);
-    connect(m_themeWatcher, &QFileSystemWatcher::fileChanged, this,
-            [this](const QString &path) {
-                // Editors and KDE may replace the file atomically; re-arm the watch
-                // before refreshing the panel/taskbar icon.
-                QTimer::singleShot(100, this, [this, path]() {
-                    if (QFileInfo::exists(path) && !m_themeWatcher->files().contains(path))
-                        m_themeWatcher->addPath(path);
-                    refreshChromePalette();
-                });
-            });
+    connect(m_themeWatcher, &QFileSystemWatcher::fileChanged, this, [this](const QString &path) {
+        // Editors and KDE may replace the file atomically; re-arm the watch
+        // before refreshing the panel/taskbar icon.
+        QTimer::singleShot(100, this, [this, path]() {
+            if (QFileInfo::exists(path) && !m_themeWatcher->files().contains(path))
+                m_themeWatcher->addPath(path);
+            refreshChromePalette();
+        });
+    });
     qApp->setQuitOnLastWindowClosed(!(m_tray && m_tray->isAvailable()));
 
     m_scheduler = new QTimer(this);
@@ -259,35 +243,32 @@ bool MainWindow::hasTray() const
 
 void MainWindow::buildActions()
 {
-    m_addAction = new QAction(QIcon::fromTheme(QStringLiteral("list-add")),
-                              tr("添加同步对"), this);
+    m_addAction = new QAction(QIcon::fromTheme(QStringLiteral("list-add")), tr("添加同步对"), this);
     m_addAction->setShortcut(QKeySequence::New);
     m_addAction->setToolTip(tr("创建一个本地文件夹与 WebDAV 目录之间的同步对"));
 
-    m_editAction = new QAction(QIcon::fromTheme(QStringLiteral("document-edit")),
-                               tr("编辑"), this);
-    m_removeAction = new QAction(QIcon::fromTheme(QStringLiteral("edit-delete")),
-                                 tr("移除"), this);
+    m_editAction = new QAction(QIcon::fromTheme(QStringLiteral("document-edit")), tr("编辑"), this);
+    m_removeAction = new QAction(QIcon::fromTheme(QStringLiteral("edit-delete")), tr("移除"), this);
     m_resetStateAction = new QAction(QIcon::fromTheme(QStringLiteral("edit-clear-history")),
                                      tr("清空同步基线…"), this);
 
-    m_syncAction = new QAction(QIcon::fromTheme(QStringLiteral("view-refresh")),
-                               tr("立即同步"), this);
+    m_syncAction =
+        new QAction(QIcon::fromTheme(QStringLiteral("view-refresh")), tr("立即同步"), this);
     m_syncAction->setShortcut(QKeySequence(Qt::Key_F5));
-    m_syncAllAction = new QAction(QIcon::fromTheme(QStringLiteral("view-refresh")),
-                                  tr("全部同步"), this);
+    m_syncAllAction =
+        new QAction(QIcon::fromTheme(QStringLiteral("view-refresh")), tr("全部同步"), this);
     m_syncAllAction->setShortcut(QKeySequence(QStringLiteral("Ctrl+Shift+F5")));
-    m_cancelAction = new QAction(QIcon::fromTheme(QStringLiteral("process-stop")),
-                                 tr("取消同步"), this);
+    m_cancelAction =
+        new QAction(QIcon::fromTheme(QStringLiteral("process-stop")), tr("取消同步"), this);
     m_cancelAction->setEnabled(false);
 
     m_pauseAction = new QAction(tr("暂停自动同步"), this);
     m_pauseAction->setCheckable(true);
 
-    m_settingsAction = new QAction(QIcon::fromTheme(QStringLiteral("configure")),
-                                   tr("首选项"), this);
-    m_quitAction = new QAction(QIcon::fromTheme(QStringLiteral("application-exit")),
-                               tr("退出"), this);
+    m_settingsAction =
+        new QAction(QIcon::fromTheme(QStringLiteral("configure")), tr("首选项"), this);
+    m_quitAction =
+        new QAction(QIcon::fromTheme(QStringLiteral("application-exit")), tr("退出"), this);
     m_quitAction->setShortcut(QKeySequence::Quit);
 
     connect(m_addAction, &QAction::triggered, this, &MainWindow::addPair);
@@ -323,7 +304,6 @@ void MainWindow::buildUi()
     toolbar->addSeparator();
     toolbar->addAction(m_settingsAction);
 
-
     auto *fileMenu = menuBar()->addMenu(tr("文件(&F)"));
     fileMenu->addAction(m_addAction);
     fileMenu->addSeparator();
@@ -344,8 +324,8 @@ void MainWindow::buildUi()
     editMenu->addAction(m_settingsAction);
 
     auto *helpMenu = menuBar()->addMenu(tr("帮助(&H)"));
-    auto *aboutAction = helpMenu->addAction(QIcon::fromTheme(QStringLiteral("help-about")),
-                                            tr("关于 NutSync"));
+    auto *aboutAction =
+        helpMenu->addAction(QIcon::fromTheme(QStringLiteral("help-about")), tr("关于 NutSync"));
     connect(aboutAction, &QAction::triggered, this, &MainWindow::showAbout);
 
     auto *splitter = new QSplitter(Qt::Horizontal, this);
@@ -382,8 +362,8 @@ void MainWindow::buildUi()
     m_pairsWidget->addAction(m_resetStateAction);
     leftLayout->addWidget(m_pairsWidget, 1);
 
-    auto *hint = new QLabel(
-        tr("提示：双击同步对可编辑。关闭窗口后 NutSync 会继续在托盘运行。"), leftPanel);
+    auto *hint =
+        new QLabel(tr("提示：双击同步对可编辑。关闭窗口后 NutSync 会继续在托盘运行。"), leftPanel);
     hint->setWordWrap(true);
     makeMuted(hint, true);
     leftLayout->addWidget(hint);
@@ -395,11 +375,10 @@ void MainWindow::buildUi()
 
     m_detailStack = new QStackedWidget(rightPanel);
 
-    m_emptyLabel = new QLabel(
-        tr("选择左侧的同步对，或点击工具栏中的“添加同步对”开始。\n\n"
-           "NutSync 使用三路状态记录进行双向同步：只有一侧变化时会自动传播，"
-           "两侧都变化时按所选策略处理，默认保留冲突副本。"),
-        m_detailStack);
+    m_emptyLabel = new QLabel(tr("选择左侧的同步对，或点击工具栏中的“添加同步对”开始。\n\n"
+                                 "NutSync 使用三路状态记录进行双向同步：只有一侧变化时会自动传播，"
+                                 "两侧都变化时按所选策略处理，默认保留冲突副本。"),
+                              m_detailStack);
     m_emptyLabel->setAlignment(Qt::AlignCenter);
     m_emptyLabel->setWordWrap(true);
     makeMuted(m_emptyLabel, false, true);
@@ -475,11 +454,11 @@ void MainWindow::buildUi()
     detailsLayout->addWidget(m_statsLabel);
 
     auto *detailButtons = new QHBoxLayout();
-    auto *syncButton = new QPushButton(QIcon::fromTheme(QStringLiteral("view-refresh")),
-                                       tr("立即同步"), details);
+    auto *syncButton =
+        new QPushButton(QIcon::fromTheme(QStringLiteral("view-refresh")), tr("立即同步"), details);
     syncButton->setObjectName(QStringLiteral("detailSyncButton"));
-    auto *editButton = new QPushButton(QIcon::fromTheme(QStringLiteral("document-edit")),
-                                       tr("编辑"), details);
+    auto *editButton =
+        new QPushButton(QIcon::fromTheme(QStringLiteral("document-edit")), tr("编辑"), details);
     editButton->setObjectName(QStringLiteral("detailEditButton"));
     detailButtons->addWidget(syncButton);
     detailButtons->addWidget(editButton);
@@ -524,8 +503,9 @@ void MainWindow::buildUi()
                 updateDetails();
                 updateActions();
             });
-    connect(m_pairsWidget, &QTreeWidget::itemDoubleClicked, this,
-            [this](QTreeWidgetItem *, int) { editPair(); });
+    connect(m_pairsWidget, &QTreeWidget::itemDoubleClicked, this, [this](QTreeWidgetItem *, int) {
+        editPair();
+    });
     connect(syncButton, &QPushButton::clicked, this, &MainWindow::requestSyncSelected);
     connect(editButton, &QPushButton::clicked, this, &MainWindow::editPair);
 
@@ -540,10 +520,9 @@ void MainWindow::loadConfig()
         const QString broken = m_configStore.filePath() + QStringLiteral(".broken-")
             + QDateTime::currentDateTime().toString(QStringLiteral("yyyyMMdd-HHmmss"));
         QFile::rename(m_configStore.filePath(), broken);
-        QMessageBox::critical(
-            this, tr("配置文件读取失败"),
-            tr("%1\n\n损坏的配置已备份为：\n%2\n\nNutSync 将以空配置启动。")
-                .arg(error, PathUtils::nativePath(broken)));
+        QMessageBox::critical(this, tr("配置文件读取失败"),
+                              tr("%1\n\n损坏的配置已备份为：\n%2\n\nNutSync 将以空配置启动。")
+                                  .arg(error, PathUtils::nativePath(broken)));
     }
     m_pauseAction->setChecked(m_autoSyncPaused);
     if (loaded) {
@@ -595,9 +574,10 @@ void MainWindow::refreshPairs(const QString &selectId)
         item->setText(0, pair.name);
         item->setIcon(0, QIcon::fromTheme(QStringLiteral("folder-sync")));
         item->setText(1, statusText(pair, false, false));
-        item->setText(2, pair.lastSync.isValid()
-                            ? pair.lastSync.toLocalTime().toString(QStringLiteral("yyyy-MM-dd HH:mm"))
-                            : QStringLiteral("—"));
+        item->setText(2,
+                      pair.lastSync.isValid()
+                          ? pair.lastSync.toLocalTime().toString(QStringLiteral("yyyy-MM-dd HH:mm"))
+                          : QStringLiteral("—"));
         item->setTextAlignment(1, Qt::AlignCenter);
         item->setTextAlignment(2, Qt::AlignRight | Qt::AlignVCenter);
         if (pair.id == wanted)
@@ -633,13 +613,15 @@ void MainWindow::updatePairRow(const SyncPair &pair)
     const bool current = m_controller && m_controller->currentPairId() == pair.id;
     const bool queued = m_controller && !current && m_controller->contains(pair.id);
     item->setText(0, pair.name);
-    item->setIcon(0, QIcon::fromTheme(statusIcon(pair, current, queued),
-                                     QIcon(QStringLiteral(":/resources/icons/nutsync.svg"))));
+    item->setIcon(0,
+                  QIcon::fromTheme(statusIcon(pair, current, queued),
+                                   QIcon(QStringLiteral(":/resources/icons/nutsync.svg"))));
     item->setText(1, statusText(pair, current, queued));
     item->setForeground(1, statusColor(pair, current, queued));
-    item->setText(2, pair.lastSync.isValid()
-                         ? pair.lastSync.toLocalTime().toString(QStringLiteral("yyyy-MM-dd HH:mm"))
-                         : QStringLiteral("—"));
+    item->setText(2,
+                  pair.lastSync.isValid()
+                      ? pair.lastSync.toLocalTime().toString(QStringLiteral("yyyy-MM-dd HH:mm"))
+                      : QStringLiteral("—"));
     const QString tooltip = pair.lastError.isEmpty() ? pair.lastMessage : pair.lastError;
     item->setToolTip(0, tooltip);
     item->setToolTip(1, tooltip);
@@ -675,9 +657,8 @@ void MainWindow::updateDetails()
     m_localValue->setText(PathUtils::nativePath(pair->localPath));
     m_localValue->setToolTip(pair->localPath);
     const QUrl remote(pair->remoteUrl);
-    m_remoteValue->setText(remote.isValid()
-                                ? remote.toDisplayString(QUrl::RemovePassword)
-                                : pair->remoteUrl);
+    m_remoteValue->setText(remote.isValid() ? remote.toDisplayString(QUrl::RemovePassword)
+                                            : pair->remoteUrl);
     m_remoteValue->setToolTip(m_remoteValue->text());
     m_accountValue->setText(pair->username.isEmpty() ? tr("匿名访问") : pair->username);
     m_policyValue->setText(conflictPolicyDisplayName(pair->conflictPolicy));
@@ -686,21 +667,17 @@ void MainWindow::updateDetails()
                                  : tr("每 %1 分钟").arg(pair->intervalMinutes));
     m_rateLimitValue->setText(rateLimitDescription(
         pair->rateLimitEnabled, pair->rateLimitWindowMinutes, pair->rateLimitMaxRequests));
-    m_watchLocalValue->setText(pair->watchLocalChanges
-                                   ? tr("inotify 自动触发")
-                                   : tr("已关闭"));
-    m_syncDeletionValue->setText(pair->syncDeletions
-                                     ? tr("本地删除传播到远程")
-                                     : tr("关闭（下次同步恢复）"));
+    m_watchLocalValue->setText(pair->watchLocalChanges ? tr("inotify 自动触发") : tr("已关闭"));
+    m_syncDeletionValue->setText(pair->syncDeletions ? tr("本地删除传播到远程")
+                                                     : tr("关闭（下次同步恢复）"));
     m_excludesValue->setText(pair->excludePatterns.isEmpty()
                                  ? tr("无")
                                  : pair->excludePatterns.join(QStringLiteral("，")));
 
-    m_statsLabel->setText(pair->lastSync.isValid()
-                              ? tr("上次同步：%1")
-                                    .arg(pair->lastSync.toLocalTime().toString(
-                                        QStringLiteral("yyyy-MM-dd HH:mm:ss")))
-                              : tr("还没有同步记录"));
+    m_statsLabel->setText(pair->lastSync.isValid() ? tr("上次同步：%1")
+                                                         .arg(pair->lastSync.toLocalTime().toString(
+                                                             QStringLiteral("yyyy-MM-dd HH:mm:ss")))
+                                                   : tr("还没有同步记录"));
 
     m_progress->setVisible(current);
     if (current) {
@@ -863,8 +840,8 @@ void MainWindow::editCurrentPair(const QString &id)
         return;
 
     SyncPair updated = dialog.syncPair();
-    const bool endpointChanged = QDir::cleanPath(updated.localPath)
-            != QDir::cleanPath(editing.localPath)
+    const bool endpointChanged =
+        QDir::cleanPath(updated.localPath) != QDir::cleanPath(editing.localPath)
         || endpointKey(updated.remoteUrl) != endpointKey(editing.remoteUrl);
     if (endpointChanged) {
         const auto answer = QMessageBox::question(
@@ -908,13 +885,13 @@ void MainWindow::resetPairState()
                                  tr("此同步对正在同步或排队，请完成后再清空基线。"));
         return;
     }
-    const auto answer = QMessageBox::question(
-        this, tr("清空同步基线"),
-        tr("清空“%1”的同步基线后，下次同步会被视为首次同步。\n\n"
-           "不会删除任何本地或远程文件；两侧都存在的不同文件会生成冲突副本。"
-           "\n\n是否继续？")
-            .arg(pair->name),
-        QMessageBox::Yes | QMessageBox::No, QMessageBox::No);
+    const auto answer =
+        QMessageBox::question(this, tr("清空同步基线"),
+                              tr("清空“%1”的同步基线后，下次同步会被视为首次同步。\n\n"
+                                 "不会删除任何本地或远程文件；两侧都存在的不同文件会生成冲突副本。"
+                                 "\n\n是否继续？")
+                                  .arg(pair->name),
+                              QMessageBox::Yes | QMessageBox::No, QMessageBox::No);
     if (answer != QMessageBox::Yes)
         return;
     if (!clearPairState(id))
@@ -960,12 +937,12 @@ void MainWindow::removePairById(const QString &id)
         return;
     }
 
-    const auto answer = QMessageBox::question(
-        this, tr("移除同步对"),
-        tr("确定移除同步对“%1”吗？\n\n"
-           "只会删除 NutSync 的配置和同步基线，不会删除本地或远程文件。")
-            .arg(pair->name),
-        QMessageBox::Yes | QMessageBox::No, QMessageBox::No);
+    const auto answer =
+        QMessageBox::question(this, tr("移除同步对"),
+                              tr("确定移除同步对“%1”吗？\n\n"
+                                 "只会删除 NutSync 的配置和同步基线，不会删除本地或远程文件。")
+                                  .arg(pair->name),
+                              QMessageBox::Yes | QMessageBox::No, QMessageBox::No);
     if (answer != QMessageBox::Yes)
         return;
 
@@ -1028,8 +1005,9 @@ void MainWindow::rebuildLocalMonitors()
 
         monitor = new LocalChangeMonitor(pair.localPath, pair.excludePatterns, this);
         const QString pairId = pair.id;
-        connect(monitor, &LocalChangeMonitor::localChanged, this,
-                [this, pairId]() { onLocalChange(pairId); });
+        connect(monitor, &LocalChangeMonitor::localChanged, this, [this, pairId]() {
+            onLocalChange(pairId);
+        });
         connect(monitor, &LocalChangeMonitor::monitorError, this,
                 [this, pairId](const QString &message) {
                     appendLog(pairId, tr("文件监视：%1").arg(message));
@@ -1144,8 +1122,7 @@ void MainWindow::showRateLimitNotice(const SyncPair &pair, const QDateTime &next
     const QString message =
         tr("“%1”已达到请求频率上限（%2），自动同步推迟到 %3 之后")
             .arg(pair.name,
-                 rateLimitDescription(pair.rateLimitEnabled,
-                                      pair.rateLimitWindowMinutes,
+                 rateLimitDescription(pair.rateLimitEnabled, pair.rateLimitWindowMinutes,
                                       pair.rateLimitMaxRequests),
                  retry);
     appendLog(pair.id, message);
@@ -1198,8 +1175,7 @@ void MainWindow::onPairStarted(const QString &pairId)
     }
     m_globalStatus->setText(tr("正在同步“%1”…").arg(pair->name));
     if (m_tray)
-        m_tray->setStatus(QStringLiteral("NutSync"),
-                          tr("正在同步：%1").arg(pair->name),
+        m_tray->setStatus(QStringLiteral("NutSync"), tr("正在同步：%1").arg(pair->name),
                           QStringLiteral("emblem-synchronizing"));
 }
 
@@ -1210,9 +1186,8 @@ void MainWindow::onLogMessage(const QString &pairId, const QString &message)
 
 void MainWindow::appendLog(const QString &pairId, const QString &message)
 {
-    const QString line = QStringLiteral("[%1] %2")
-                             .arg(QTime::currentTime().toString(QStringLiteral("HH:mm:ss")),
-                                  message);
+    const QString line = QStringLiteral("[%1] %2").arg(
+        QTime::currentTime().toString(QStringLiteral("HH:mm:ss")), message);
     QStringList &logs = m_logs[pairId];
     logs.append(line);
     if (logs.size() > 800)
@@ -1222,8 +1197,7 @@ void MainWindow::appendLog(const QString &pairId, const QString &message)
     Logger::log(QStringLiteral("activity"), QStringLiteral("%1: %2").arg(pairId, message));
 }
 
-void MainWindow::onProgress(const QString &pairId, int completed, int total,
-                            const QString &path)
+void MainWindow::onProgress(const QString &pairId, int completed, int total, const QString &path)
 {
     if (selectedPairId() != pairId)
         return;
@@ -1270,35 +1244,33 @@ void MainWindow::onPairFinished(const SyncSummary &summary)
 
     if (m_tray) {
         if (!summary.success && !summary.cancelled) {
-            m_tray->showNotification(
-                tr("NutSync 同步失败"),
-                summary.errorDetails.value(0, summary.message), true);
+            m_tray->showNotification(tr("NutSync 同步失败"),
+                                     summary.errorDetails.value(0, summary.message), true);
         } else if (summary.conflicts > 0) {
-            m_tray->showNotification(
-                tr("NutSync 同步完成"),
-                tr("“%1”处理了 %2 个冲突。%3")
-                    .arg(pair->name)
-                    .arg(summary.conflicts)
-                    .arg(summary.message),
-                false);
-        } else if (m_notifyOnSuccess.contains(pair->id)) {
-            const QString detail = counts.isEmpty() ? summary.message
-                                                    : summary.message + QStringLiteral(" · ")
-                                                        + counts;
             m_tray->showNotification(tr("NutSync 同步完成"),
-                                     tr("“%1”：%2").arg(pair->name, detail), false);
+                                     tr("“%1”处理了 %2 个冲突。%3")
+                                         .arg(pair->name)
+                                         .arg(summary.conflicts)
+                                         .arg(summary.message),
+                                     false);
+        } else if (m_notifyOnSuccess.contains(pair->id)) {
+            const QString detail = counts.isEmpty()
+                ? summary.message
+                : summary.message + QStringLiteral(" · ") + counts;
+            m_tray->showNotification(tr("NutSync 同步完成"), tr("“%1”：%2").arg(pair->name, detail),
+                                     false);
         }
     }
     const bool manualSync = m_notifyOnSuccess.contains(summary.pairId);
     if (summary.success || summary.cancelled || manualSync
-        || hasPermanentHttpError(summary)) {
+        || RetryPolicy::hasPermanentHttpError(summary)) {
         cancelRetry(summary.pairId);
     } else if (pair->enabled && m_config.settings.retryCount > 0) {
         const int attempt = m_autoRetryAttempts.value(summary.pairId) + 1;
         if (attempt <= m_config.settings.retryCount) {
             m_autoRetryAttempts.insert(summary.pairId, attempt);
-            const int delay = qMin(600, m_config.settings.retryDelaySeconds
-                                            * (1 << (attempt - 1)));
+            const int delay =
+                RetryPolicy::backoffSeconds(m_config.settings.retryDelaySeconds, attempt);
             appendLog(summary.pairId,
                       tr("同步失败，%1 秒后重试（%2/%3）")
                           .arg(delay)
@@ -1311,8 +1283,7 @@ void MainWindow::onPairFinished(const SyncSummary &summary)
                 m_retryTimers.remove(pairId);
                 const SyncPair *current = findPair(pairId);
                 if (current && current->enabled && m_config.settings.retryCount > 0
-                    && m_autoRetryAttempts.value(pairId)
-                        <= m_config.settings.retryCount
+                    && m_autoRetryAttempts.value(pairId) <= m_config.settings.retryCount
                     && !m_controller->contains(pairId)) {
                     requestSync(pairId, false);
                 }
@@ -1375,11 +1346,12 @@ void MainWindow::updateTrayIdleStatus()
 {
     if (!m_tray || m_busy)
         return;
-    const int enabled = std::count_if(m_config.pairs.cbegin(), m_config.pairs.cend(),
-                                      [](const SyncPair &pair) { return pair.enabled; });
+    const int enabled =
+        std::count_if(m_config.pairs.cbegin(), m_config.pairs.cend(), [](const SyncPair &pair) {
+            return pair.enabled;
+        });
     m_tray->setStatus(QStringLiteral("NutSync"),
-                      m_autoSyncPaused ? tr("自动同步已暂停")
-                                       : tr("%1 个同步对").arg(enabled),
+                      m_autoSyncPaused ? tr("自动同步已暂停") : tr("%1 个同步对").arg(enabled),
                       QStringLiteral("nutsync"));
     Q_UNUSED(enabled)
 }
@@ -1504,12 +1476,10 @@ void MainWindow::openSettings()
         startMinimized->setEnabled(false);
 
     AutostartManager autostartManager;
-    auto *autostart = new QCheckBox(tr("登录时自动启动 NutSync（隐藏到系统托盘）"),
-                                    &dialog);
+    auto *autostart = new QCheckBox(tr("登录时自动启动 NutSync（隐藏到系统托盘）"), &dialog);
     autostart->setChecked(autostartManager.isEnabled());
-    autostart->setToolTip(
-        tr("创建用户级 XDG autostart 条目，以 --hidden 参数启动；"
-           "如果系统托盘不可用，则仍会显示主窗口。"));
+    autostart->setToolTip(tr("创建用户级 XDG autostart 条目，以 --hidden 参数启动；"
+                             "如果系统托盘不可用，则仍会显示主窗口。"));
 
     layout->addWidget(notifications);
     layout->addWidget(closeToTray);
@@ -1574,8 +1544,9 @@ void MainWindow::openSettings()
         proxyUser->setEnabled(manual);
         proxyPassword->setEnabled(manual);
     };
-    connect(proxyMode, &QComboBox::currentIndexChanged, &dialog,
-            [updateProxyFields](int) { updateProxyFields(); });
+    connect(proxyMode, &QComboBox::currentIndexChanged, &dialog, [updateProxyFields](int) {
+        updateProxyFields();
+    });
     updateProxyFields();
     connect(clearProxyPassword, &QPushButton::clicked, &dialog, [&]() {
         QString error;
@@ -1587,34 +1558,33 @@ void MainWindow::openSettings()
         proxyPassword->setPlaceholderText(tr("已清除"));
     });
     connect(browseCa, &QPushButton::clicked, &dialog, [&]() {
-        const QString file = QFileDialog::getOpenFileName(
-            &dialog, tr("选择 CA 证书文件"), caPath->text(),
-            tr("证书文件 (*.pem *.crt *.cer);;所有文件 (*)"));
+        const QString file =
+            QFileDialog::getOpenFileName(&dialog, tr("选择 CA 证书文件"), caPath->text(),
+                                         tr("证书文件 (*.pem *.crt *.cer);;所有文件 (*)"));
         if (!file.isEmpty())
             caPath->setText(file);
     });
 
-    auto *autostartNote = new QLabel(
-        tr("用户级 XDG autostart 条目：\n%1\n"
-           "仅对当前用户生效；取消勾选会删除该条目。")
-            .arg(PathUtils::nativePath(autostartManager.desktopFilePath())),
-        &dialog);
+    auto *autostartNote =
+        new QLabel(tr("用户级 XDG autostart 条目：\n%1\n"
+                      "仅对当前用户生效；取消勾选会删除该条目。")
+                       .arg(PathUtils::nativePath(autostartManager.desktopFilePath())),
+                   &dialog);
     autostartNote->setWordWrap(true);
     autostartNote->setTextInteractionFlags(Qt::TextSelectableByMouse);
     makeMuted(autostartNote, true);
     layout->addWidget(autostartNote);
 
-    auto *note = new QLabel(
-        tr("同步间隔和冲突策略按同步对单独设置。密码保存在系统的 KWallet / "
-           "Secret Service 中，不会写入配置文件。"),
-        &dialog);
+    auto *note = new QLabel(tr("同步间隔和冲突策略按同步对单独设置。密码保存在系统的 KWallet / "
+                               "Secret Service 中，不会写入配置文件。"),
+                            &dialog);
     note->setWordWrap(true);
     makeMuted(note);
     layout->addWidget(note);
 
     auto *logLine = new QHBoxLayout();
-    auto *logLabel = new QLabel(tr("日志：%1").arg(PathUtils::nativePath(Logger::logFilePath())),
-                                &dialog);
+    auto *logLabel =
+        new QLabel(tr("日志：%1").arg(PathUtils::nativePath(Logger::logFilePath())), &dialog);
     logLabel->setTextInteractionFlags(Qt::TextSelectableByMouse);
     logLabel->setWordWrap(true);
     auto *openLog = new QPushButton(tr("打开日志目录"), &dialog);
@@ -1625,8 +1595,7 @@ void MainWindow::openSettings()
     logLine->addWidget(openLog);
     layout->addLayout(logLine);
 
-    auto *buttons = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel,
-                                         &dialog);
+    auto *buttons = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, &dialog);
     buttons->button(QDialogButtonBox::Ok)->setText(tr("确定"));
     buttons->button(QDialogButtonBox::Cancel)->setText(tr("取消"));
     outerLayout->addWidget(buttons);
@@ -1643,8 +1612,7 @@ void MainWindow::openSettings()
             && (!QFileInfo(caFile).isFile()
                 || QSslCertificate::fromPath(caFile, QSsl::Pem).isEmpty())) {
             QMessageBox::warning(&dialog, tr("CA 证书无效"),
-                                 tr("无法读取 CA 证书文件“%1”，请选择 PEM 证书。")
-                                     .arg(caFile));
+                                 tr("无法读取 CA 证书文件“%1”，请选择 PEM 证书。").arg(caFile));
             caPath->setFocus();
             return;
         }
@@ -1681,8 +1649,8 @@ void MainWindow::openSettings()
         m_tray->setNotificationsEnabled(m_config.settings.notifications);
     if (!proxyPassword->text().isEmpty()) {
         QString passwordError;
-        if (!m_credentials.writePassword(QStringLiteral("proxy-password"),
-                                         proxyPassword->text(), &passwordError)) {
+        if (!m_credentials.writePassword(QStringLiteral("proxy-password"), proxyPassword->text(),
+                                         &passwordError)) {
             QMessageBox::warning(this, tr("无法保存代理密码"), passwordError);
         }
     }
@@ -1702,24 +1670,22 @@ void MainWindow::openSettings()
 
 void MainWindow::showAbout()
 {
-    QMessageBox::about(
-        this, tr("关于 NutSync"),
-        tr("<h3>NutSync %1</h3>"
-           "<p>适用于 KDE Plasma 的 WebDAV 双向同步工具。</p>"
-           "<p>基于 Qt 6 / KDE Frameworks 构建。同步引擎采用三路状态比较："
-           "只有一侧发生变化时自动传播；两侧都发生变化时按策略处理；"
-           "默认保留双方副本。删除操作也会同步。</p>"
-           "<p>密码存储在系统 KWallet / Secret Service 中，配置文件不保存密码。</p>"
-           "<p style=\"color: gray;\">协议后端可扩展，目前提供 WebDAV 实现。</p>")
-            .arg(QString::fromLatin1(NUTSYNC_VERSION)));
+    QMessageBox::about(this, tr("关于 NutSync"),
+                       tr("<h3>NutSync %1</h3>"
+                          "<p>适用于 KDE Plasma 的 WebDAV 双向同步工具。</p>"
+                          "<p>基于 Qt 6 / KDE Frameworks 构建。同步引擎采用三路状态比较："
+                          "只有一侧发生变化时自动传播；两侧都发生变化时按策略处理；"
+                          "默认保留双方副本。删除操作也会同步。</p>"
+                          "<p>密码存储在系统 KWallet / Secret Service 中，配置文件不保存密码。</p>"
+                          "<p style=\"color: gray;\">协议后端可扩展，目前提供 WebDAV 实现。</p>")
+                           .arg(QString::fromLatin1(NUTSYNC_VERSION)));
 }
 
 void MainWindow::quitApplication()
 {
     if (m_busy) {
         const auto answer = QMessageBox::question(
-            this, tr("同步正在进行"),
-            tr("仍有同步任务正在运行。确定要退出并中断同步吗？"),
+            this, tr("同步正在进行"), tr("仍有同步任务正在运行。确定要退出并中断同步吗？"),
             QMessageBox::Yes | QMessageBox::No, QMessageBox::No);
         if (answer != QMessageBox::Yes)
             return;
@@ -1799,9 +1765,8 @@ void MainWindow::closeEvent(QCloseEvent *event)
         hide();
         if (!m_trayHintShown && m_tray) {
             m_trayHintShown = true;
-            m_tray->showNotification(
-                tr("NutSync 仍在运行"),
-                tr("主窗口已隐藏到系统托盘。同步会按计划继续进行。"), false);
+            m_tray->showNotification(tr("NutSync 仍在运行"),
+                                     tr("主窗口已隐藏到系统托盘。同步会按计划继续进行。"), false);
         }
         event->ignore();
         return;
@@ -1809,8 +1774,7 @@ void MainWindow::closeEvent(QCloseEvent *event)
 
     if (m_busy) {
         const auto answer = QMessageBox::question(
-            this, tr("同步正在进行"),
-            tr("仍有同步任务正在运行。确定要退出并中断同步吗？"),
+            this, tr("同步正在进行"), tr("仍有同步任务正在运行。确定要退出并中断同步吗？"),
             QMessageBox::Yes | QMessageBox::No, QMessageBox::No);
         if (answer != QMessageBox::Yes) {
             event->ignore();

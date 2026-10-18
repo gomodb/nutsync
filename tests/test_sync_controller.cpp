@@ -99,10 +99,8 @@ void TestSyncController::queuedSyncRunsInWorkerAndReportsSummary()
     QVERIFY(finishedSpy.wait(20000));
     QCOMPARE(finishedSpy.count(), 1);
 
-    const SyncSummary summary =
-        qvariant_cast<SyncSummary>(finishedSpy.constFirst().constFirst());
-    QVERIFY2(summary.success, qPrintable(summary.message + "\n"
-                                         + summary.errorDetails.join('\n')));
+    const SyncSummary summary = qvariant_cast<SyncSummary>(finishedSpy.constFirst().constFirst());
+    QVERIFY2(summary.success, qPrintable(summary.message + "\n" + summary.errorDetails.join('\n')));
     QCOMPARE(summary.uploaded, 1);
     QVERIFY(QFileInfo::exists(QDir(remoteDir.path()).filePath(QStringLiteral("queued.txt"))));
 

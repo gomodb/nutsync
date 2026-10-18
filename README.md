@@ -133,7 +133,7 @@ AUR metadata lives in [packaging/arch/PKGBUILD](packaging/arch/PKGBUILD). The pa
 The package source is the GitHub tag archive:
 
 ```text
-https://github.com/gomodb/nutsync/archive/refs/tags/v0.4.1.tar.gz
+https://github.com/gomodb/nutsync/archive/refs/tags/v0.4.2.tar.gz
 ```
 
 Build from the project directory:
@@ -151,7 +151,7 @@ makepkg -f
 
 The AUR repository separately contains the `PKGBUILD`, `.SRCINFO`, and the 0BSD packaging license. Application source remains GPL-3.0-or-later; AUR packaging files are 0BSD.
 
-The first AUR release for this version is `0.4.1-1`. For a new release, update `pkgver`, `source`, and `sha256sums`, then run:
+The first AUR release for this version is `0.4.2-1`. For a new release, update `pkgver`, `source`, and `sha256sums`, then run:
 
 ```bash
 makepkg --printsrcinfo > .SRCINFO
@@ -236,6 +236,7 @@ Network options are available in **Preferences → Network**:
 - **Proxy password**: stored in the system keychain, never in `config.json`.
 - **CA certificate file**: an additional PEM bundle appended to the system CA certificates. Certificate verification is always enforced.
 - **Retry attempts / base delay**: failed automatic syncs retry with exponential backoff (30 s, 60 s, 120 s, ... up to 10 minutes). Permanent HTTP errors such as 401, 403, 409, and 412 are not retried, and manual syncs are never retried automatically.
+- **Request-level retries**: each WebDAV request retries network errors, 408, 425, 429, and 5xx responses up to three times, honoring `Retry-After`. Downloads resume from the partial temporary file with an HTTP `Range` request; uploads restart from the beginning because WebDAV PUT has no standard resumable form.
 - **Log level**: Debug, Info, Warning, or Error.
 
 Proxy and CA changes take effect after restart. The log level is applied immediately.

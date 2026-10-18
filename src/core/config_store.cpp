@@ -78,20 +78,17 @@ SyncPair pairFromJson(const QJsonObject &obj)
         if (!pattern.isEmpty())
             pair.excludePatterns.append(pattern);
     }
-    pair.conflictPolicy = conflictPolicyFromString(
-        obj.value(QStringLiteral("conflictPolicy")).toString());
+    pair.conflictPolicy =
+        conflictPolicyFromString(obj.value(QStringLiteral("conflictPolicy")).toString());
     pair.intervalMinutes = obj.value(QStringLiteral("intervalMinutes")).toInt(15);
     if (pair.intervalMinutes < 0)
         pair.intervalMinutes = 0;
     pair.rateLimitEnabled = obj.value(QStringLiteral("rateLimitEnabled")).toBool(false);
-    pair.rateLimitWindowMinutes =
-        obj.value(QStringLiteral("rateLimitWindowMinutes")).toInt(60);
-    pair.rateLimitMaxRequests =
-        obj.value(QStringLiteral("rateLimitMaxRequests")).toInt(10);
+    pair.rateLimitWindowMinutes = obj.value(QStringLiteral("rateLimitWindowMinutes")).toInt(60);
+    pair.rateLimitMaxRequests = obj.value(QStringLiteral("rateLimitMaxRequests")).toInt(10);
     pair.rateLimitWindowMinutes = qBound(1, pair.rateLimitWindowMinutes, 10080);
     pair.rateLimitMaxRequests = qBound(1, pair.rateLimitMaxRequests, 100000);
-    pair.watchLocalChanges =
-        obj.value(QStringLiteral("watchLocalChanges")).toBool(true);
+    pair.watchLocalChanges = obj.value(QStringLiteral("watchLocalChanges")).toBool(true);
     pair.syncDeletions = obj.value(QStringLiteral("syncDeletions")).toBool(false);
     pair.enabled = obj.value(QStringLiteral("enabled")).toBool(true);
     pair.syncOnStartup = obj.value(QStringLiteral("syncOnStartup")).toBool(true);
@@ -127,13 +124,12 @@ AppSettings settingsFromJson(const QJsonObject &obj)
 {
     AppSettings settings;
     const QString language = obj.value(QStringLiteral("language")).toString();
-    settings.language = (language == QLatin1String("en")
-                         || language == QLatin1String("zh_CN"))
+    settings.language = (language == QLatin1String("en") || language == QLatin1String("zh_CN"))
         ? language
         : QStringLiteral("system");
     const QString proxyMode = obj.value(QStringLiteral("proxyMode")).toString();
-    settings.proxyMode = (proxyMode == QLatin1String("none")
-                          || proxyMode == QLatin1String("manual"))
+    settings.proxyMode =
+        (proxyMode == QLatin1String("none") || proxyMode == QLatin1String("manual"))
         ? proxyMode
         : QStringLiteral("system");
     settings.proxyHost = obj.value(QStringLiteral("proxyHost")).toString();
@@ -141,8 +137,7 @@ AppSettings settingsFromJson(const QJsonObject &obj)
     settings.proxyUser = obj.value(QStringLiteral("proxyUser")).toString();
     settings.caBundlePath = obj.value(QStringLiteral("caBundlePath")).toString();
     const QString logLevel = obj.value(QStringLiteral("logLevel")).toString();
-    settings.logLevel = (logLevel == QLatin1String("debug")
-                         || logLevel == QLatin1String("warning")
+    settings.logLevel = (logLevel == QLatin1String("debug") || logLevel == QLatin1String("warning")
                          || logLevel == QLatin1String("error"))
         ? logLevel
         : QStringLiteral("info");
@@ -172,7 +167,7 @@ bool ConfigStore::load(AppConfig *config, QString *error) const
 {
     if (!config)
         return false;
-    *config = AppConfig {};
+    *config = AppConfig{};
 
     QFile file(m_filePath);
     if (!file.exists())
@@ -180,12 +175,11 @@ bool ConfigStore::load(AppConfig *config, QString *error) const
 
     if (!file.open(QIODevice::ReadOnly)) {
         if (error)
-            *error = QObject::tr("无法读取配置文件 %1：%2")
-                         .arg(m_filePath, file.errorString());
+            *error = QObject::tr("无法读取配置文件 %1：%2").arg(m_filePath, file.errorString());
         return false;
     }
 
-    QJsonParseError parseError {};
+    QJsonParseError parseError{};
     const QJsonDocument doc = QJsonDocument::fromJson(file.readAll(), &parseError);
     if (parseError.error != QJsonParseError::NoError) {
         if (error)
@@ -238,8 +232,7 @@ bool ConfigStore::save(const AppConfig &config, QString *error) const
     QSaveFile file(m_filePath);
     if (!file.open(QIODevice::WriteOnly)) {
         if (error)
-            *error = QObject::tr("无法写入配置文件 %1：%2")
-                         .arg(m_filePath, file.errorString());
+            *error = QObject::tr("无法写入配置文件 %1：%2").arg(m_filePath, file.errorString());
         return false;
     }
     file.setPermissions(QFileDevice::ReadOwner | QFileDevice::WriteOwner);

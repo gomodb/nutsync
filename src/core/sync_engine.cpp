@@ -100,8 +100,7 @@ SyncSummary SyncEngine::lastSummary() const
 
 void SyncEngine::emitLog(const QString &message, const QString &path)
 {
-    const QString line = path.isEmpty() ? message
-                                        : QStringLiteral("%1：%2").arg(message, path);
+    const QString line = path.isEmpty() ? message : QStringLiteral("%1：%2").arg(message, path);
     qInfo().noquote() << "[sync]" << line;
     emit logMessage(line);
 }
@@ -221,10 +220,9 @@ void SyncEngine::run()
         }
         if (!rootExists) {
             if (!state.isEmpty()) {
-                fatalError = tr(
-                    "远程同步根目录不存在，但此同步对已有历史状态。"
-                    "为避免误删本地文件，同步已停止。请检查 WebDAV 地址，"
-                    "或在确认后清空该同步对的基线状态。");
+                fatalError = tr("远程同步根目录不存在，但此同步对已有历史状态。"
+                                "为避免误删本地文件，同步已停止。请检查 WebDAV 地址，"
+                                "或在确认后清空该同步对的基线状态。");
                 break;
             }
             if (!m_backend->makeDirectory(QString(), &settingsError)) {
@@ -278,8 +276,7 @@ void SyncEngine::run()
             break;
         }
 
-        plan = SyncPlanner::build(m_localSnapshot, remoteSnapshot, state,
-                                  m_pair.syncDeletions);
+        plan = SyncPlanner::build(m_localSnapshot, remoteSnapshot, state, m_pair.syncDeletions);
         summary.conflictPaths = plan.conflicts;
         emitLog(tr("同步计划：上传 %1，下载 %2，删除 %3，冲突 %4")
                     .arg(plan.uploads)
@@ -370,8 +367,8 @@ bool SyncEngine::scanLocal(QMap<QString, LocalEntry> *entries, QString *error)
     return scanLocalDirectory(QString(), entries, error);
 }
 
-bool SyncEngine::scanLocalDirectory(const QString &relativeDir,
-                                    QMap<QString, LocalEntry> *entries, QString *error)
+bool SyncEngine::scanLocalDirectory(const QString &relativeDir, QMap<QString, LocalEntry> *entries,
+                                    QString *error)
 {
     if (m_cancelled.loadRelaxed()) {
         if (error)
@@ -392,9 +389,9 @@ bool SyncEngine::scanLocalDirectory(const QString &relativeDir,
         return false;
     }
 
-    const QFileInfoList entriesList = dir.entryInfoList(
-        QDir::AllEntries | QDir::NoDotAndDotDot | QDir::Hidden | QDir::System,
-        QDir::DirsFirst | QDir::Name);
+    const QFileInfoList entriesList =
+        dir.entryInfoList(QDir::AllEntries | QDir::NoDotAndDotDot | QDir::Hidden | QDir::System,
+                          QDir::DirsFirst | QDir::Name);
 
     for (const QFileInfo &info : entriesList) {
         if (m_cancelled.loadRelaxed()) {
@@ -517,8 +514,7 @@ bool SyncEngine::localSubtreeStillMatchesSnapshot(const QString &prefix) const
     }
 
     QDirIterator iterator(absolute,
-                          QDir::AllEntries | QDir::NoDotAndDotDot | QDir::Hidden
-                              | QDir::System,
+                          QDir::AllEntries | QDir::NoDotAndDotDot | QDir::Hidden | QDir::System,
                           QDirIterator::Subdirectories);
     while (iterator.hasNext()) {
         const QString path = iterator.next();
@@ -630,9 +626,8 @@ bool SyncEngine::recordSynced(const QString &path, QString *error)
         return false;
     }
 
-    StateEntry state = local.type == EntryType::Directory
-        ? SyncPlanner::makeDirectoryState(path)
-        : SyncPlanner::makeState(local, remote);
+    StateEntry state = local.type == EntryType::Directory ? SyncPlanner::makeDirectoryState(path)
+                                                          : SyncPlanner::makeState(local, remote);
     QString stateError;
     if (!m_stateStore->upsert(m_pair.id, state, &stateError)) {
         if (error)
@@ -643,8 +638,7 @@ bool SyncEngine::recordSynced(const QString &path, QString *error)
 }
 
 bool SyncEngine::doUpload(const SyncAction &action, const QString &localFile,
-                          const QString &remotePath, const QString &expectedEtag,
-                          QString *error)
+                          const QString &remotePath, const QString &expectedEtag, QString *error)
 {
     if (!m_backend->upload(localFile, remotePath, expectedEtag, error, [this]() {
             return m_cancelled.loadRelaxed() != 0;
@@ -699,8 +693,7 @@ bool SyncEngine::deleteRemote(const SyncAction &action, QString *error)
         return false;
     }
     if (!action.remote.etag.isEmpty() && !current.etag.isEmpty()
-        && PathUtils::normalizeEtag(action.remote.etag)
-            != PathUtils::normalizeEtag(current.etag)) {
+        && PathUtils::normalizeEtag(action.remote.etag) != PathUtils::normalizeEtag(current.etag)) {
         if (error)
             *error = tr("远程内容在同步期间发生了变化，未执行删除");
         return false;
@@ -856,8 +849,7 @@ bool SyncEngine::chooseConflictPath(const QString &path, QString *conflictPath, 
     return false;
 }
 
-bool SyncEngine::resolveKeepBoth(const SyncAction &action,
-                                 const QString &temporaryRemoteFile,
+bool SyncEngine::resolveKeepBoth(const SyncAction &action, const QString &temporaryRemoteFile,
                                  SyncSummary *summary)
 {
     QString conflictPath;
@@ -886,12 +878,11 @@ bool SyncEngine::resolveKeepBoth(const SyncAction &action,
     if (!haveLocalCopy) {
         DownloadResult downloaded;
         QString downloadError;
-        if (!m_backend->download(action.remote.path, conflictAbsolute, &downloaded,
-                                 &downloadError, [this]() {
+        if (!m_backend->download(action.remote.path, conflictAbsolute, &downloaded, &downloadError,
+                                 [this]() {
                                      return m_cancelled.loadRelaxed() != 0;
                                  })) {
-            addError(summary,
-                     tr("“%1”：下载冲突副本失败：%2").arg(action.path, downloadError));
+            addError(summary, tr("“%1”：下载冲突副本失败：%2").arg(action.path, downloadError));
             return false;
         }
     }
@@ -900,10 +891,11 @@ bool SyncEngine::resolveKeepBoth(const SyncAction &action,
 
     QString uploadError;
     if (!m_backend->upload(conflictAbsolute, conflictPath, QStringLiteral("*"), &uploadError,
-                           [this]() { return m_cancelled.loadRelaxed() != 0; })) {
+                           [this]() {
+                               return m_cancelled.loadRelaxed() != 0;
+                           })) {
         addError(summary,
-                 tr("“%1”：冲突副本已保存在本地，但上传失败：%2")
-                     .arg(conflictPath, uploadError));
+                 tr("“%1”：冲突副本已保存在本地，但上传失败：%2").arg(conflictPath, uploadError));
         return false;
     }
     if (!recordSynced(conflictPath, &uploadError)) {
@@ -919,8 +911,7 @@ bool SyncEngine::resolveKeepBoth(const SyncAction &action,
     }
     if (!doUpload(action, absolute, action.path, etag, &uploadError)) {
         addError(summary,
-                 tr("“%1”：冲突副本已保留，但本地版本上传失败：%2")
-                     .arg(action.path, uploadError));
+                 tr("“%1”：冲突副本已保留，但本地版本上传失败：%2").arg(action.path, uploadError));
         return false;
     }
     return true;
@@ -938,8 +929,7 @@ bool SyncEngine::resolveConflict(const SyncAction &action, SyncSummary *summary)
     if (hasLocal && hasRemote && action.local.type != action.remote.type) {
         ++summary->conflicts;
         addError(summary,
-                 tr("“%1”：无法自动解决文件与目录类型冲突，请在两侧手动处理")
-                     .arg(action.path));
+                 tr("“%1”：无法自动解决文件与目录类型冲突，请在两侧手动处理").arg(action.path));
         return false;
     }
 
@@ -950,16 +940,14 @@ bool SyncEngine::resolveConflict(const SyncAction &action, SyncSummary *summary)
         if (!exists || current.type != action.local.type)
             return false;
         if (current.type == EntryType::File) {
-            return current.size == action.local.size
-                && current.mtimeMs == action.local.mtimeMs;
+            return current.size == action.local.size && current.mtimeMs == action.local.mtimeMs;
         }
         return true;
     };
 
     auto uploadLocal = [&]() -> bool {
         if (!currentLocalStillMatches()) {
-            addError(summary,
-                     tr("“%1”：本地文件在同步期间发生变化，请重试").arg(action.path));
+            addError(summary, tr("“%1”：本地文件在同步期间发生变化，请重试").arg(action.path));
             return false;
         }
         QString etag;
@@ -979,8 +967,7 @@ bool SyncEngine::resolveConflict(const SyncAction &action, SyncSummary *summary)
 
     auto downloadRemote = [&]() -> bool {
         if (action.local.isValid() && !currentLocalStillMatches()) {
-            addError(summary,
-                     tr("“%1”：本地文件在同步期间发生变化，请重试").arg(action.path));
+            addError(summary, tr("“%1”：本地文件在同步期间发生变化，请重试").arg(action.path));
             return false;
         }
         if (!action.local.isValid()) {
@@ -988,8 +975,7 @@ bool SyncEngine::resolveConflict(const SyncAction &action, SyncSummary *summary)
             bool exists = false;
             statLocal(action.path, &current, &exists);
             if (exists) {
-                addError(summary,
-                         tr("“%1”：本地路径在同步期间出现，请重试").arg(action.path));
+                addError(summary, tr("“%1”：本地路径在同步期间出现，请重试").arg(action.path));
                 return false;
             }
         }
@@ -1112,8 +1098,7 @@ bool SyncEngine::executeAction(const SyncAction &action, SyncSummary *summary)
         if (!exists || current.type != action.local.type)
             return false;
         if (current.type == EntryType::File) {
-            return current.size == action.local.size
-                && current.mtimeMs == action.local.mtimeMs;
+            return current.size == action.local.size && current.mtimeMs == action.local.mtimeMs;
         }
         return true;
     };

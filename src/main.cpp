@@ -32,19 +32,17 @@ int main(int argc, char *argv[])
     QTranslator translator;
     QTranslator qtTranslator;
     if (!NutSync::Language::installTranslator(
-            application, NutSync::Language::resolve(startupConfig.settings.language),
-            &translator, &qtTranslator)) {
+            application, NutSync::Language::resolve(startupConfig.settings.language), &translator,
+            &qtTranslator)) {
         qWarning("NutSync: failed to load English translation");
     }
 
     QCommandLineParser parser;
-    parser.setApplicationDescription(
-        QObject::tr("适用于 KDE 的 WebDAV 双向同步客户端"));
+    parser.setApplicationDescription(QObject::tr("适用于 KDE 的 WebDAV 双向同步客户端"));
     parser.addHelpOption();
     parser.addVersionOption();
-    QCommandLineOption hiddenOption(
-        QStringLiteral("hidden"),
-        QObject::tr("启动后隐藏主窗口（仅在有系统托盘时生效）"));
+    QCommandLineOption hiddenOption(QStringLiteral("hidden"),
+                                    QObject::tr("启动后隐藏主窗口（仅在有系统托盘时生效）"));
     parser.addOption(hiddenOption);
     parser.process(application);
 
@@ -54,23 +52,20 @@ int main(int argc, char *argv[])
     NutSync::AutostartManager::migrateLegacy();
 
     NutSync::CredentialStore startupCredentials;
-    const QString proxyPassword =
-        startupConfig.settings.proxyMode == QLatin1String("manual")
+    const QString proxyPassword = startupConfig.settings.proxyMode == QLatin1String("manual")
         ? startupCredentials.readPassword(QStringLiteral("proxy-password"))
         : QString();
     QString networkError;
-    if (!NutSync::NetworkSettings::apply(startupConfig.settings, proxyPassword,
-                                         &networkError)) {
+    if (!NutSync::NetworkSettings::apply(startupConfig.settings, proxyPassword, &networkError)) {
         qWarning().noquote() << networkError;
     }
 
     QLockFile lockFile(NutSync::AppPaths::configDir() + QStringLiteral("/nutsync.lock"));
     lockFile.setStaleLockTime(30000);
     if (!lockFile.tryLock(100)) {
-        QMessageBox::information(
-            nullptr, QObject::tr("NutSync 已在运行"),
-            QObject::tr("另一个 NutSync 实例已经启动。\n"
-                        "请使用系统托盘中的图标打开主窗口。"));
+        QMessageBox::information(nullptr, QObject::tr("NutSync 已在运行"),
+                                 QObject::tr("另一个 NutSync 实例已经启动。\n"
+                                             "请使用系统托盘中的图标打开主窗口。"));
         return 1;
     }
 

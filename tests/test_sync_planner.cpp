@@ -27,8 +27,8 @@ LocalEntry localDir(const QString &path)
     return entry;
 }
 
-RemoteEntry remoteFile(const QString &path, const QString &etag,
-                       qint64 size = 4, qint64 mtime = 1000)
+RemoteEntry remoteFile(const QString &path, const QString &etag, qint64 size = 4,
+                       qint64 mtime = 1000)
 {
     RemoteEntry entry;
     entry.path = path;
@@ -81,7 +81,6 @@ const SyncAction *findAction(const SyncPlan &plan, ActionKind kind, const QStrin
     }
     return nullptr;
 }
-
 
 } // namespace
 
@@ -140,8 +139,7 @@ void TestSyncPlanner::changedFiles()
     QMap<QString, LocalEntry> local;
     local.insert(QStringLiteral("a"), localFile(QStringLiteral("a"), 4, 2000));
     QMap<QString, RemoteEntry> remote;
-    remote.insert(QStringLiteral("a"),
-                  remoteFile(QStringLiteral("a"), QStringLiteral("\"e1\"")));
+    remote.insert(QStringLiteral("a"), remoteFile(QStringLiteral("a"), QStringLiteral("\"e1\"")));
     QHash<QString, StateEntry> state;
     state.insert(QStringLiteral("a"), fileState(QStringLiteral("a")));
     {
@@ -150,8 +148,7 @@ void TestSyncPlanner::changedFiles()
         QVERIFY(findAction(plan, ActionKind::Upload, QStringLiteral("a")));
     }
     {
-        remote[QStringLiteral("a")] =
-            remoteFile(QStringLiteral("a"), QStringLiteral("\"e2\""));
+        remote[QStringLiteral("a")] = remoteFile(QStringLiteral("a"), QStringLiteral("\"e2\""));
         local[QStringLiteral("a")] = localFile(QStringLiteral("a"), 4, 1000);
         const SyncPlan plan = SyncPlanner::build(local, remote, state);
         QCOMPARE(plan.actions.size(), 1);
@@ -218,7 +215,7 @@ void TestSyncPlanner::stateOnlyEntriesAreRemoved()
     state.insert(QStringLiteral("gone"), fileState(QStringLiteral("gone")));
     const SyncPlan plan = SyncPlanner::build({}, {}, state);
     QVERIFY(plan.actions.isEmpty());
-    QCOMPARE(plan.removedStates, QStringList {QStringLiteral("gone")});
+    QCOMPARE(plan.removedStates, QStringList{QStringLiteral("gone")});
 }
 
 void TestSyncPlanner::directoryDeletionPropagation()

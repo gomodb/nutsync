@@ -20,18 +20,15 @@ void TestLanguage::resolvesSystemLanguage()
 {
     QCOMPARE(Language::resolve(QStringLiteral("system"), QLocale::Chinese),
              QStringLiteral("zh_CN"));
-    QCOMPARE(Language::resolve(QStringLiteral("system"), QLocale::English),
-             QStringLiteral("en"));
-    QCOMPARE(Language::resolve(QStringLiteral("system"), QLocale::French),
-             QStringLiteral("en"));
+    QCOMPARE(Language::resolve(QStringLiteral("system"), QLocale::English), QStringLiteral("en"));
+    QCOMPARE(Language::resolve(QStringLiteral("system"), QLocale::French), QStringLiteral("en"));
     QCOMPARE(Language::resolve(QString(), QLocale::French), QStringLiteral("en"));
 }
 
 void TestLanguage::explicitPreferenceWins()
 {
     QCOMPARE(Language::resolve(QStringLiteral("en"), QLocale::Chinese), QStringLiteral("en"));
-    QCOMPARE(Language::resolve(QStringLiteral("zh_CN"), QLocale::English),
-             QStringLiteral("zh_CN"));
+    QCOMPARE(Language::resolve(QStringLiteral("zh_CN"), QLocale::English), QStringLiteral("zh_CN"));
 }
 
 } // namespace NutSync::Test

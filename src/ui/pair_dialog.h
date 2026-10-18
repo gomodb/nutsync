@@ -24,8 +24,7 @@ class PairDialog : public QDialog
     Q_OBJECT
 
 public:
-    explicit PairDialog(const SyncPair &pair, bool credentialsAvailable,
-                        QWidget *parent = nullptr);
+    explicit PairDialog(const SyncPair &pair, bool credentialsAvailable, QWidget *parent = nullptr);
 
     SyncPair syncPair() const;
 

@@ -36,8 +36,7 @@ bool apply(const AppSettings &settings, const QString &proxyPassword, QString *e
         QSslCertificate::fromPath(settings.caBundlePath, QSsl::Pem);
     if (certificates.isEmpty()) {
         if (error) {
-            *error = QObject::tr("无法读取 CA 证书文件“%1”")
-                         .arg(settings.caBundlePath);
+            *error = QObject::tr("无法读取 CA 证书文件“%1”").arg(settings.caBundlePath);
         }
         return false;
     }

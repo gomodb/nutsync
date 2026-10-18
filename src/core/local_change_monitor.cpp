@@ -23,9 +23,8 @@ namespace {
 constexpr int kDebounceMs = 1500;
 
 #ifdef Q_OS_LINUX
-constexpr uint32_t kWatchMask = IN_CLOSE_WRITE | IN_MODIFY | IN_ATTRIB | IN_CREATE
-    | IN_DELETE | IN_DELETE_SELF | IN_MOVED_FROM | IN_MOVED_TO | IN_MOVE_SELF
-    | IN_ONLYDIR | IN_DONT_FOLLOW;
+constexpr uint32_t kWatchMask = IN_CLOSE_WRITE | IN_MODIFY | IN_ATTRIB | IN_CREATE | IN_DELETE
+    | IN_DELETE_SELF | IN_MOVED_FROM | IN_MOVED_TO | IN_MOVE_SELF | IN_ONLYDIR | IN_DONT_FOLLOW;
 #endif
 } // namespace
 
@@ -157,24 +156,21 @@ void LocalChangeMonitor::refreshWatches()
 #endif
 }
 
-bool LocalChangeMonitor::addDirectory(const QString &absolutePath,
-                                      const QString &relativePath, QString *error,
-                                      bool isRoot)
+bool LocalChangeMonitor::addDirectory(const QString &absolutePath, const QString &relativePath,
+                                      QString *error, bool isRoot)
 {
 #ifdef Q_OS_LINUX
     const QString cleaned = QDir::cleanPath(absolutePath);
-    if (!relativePath.isEmpty()
-        && PathUtils::isExcluded(relativePath, m_excludePatterns)) {
+    if (!relativePath.isEmpty() && PathUtils::isExcluded(relativePath, m_excludePatterns)) {
         return true;
     }
 
     if (!m_watchedDirectories.contains(cleaned)) {
-        const int watch = inotify_add_watch(m_fd, QFile::encodeName(cleaned).constData(),
-                                            kWatchMask);
+        const int watch =
+            inotify_add_watch(m_fd, QFile::encodeName(cleaned).constData(), kWatchMask);
         if (watch < 0) {
-            const QString message = tr("无法监视目录“%1”：%2")
-                                        .arg(cleaned,
-                                             QString::fromLocal8Bit(strerror(errno)));
+            const QString message =
+                tr("无法监视目录“%1”：%2").arg(cleaned, QString::fromLocal8Bit(strerror(errno)));
             if (isRoot) {
                 if (error)
                     *error = message;
@@ -191,8 +187,7 @@ bool LocalChangeMonitor::addDirectory(const QString &absolutePath,
     if (!directory.isReadable())
         return true;
     const QFileInfoList children = directory.entryInfoList(
-        QDir::AllDirs | QDir::NoDotAndDotDot | QDir::Hidden | QDir::System,
-        QDir::Name);
+        QDir::AllDirs | QDir::NoDotAndDotDot | QDir::Hidden | QDir::System, QDir::Name);
     for (const QFileInfo &child : children) {
         if (child.isSymLink() || !child.isDir())
             continue;
@@ -281,8 +276,8 @@ void LocalChangeMonitor::readEvents()
                 break;
             if (errno == EINTR)
                 continue;
-            reportError(tr("读取 inotify 事件失败：%1")
-                            .arg(QString::fromLocal8Bit(strerror(errno))));
+            reportError(
+                tr("读取 inotify 事件失败：%1").arg(QString::fromLocal8Bit(strerror(errno))));
             break;
         }
         if (length == 0)
@@ -307,26 +302,20 @@ void LocalChangeMonitor::readEvents()
             if (watchPath.isEmpty())
                 continue;
 
-            const QString name = event->len > 0
-                ? QFile::decodeName(event->name)
-                : QString();
-            const QString absolute = name.isEmpty()
-                ? watchPath
-                : watchPath + QLatin1Char('/') + name;
+            const QString name = event->len > 0 ? QFile::decodeName(event->name) : QString();
+            const QString absolute =
+                name.isEmpty() ? watchPath : watchPath + QLatin1Char('/') + name;
             const QString relative = relativePathFor(absolute);
-            if (!relative.isEmpty()
-                && PathUtils::isExcluded(relative, m_excludePatterns)) {
+            if (!relative.isEmpty() && PathUtils::isExcluded(relative, m_excludePatterns)) {
                 continue;
             }
 
             const bool isDirectory = event->mask & IN_ISDIR;
-            if (isDirectory
-                && (event->mask & (IN_CREATE | IN_MOVED_TO))) {
+            if (isDirectory && (event->mask & (IN_CREATE | IN_MOVED_TO))) {
                 addDirectory(absolute, relative, nullptr, false);
             }
             if (isDirectory
-                && (event->mask & (IN_DELETE | IN_MOVED_FROM | IN_DELETE_SELF
-                                   | IN_MOVE_SELF))) {
+                && (event->mask & (IN_DELETE | IN_MOVED_FROM | IN_DELETE_SELF | IN_MOVE_SELF))) {
                 removeWatchesUnder(absolute);
             }
 

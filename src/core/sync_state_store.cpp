@@ -48,8 +48,7 @@ bool SyncStateStore::open(QString *error)
     m_database.setDatabaseName(m_databasePath);
     if (!m_database.open()) {
         if (error)
-            *error = QObject::tr("无法打开同步状态数据库：%1")
-                         .arg(m_database.lastError().text());
+            *error = QObject::tr("无法打开同步状态数据库：%1").arg(m_database.lastError().text());
         m_database = {};
         QSqlDatabase::removeDatabase(m_connectionName);
         return false;
@@ -83,19 +82,18 @@ void SyncStateStore::close()
 bool SyncStateStore::ensureSchema(QString *error)
 {
     QSqlQuery query(m_database);
-    const QString sql = QStringLiteral(
-        "CREATE TABLE IF NOT EXISTS sync_state ("
-        "  pair_id TEXT NOT NULL,"
-        "  path TEXT NOT NULL,"
-        "  entry_type INTEGER NOT NULL,"
-        "  local_size INTEGER NOT NULL,"
-        "  local_mtime INTEGER NOT NULL,"
-        "  remote_size INTEGER NOT NULL,"
-        "  remote_mtime INTEGER NOT NULL,"
-        "  remote_etag TEXT NOT NULL DEFAULT '',"
-        "  synced_at INTEGER NOT NULL,"
-        "  PRIMARY KEY (pair_id, path)"
-        ")");
+    const QString sql = QStringLiteral("CREATE TABLE IF NOT EXISTS sync_state ("
+                                       "  pair_id TEXT NOT NULL,"
+                                       "  path TEXT NOT NULL,"
+                                       "  entry_type INTEGER NOT NULL,"
+                                       "  local_size INTEGER NOT NULL,"
+                                       "  local_mtime INTEGER NOT NULL,"
+                                       "  remote_size INTEGER NOT NULL,"
+                                       "  remote_mtime INTEGER NOT NULL,"
+                                       "  remote_etag TEXT NOT NULL DEFAULT '',"
+                                       "  synced_at INTEGER NOT NULL,"
+                                       "  PRIMARY KEY (pair_id, path)"
+                                       ")");
     if (!query.exec(sql)) {
         if (error)
             *error = QObject::tr("创建同步状态表失败：%1").arg(queryError(query));
@@ -151,15 +149,15 @@ bool SyncStateStore::upsert(const QString &pairId, const StateEntry &entry, QStr
     if (!m_open)
         return true;
     QSqlQuery query(m_database);
-    query.prepare(QStringLiteral(
-        "INSERT INTO sync_state (pair_id, path, entry_type, local_size, local_mtime,"
-        " remote_size, remote_mtime, remote_etag, synced_at)"
-        " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"
-        " ON CONFLICT(pair_id, path) DO UPDATE SET"
-        " entry_type=excluded.entry_type, local_size=excluded.local_size,"
-        " local_mtime=excluded.local_mtime, remote_size=excluded.remote_size,"
-        " remote_mtime=excluded.remote_mtime, remote_etag=excluded.remote_etag,"
-        " synced_at=excluded.synced_at"));
+    query.prepare(
+        QStringLiteral("INSERT INTO sync_state (pair_id, path, entry_type, local_size, local_mtime,"
+                       " remote_size, remote_mtime, remote_etag, synced_at)"
+                       " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"
+                       " ON CONFLICT(pair_id, path) DO UPDATE SET"
+                       " entry_type=excluded.entry_type, local_size=excluded.local_size,"
+                       " local_mtime=excluded.local_mtime, remote_size=excluded.remote_size,"
+                       " remote_mtime=excluded.remote_mtime, remote_etag=excluded.remote_etag,"
+                       " synced_at=excluded.synced_at"));
     query.addBindValue(pairId);
     query.addBindValue(entry.path);
     query.addBindValue(static_cast<int>(entry.type));
@@ -185,8 +183,7 @@ bool SyncStateStore::upsertMany(const QString &pairId, const QList<StateEntry> &
         return true;
     if (!m_database.transaction()) {
         if (error)
-            *error = QObject::tr("开始状态数据库事务失败：%1")
-                         .arg(m_database.lastError().text());
+            *error = QObject::tr("开始状态数据库事务失败：%1").arg(m_database.lastError().text());
         return false;
     }
     for (const StateEntry &entry : entries) {
@@ -197,8 +194,7 @@ bool SyncStateStore::upsertMany(const QString &pairId, const QList<StateEntry> &
     }
     if (!m_database.commit()) {
         if (error)
-            *error = QObject::tr("提交状态数据库事务失败：%1")
-                         .arg(m_database.lastError().text());
+            *error = QObject::tr("提交状态数据库事务失败：%1").arg(m_database.lastError().text());
         m_database.rollback();
         return false;
     }
@@ -238,9 +234,8 @@ bool SyncStateStore::removePrefix(const QString &pairId, const QString &path, QS
         return clearPair(pairId, error);
 
     QSqlQuery query(m_database);
-    query.prepare(QStringLiteral(
-        "DELETE FROM sync_state WHERE pair_id = ?"
-        " AND (path = ? OR path LIKE ? ESCAPE '\\')"));
+    query.prepare(QStringLiteral("DELETE FROM sync_state WHERE pair_id = ?"
+                                 " AND (path = ? OR path LIKE ? ESCAPE '\\')"));
     query.addBindValue(pairId);
     query.addBindValue(path);
     query.addBindValue(escapeLike(path) + QStringLiteral("/%"));

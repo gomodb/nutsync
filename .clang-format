@@ -56,7 +56,6 @@ BinPackArguments: true
 BinPackParameters: true
 BreakBeforeBinaryOperators: NonAssignment
 BreakBeforeTernaryOperators: true
-BreakTemplateDeclarations: Yes
 
 AllowShortFunctionsOnASingleLine: Inline
 AllowShortLambdasOnASingleLine: Empty

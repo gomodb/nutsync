@@ -106,9 +106,8 @@ StateEntry SyncPlanner::makeDirectoryState(const QString &path)
 }
 
 SyncPlan SyncPlanner::build(const QMap<QString, LocalEntry> &local,
-                           const QMap<QString, RemoteEntry> &remote,
-                           const QHash<QString, StateEntry> &state,
-                           bool syncLocalDeletions)
+                            const QMap<QString, RemoteEntry> &remote,
+                            const QHash<QString, StateEntry> &state, bool syncLocalDeletions)
 {
     SyncPlan plan;
     QSet<QString> conflicts;
@@ -123,14 +122,13 @@ SyncPlan SyncPlanner::build(const QMap<QString, LocalEntry> &local,
             return;
         conflicts.insert(path);
         plan.conflicts.append(path);
-        plan.actions.append(
-            makeAction(ActionKind::ResolveConflict, path, localEntry, remoteEntry,
-                       stateEntry, stateExists));
+        plan.actions.append(makeAction(ActionKind::ResolveConflict, path, localEntry, remoteEntry,
+                                       stateEntry, stateExists));
     };
 
     auto addUniqueAction = [&](const SyncAction &action) {
-        const QString key = QString::number(static_cast<int>(action.kind))
-            + QLatin1Char('\x1f') + action.path;
+        const QString key =
+            QString::number(static_cast<int>(action.kind)) + QLatin1Char('\x1f') + action.path;
         if (actionKeys.contains(key))
             return;
         actionKeys.insert(key);
@@ -168,10 +166,10 @@ SyncPlan SyncPlanner::build(const QMap<QString, LocalEntry> &local,
             continue;
         }
 
-        const LocalEntry localEntry = hasLocal ? local.value(path) : LocalEntry {};
-        const RemoteEntry remoteEntry = hasRemote ? remote.value(path) : RemoteEntry {};
+        const LocalEntry localEntry = hasLocal ? local.value(path) : LocalEntry{};
+        const RemoteEntry remoteEntry = hasRemote ? remote.value(path) : RemoteEntry{};
         const bool stateExists = state.contains(path);
-        const StateEntry stateEntry = stateExists ? state.value(path) : StateEntry {};
+        const StateEntry stateEntry = stateExists ? state.value(path) : StateEntry{};
 
         const bool localIsDir = hasLocal && isDirectory(localEntry);
         const bool remoteIsDir = hasRemote && isDirectory(remoteEntry);
@@ -229,11 +227,10 @@ SyncPlan SyncPlanner::build(const QMap<QString, LocalEntry> &local,
                 continue;
             }
             if (!stateExists) {
-                addUniqueAction(makeAction(ActionKind::Upload, path, localEntry, {}, {},
-                                           false));
+                addUniqueAction(makeAction(ActionKind::Upload, path, localEntry, {}, {}, false));
             } else if (localUnchanged(localEntry, stateEntry)) {
-                addUniqueAction(makeAction(ActionKind::DeleteLocal, path, localEntry, {},
-                                           stateEntry, true));
+                addUniqueAction(
+                    makeAction(ActionKind::DeleteLocal, path, localEntry, {}, stateEntry, true));
             } else {
                 addConflict(path, localEntry, remoteEntry, stateEntry, stateExists);
             }
@@ -249,13 +246,13 @@ SyncPlan SyncPlanner::build(const QMap<QString, LocalEntry> &local,
             addUniqueAction(makeAction(ActionKind::Download, path, {}, remoteEntry, {}, false));
         } else if (remoteUnchanged(remoteEntry, stateEntry)) {
             if (syncLocalDeletions) {
-                addUniqueAction(makeAction(ActionKind::DeleteRemote, path, {}, remoteEntry,
-                                           stateEntry, true));
+                addUniqueAction(
+                    makeAction(ActionKind::DeleteRemote, path, {}, remoteEntry, stateEntry, true));
             } else {
                 // Local deletion is not allowed to propagate. Downloading now
                 // restores the remote copy during this synchronization.
-                addUniqueAction(makeAction(ActionKind::Download, path, {}, remoteEntry,
-                                           stateEntry, true));
+                addUniqueAction(
+                    makeAction(ActionKind::Download, path, {}, remoteEntry, stateEntry, true));
             }
         } else {
             addConflict(path, localEntry, remoteEntry, stateEntry, stateExists);
@@ -277,8 +274,7 @@ SyncPlan SyncPlanner::build(const QMap<QString, LocalEntry> &local,
             const StateEntry &entryState = state.value(it.key());
             if (it.value().type != entryState.type)
                 return false;
-            if (it.value().type == EntryType::File
-                && !localUnchanged(it.value(), entryState)) {
+            if (it.value().type == EntryType::File && !localUnchanged(it.value(), entryState)) {
                 return false;
             }
         }
@@ -306,8 +302,7 @@ SyncPlan SyncPlanner::build(const QMap<QString, LocalEntry> &local,
             const StateEntry &entryState = state.value(it.key());
             if (it.value().type != entryState.type)
                 return false;
-            if (it.value().type == EntryType::File
-                && !remoteUnchanged(it.value(), entryState)) {
+            if (it.value().type == EntryType::File && !remoteUnchanged(it.value(), entryState)) {
                 return false;
             }
         }
@@ -354,7 +349,7 @@ SyncPlan SyncPlanner::build(const QMap<QString, LocalEntry> &local,
             continue;
 
         const bool stateExists = state.contains(path);
-        const StateEntry stateEntry = stateExists ? state.value(path) : StateEntry {};
+        const StateEntry stateEntry = stateExists ? state.value(path) : StateEntry{};
 
         if (localDir && remoteDir) {
             if (!stateExists || stateEntry.type != EntryType::Directory)

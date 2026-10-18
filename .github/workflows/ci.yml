@@ -30,7 +30,13 @@ jobs:
           sudo apt-get install -y --no-install-recommends \
             cmake ninja-build g++ python3 \
             qt6-base-dev qt6-tools-dev qt6-tools-dev-tools \
-            libqt6sql6-sqlite appstream desktop-file-utils
+            libqt6sql6-sqlite appstream desktop-file-utils clang-format
+
+      - name: Check formatting
+        run: |
+          clang-format --version
+          find src tests -type f \( -name '*.cpp' -o -name '*.h' \) -print0 \
+            | xargs -0 -n1 clang-format --dry-run --Werror
 
       - name: Configure
         run: >

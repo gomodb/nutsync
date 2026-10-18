@@ -59,8 +59,7 @@ PairDialog::PairDialog(const SyncPair &pair, bool credentialsAvailable, QWidget 
         m_conflictPolicy->setCurrentIndex(policyIndex);
     m_interval->setValue(pair.intervalMinutes);
     m_rateLimitEnabled->setChecked(pair.rateLimitEnabled);
-    const int windowMinutes = pair.rateLimitWindowMinutes > 0
-        ? pair.rateLimitWindowMinutes : 60;
+    const int windowMinutes = pair.rateLimitWindowMinutes > 0 ? pair.rateLimitWindowMinutes : 60;
     if (windowMinutes % 60 == 0) {
         m_rateLimitUnit->setCurrentIndex(1);
         m_rateLimitWindow->setMaximum(168);
@@ -70,8 +69,7 @@ PairDialog::PairDialog(const SyncPair &pair, bool credentialsAvailable, QWidget 
         m_rateLimitWindow->setMaximum(10080);
         m_rateLimitWindow->setValue(windowMinutes);
     }
-    m_rateLimitCount->setValue(pair.rateLimitMaxRequests > 0
-                                   ? pair.rateLimitMaxRequests : 10);
+    m_rateLimitCount->setValue(pair.rateLimitMaxRequests > 0 ? pair.rateLimitMaxRequests : 10);
     m_rateLimitRow->setEnabled(pair.rateLimitEnabled);
     m_enabled->setChecked(pair.enabled);
     m_syncOnStartup->setChecked(pair.syncOnStartup);
@@ -112,10 +110,9 @@ void PairDialog::buildUi(bool credentialsAvailable)
     title->setFont(titleFont);
     layout->addWidget(title);
 
-    auto *intro = new QLabel(
-        tr("本地文件夹与 WebDAV 目录将进行双向同步。删除操作也会同步；"
-           "发生冲突时默认保留双方副本，不会静默丢弃数据。"),
-        this);
+    auto *intro = new QLabel(tr("本地文件夹与 WebDAV 目录将进行双向同步。删除操作也会同步；"
+                                "发生冲突时默认保留双方副本，不会静默丢弃数据。"),
+                             this);
     intro->setWordWrap(true);
     makeMuted(intro);
     layout->addWidget(intro);
@@ -152,8 +149,7 @@ void PairDialog::buildUi(bool credentialsAvailable)
     form->addRow(tr("WebDAV 地址"), m_remoteUrl);
 
     auto *remoteHint = new QLabel(
-        tr("填写同步根目录的完整 URL，而不是服务器首页。程序会在此目录下递归同步。"),
-        this);
+        tr("填写同步根目录的完整 URL，而不是服务器首页。程序会在此目录下递归同步。"), this);
     remoteHint->setWordWrap(true);
     makeMuted(remoteHint, true);
     form->addRow(QString(), remoteHint);
@@ -188,11 +184,9 @@ void PairDialog::buildUi(bool credentialsAvailable)
     m_enabled->setChecked(true);
     m_syncOnStartup = new QCheckBox(tr("程序启动后自动同步"), this);
     m_syncOnStartup->setChecked(true);
-    m_watchLocalChanges = new QCheckBox(
-        tr("监视本地文件变化并自动同步（inotify）"), this);
+    m_watchLocalChanges = new QCheckBox(tr("监视本地文件变化并自动同步（inotify）"), this);
     m_watchLocalChanges->setChecked(true);
-    m_syncDeletions = new QCheckBox(
-        tr("同步删除：允许本地删除传播到远程"), this);
+    m_syncDeletions = new QCheckBox(tr("同步删除：允许本地删除传播到远程"), this);
     m_syncDeletions->setChecked(false);
     m_syncDeletions->setToolTip(
         tr("关闭时，本地删除不会删除远程文件；下一次同步会从远程恢复该文件。"
@@ -202,17 +196,16 @@ void PairDialog::buildUi(bool credentialsAvailable)
     form->addRow(QString(), m_watchLocalChanges);
     form->addRow(QString(), m_syncDeletions);
 
-    auto *deleteHint = new QLabel(
-        tr("“同步删除”关闭时，本地删除只会影响本地副本；远程文件会在下一次同步时恢复。"
-           "远程删除仍然会传播到本地。"),
-        this);
+    auto *deleteHint =
+        new QLabel(tr("“同步删除”关闭时，本地删除只会影响本地副本；远程文件会在下一次同步时恢复。"
+                      "远程删除仍然会传播到本地。"),
+                   this);
     deleteHint->setWordWrap(true);
     makeMuted(deleteHint, true);
     form->addRow(QString(), deleteHint);
 
     m_excludes = new QPlainTextEdit(this);
-    m_excludes->setPlaceholderText(
-        tr("每行一个规则，例如：\n.git\n*.tmp\nnode_modules\n缓存/"));
+    m_excludes->setPlaceholderText(tr("每行一个规则，例如：\n.git\n*.tmp\nnode_modules\n缓存/"));
     m_excludes->setFixedHeight(80);
     form->addRow(tr("排除规则"), m_excludes);
 
@@ -234,8 +227,7 @@ void PairDialog::buildUi(bool credentialsAvailable)
     m_interval->setValue(15);
     form->addRow(tr("定时同步间隔"), m_interval);
 
-    m_rateLimitEnabled = new QCheckBox(
-        tr("限制自动同步请求频率（默认不限制）"), this);
+    m_rateLimitEnabled = new QCheckBox(tr("限制自动同步请求频率（默认不限制）"), this);
     form->addRow(QString(), m_rateLimitEnabled);
 
     m_rateLimitRow = new QWidget(this);
@@ -261,10 +253,10 @@ void PairDialog::buildUi(bool credentialsAvailable)
     rateLimitLayout->addStretch(1);
     form->addRow(tr("请求频率上限"), m_rateLimitRow);
 
-    auto *rateLimitHint = new QLabel(
-        tr("限制定时同步、inotify 本地变更触发和启动同步在窗口内的启动次数。"
-           "手动同步始终允许，但会计入额度。"),
-        this);
+    auto *rateLimitHint =
+        new QLabel(tr("限制定时同步、inotify 本地变更触发和启动同步在窗口内的启动次数。"
+                      "手动同步始终允许，但会计入额度。"),
+                   this);
     rateLimitHint->setWordWrap(true);
     makeMuted(rateLimitHint, true);
     form->addRow(QString(), rateLimitHint);
@@ -273,8 +265,8 @@ void PairDialog::buildUi(bool credentialsAvailable)
     layout->addWidget(scroll, 1);
 
     auto *testRow = new QHBoxLayout();
-    m_testButton = new QPushButton(QIcon::fromTheme(QStringLiteral("network-connect")),
-                                   tr("测试连接"), this);
+    m_testButton =
+        new QPushButton(QIcon::fromTheme(QStringLiteral("network-connect")), tr("测试连接"), this);
     m_testStatus = new QLabel(tr("保存前可先验证地址和凭据。"), this);
     m_testStatus->setWordWrap(true);
     m_testStatus->setTextInteractionFlags(Qt::TextSelectableByMouse);
@@ -282,11 +274,10 @@ void PairDialog::buildUi(bool credentialsAvailable)
     testRow->addWidget(m_testStatus, 1);
     layout->addLayout(testRow);
 
-    auto *buttons = new QDialogButtonBox(QDialogButtonBox::Save | QDialogButtonBox::Cancel,
-                                         this);
+    auto *buttons = new QDialogButtonBox(QDialogButtonBox::Save | QDialogButtonBox::Cancel, this);
     buttons->button(QDialogButtonBox::Save)->setText(tr("保存"));
-    buttons->button(QDialogButtonBox::Save)->setIcon(
-        QIcon::fromTheme(QStringLiteral("dialog-ok-apply")));
+    buttons->button(QDialogButtonBox::Save)
+        ->setIcon(QIcon::fromTheme(QStringLiteral("dialog-ok-apply")));
     buttons->button(QDialogButtonBox::Cancel)->setText(tr("取消"));
     layout->addWidget(buttons);
 
@@ -294,8 +285,7 @@ void PairDialog::buildUi(bool credentialsAvailable)
     connect(m_showPassword, &QCheckBox::toggled, this, [this](bool shown) {
         m_password->setEchoMode(shown ? QLineEdit::Normal : QLineEdit::Password);
     });
-    connect(m_rateLimitEnabled, &QCheckBox::toggled, m_rateLimitRow,
-            &QWidget::setEnabled);
+    connect(m_rateLimitEnabled, &QCheckBox::toggled, m_rateLimitRow, &QWidget::setEnabled);
     connect(m_rateLimitUnit, &QComboBox::currentIndexChanged, this, [this]() {
         const int unit = m_rateLimitUnit->currentData().toInt();
         m_rateLimitWindow->setMaximum(unit == 60 ? 168 : 10080);
@@ -316,9 +306,9 @@ void PairDialog::buildUi(bool credentialsAvailable)
             if (answer != QMessageBox::Yes)
                 return;
             if (!QDir().mkpath(localPath)) {
-                QMessageBox::warning(this, tr("无法创建文件夹"),
-                                     tr("无法创建本地文件夹：%1")
-                                         .arg(PathUtils::nativePath(localPath)));
+                QMessageBox::warning(
+                    this, tr("无法创建文件夹"),
+                    tr("无法创建本地文件夹：%1").arg(PathUtils::nativePath(localPath)));
                 return;
             }
         }
@@ -354,8 +344,7 @@ QUrl PairDialog::normalizedRemoteUrl(bool *ok) const
 
     QUrl url(value, QUrl::StrictMode);
     if (!url.isValid() || url.host().isEmpty()
-        || (url.scheme() != QLatin1String("http")
-            && url.scheme() != QLatin1String("https"))) {
+        || (url.scheme() != QLatin1String("http") && url.scheme() != QLatin1String("https"))) {
         return {};
     }
     QString path = url.path();
@@ -385,14 +374,13 @@ bool PairDialog::validateInputs(bool forTestOnly)
     bool urlOk = false;
     const QUrl url = normalizedRemoteUrl(&urlOk);
     if (!urlOk) {
-        QMessageBox::warning(
-            this, tr("地址无效"),
-            tr("请填写有效的 http:// 或 https:// WebDAV 目录地址。"));
+        QMessageBox::warning(this, tr("地址无效"),
+                             tr("请填写有效的 http:// 或 https:// WebDAV 目录地址。"));
         m_remoteUrl->setFocus();
         return false;
     }
-    const bool hasCredentials = !url.userName().isEmpty()
-        || !m_username->text().trimmed().isEmpty() || !m_password->text().isEmpty();
+    const bool hasCredentials = !url.userName().isEmpty() || !m_username->text().trimmed().isEmpty()
+        || !m_password->text().isEmpty();
     if (hasCredentials && !NetworkUtils::allowsCleartextCredentials(url)) {
         QMessageBox::warning(
             this, tr("不安全的连接"),
@@ -476,12 +464,11 @@ SyncPair PairDialog::syncPair() const
     }
     pair.rememberPassword = m_rememberPassword->isChecked();
     pair.excludePatterns = parsedExcludes();
-    pair.conflictPolicy = static_cast<ConflictPolicy>(
-        m_conflictPolicy->currentData().toInt());
+    pair.conflictPolicy = static_cast<ConflictPolicy>(m_conflictPolicy->currentData().toInt());
     pair.intervalMinutes = m_interval->value();
     pair.rateLimitEnabled = m_rateLimitEnabled->isChecked();
-    pair.rateLimitWindowMinutes = m_rateLimitWindow->value()
-        * m_rateLimitUnit->currentData().toInt();
+    pair.rateLimitWindowMinutes =
+        m_rateLimitWindow->value() * m_rateLimitUnit->currentData().toInt();
     pair.rateLimitMaxRequests = m_rateLimitCount->value();
     if (pair.rateLimitWindowMinutes <= 0)
         pair.rateLimitWindowMinutes = 60;

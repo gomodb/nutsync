@@ -14,8 +14,7 @@ SyncController::SyncController(QString stateDatabasePath, QObject *parent)
     : QObject(parent)
     , m_stateDatabasePath(std::move(stateDatabasePath))
 {
-    connect(&m_watcher, &QFutureWatcher<void>::finished, this,
-            &SyncController::onWorkerFinished);
+    connect(&m_watcher, &QFutureWatcher<void>::finished, this, &SyncController::onWorkerFinished);
 }
 
 SyncController::~SyncController()
@@ -113,15 +112,18 @@ void SyncController::startNext()
 
     auto *engine = new SyncEngine(m_currentPair, m_stateDatabasePath, this);
     m_engine = engine;
-    connect(engine, &SyncEngine::logMessage, this,
-            [this](const QString &message) { emit logMessage(m_currentPairId, message); });
+    connect(engine, &SyncEngine::logMessage, this, [this](const QString &message) {
+        emit logMessage(m_currentPairId, message);
+    });
     connect(engine, &SyncEngine::progress, this,
             [this](int completed, int total, const QString &path) {
                 emit progress(m_currentPairId, completed, total, path);
             });
     connect(engine, &SyncEngine::finished, this, &SyncController::onEngineFinished);
 
-    m_watcher.setFuture(QtConcurrent::run([engine]() { engine->run(); }));
+    m_watcher.setFuture(QtConcurrent::run([engine]() {
+        engine->run();
+    }));
 }
 
 void SyncController::onEngineFinished(const SyncSummary &summary)
@@ -135,7 +137,7 @@ void SyncController::onWorkerFinished()
     SyncEngine *engine = m_engine;
     SyncSummary summary = m_pendingSummary;
     if (!m_hasPendingSummary) {
-        summary = engine ? engine->lastSummary() : SyncSummary {};
+        summary = engine ? engine->lastSummary() : SyncSummary{};
     }
     if (summary.pairId.isEmpty()) {
         summary.pairId = m_currentPairId;

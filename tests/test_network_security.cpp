@@ -19,9 +19,12 @@ void TestNetworkSecurity::classifiesLoopbackHosts()
     QVERIFY(NetworkUtils::isLoopbackHost(QStringLiteral("127.0.0.1")));
     QVERIFY(NetworkUtils::isLoopbackHost(QStringLiteral("::1")));
     QVERIFY(!NetworkUtils::isLoopbackHost(QStringLiteral("example.com")));
-    QVERIFY(NetworkUtils::allowsCleartextCredentials(QUrl(QStringLiteral("http://127.0.0.1/dav/"))));
-    QVERIFY(NetworkUtils::allowsCleartextCredentials(QUrl(QStringLiteral("https://example.com/dav/"))));
-    QVERIFY(!NetworkUtils::allowsCleartextCredentials(QUrl(QStringLiteral("http://example.com/dav/"))));
+    QVERIFY(
+        NetworkUtils::allowsCleartextCredentials(QUrl(QStringLiteral("http://127.0.0.1/dav/"))));
+    QVERIFY(
+        NetworkUtils::allowsCleartextCredentials(QUrl(QStringLiteral("https://example.com/dav/"))));
+    QVERIFY(
+        !NetworkUtils::allowsCleartextCredentials(QUrl(QStringLiteral("http://example.com/dav/"))));
 }
 
 void TestNetworkSecurity::doesNotFollowCrossOriginRedirects()
@@ -56,8 +59,7 @@ void TestNetworkSecurity::doesNotFollowCrossOriginRedirects()
     QVERIFY(redirect.listen(QHostAddress::LocalHost, 0));
     const QString redirectUrl =
         QStringLiteral("http://127.0.0.1:%1/dav/").arg(redirect.serverPort());
-    const QString targetUrl =
-        QStringLiteral("http://127.0.0.1:%1/dav/").arg(target.serverPort());
+    const QString targetUrl = QStringLiteral("http://127.0.0.1:%1/dav/").arg(target.serverPort());
     connect(&redirect, &QTcpServer::newConnection, &redirect, [&]() {
         while (QTcpSocket *socket = redirect.nextPendingConnection()) {
             connect(socket, &QTcpSocket::readyRead, socket, [&, socket]() {
@@ -67,8 +69,7 @@ void TestNetworkSecurity::doesNotFollowCrossOriginRedirects()
                 if (!data.contains("\r\n\r\n") || socket->property("responded").toBool())
                     return;
                 socket->setProperty("responded", true);
-                const QByteArray response =
-                    "HTTP/1.1 302 Found\r\nLocation: " + targetUrl.toUtf8()
+                const QByteArray response = "HTTP/1.1 302 Found\r\nLocation: " + targetUrl.toUtf8()
                     + "\r\nContent-Length: 0\r\nConnection: close\r\n\r\n";
                 socket->write(response);
                 socket->disconnectFromHost();

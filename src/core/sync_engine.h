@@ -23,8 +23,7 @@ class SyncEngine : public QObject
 public:
     using BackendFactory = std::function<std::unique_ptr<RemoteBackend>()>;
 
-    explicit SyncEngine(SyncPair pair, QString stateDatabasePath = {},
-                        QObject *parent = nullptr);
+    explicit SyncEngine(SyncPair pair, QString stateDatabasePath = {}, QObject *parent = nullptr);
 
     void setBackendFactory(BackendFactory factory);
     void requestCancel();
@@ -41,8 +40,8 @@ signals:
 
 private:
     bool scanLocal(QMap<QString, LocalEntry> *entries, QString *error);
-    bool scanLocalDirectory(const QString &relativeDir,
-                            QMap<QString, LocalEntry> *entries, QString *error);
+    bool scanLocalDirectory(const QString &relativeDir, QMap<QString, LocalEntry> *entries,
+                            QString *error);
     bool statLocal(const QString &relativePath, LocalEntry *entry, bool *exists) const;
     bool localDeleteStillSafe(const SyncAction &action) const;
     bool localSubtreeStillMatchesSnapshot(const QString &prefix) const;
@@ -56,10 +55,10 @@ private:
     bool resolveKeepBoth(const SyncAction &action, const QString &temporaryRemoteFile,
                          SyncSummary *summary);
     bool chooseConflictPath(const QString &path, QString *conflictPath, QString *error);
-    bool doUpload(const SyncAction &action, const QString &localFile,
-                  const QString &remotePath, const QString &expectedEtag, QString *error);
-    bool doDownload(const SyncAction &action, const QString &remotePath,
-                    const QString &localFile, QString *error);
+    bool doUpload(const SyncAction &action, const QString &localFile, const QString &remotePath,
+                  const QString &expectedEtag, QString *error);
+    bool doDownload(const SyncAction &action, const QString &remotePath, const QString &localFile,
+                    QString *error);
     bool deleteRemote(const SyncAction &action, QString *error);
     bool deleteLocal(const SyncAction &action, QString *error);
     bool executeAction(const SyncAction &action, SyncSummary *summary);
@@ -69,7 +68,7 @@ private:
     SyncPair m_pair;
     QString m_stateDatabasePath;
     BackendFactory m_backendFactory;
-    QAtomicInt m_cancelled {0};
+    QAtomicInt m_cancelled{0};
     QMap<QString, LocalEntry> m_localSnapshot;
     std::unique_ptr<RemoteBackend> m_backend;
     SyncStateStore *m_stateStore = nullptr;

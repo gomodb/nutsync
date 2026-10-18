@@ -4,12 +4,17 @@
 #include "core/network_utils.h"
 #include "core/sync_types.h"
 
+#include <QDateTime>
+#include <QDir>
+#include <QElapsedTimer>
 #include <QEventLoop>
 #include <QFile>
 #include <QFileInfo>
 #include <QNetworkReply>
 #include <QSaveFile>
 #include <QSet>
+#include <QTemporaryFile>
+#include <QThread>
 #include <QTimer>
 #include <QXmlStreamReader>
 
@@ -44,6 +49,56 @@ QString statusText(int status)
     return QStringLiteral("HTTP %1").arg(status);
 }
 
+bool retryableStatus(int status)
+{
+    return status == 0 || status == 408 || status == 425 || status == 429
+        || (status >= 500 && status < 600);
+}
+
+bool retryableFailure(int status, QNetworkReply::NetworkError networkError)
+{
+    return retryableStatus(status)
+        || (networkError != QNetworkReply::NoError && status >= 200 && status < 300);
+}
+
+int retryAfterDelayMs(QNetworkReply *reply)
+{
+    const QByteArray value = reply->rawHeader("Retry-After").trimmed();
+    if (value.isEmpty())
+        return -1;
+
+    bool ok = false;
+    const int seconds = value.toInt(&ok);
+    if (ok)
+        return qBound(0, seconds, 300) * 1000;
+
+    const QDateTime date = QDateTime::fromString(QString::fromLatin1(value), Qt::RFC2822Date);
+    if (date.isValid()) {
+        const qint64 delay = QDateTime::currentDateTimeUtc().msecsTo(date.toUTC());
+        return static_cast<int>(qBound<qint64>(0LL, delay, 300000LL));
+    }
+    return -1;
+}
+
+bool waitBeforeRetry(int attempt, int retryAfterMs, int baseDelayMs, int maxDelayMs,
+                     const CancelledCallback &cancelled)
+{
+    if (cancelled && cancelled())
+        return false;
+
+    int delay = retryAfterMs;
+    if (delay < 0)
+        delay = qMin(maxDelayMs, baseDelayMs * (1 << qMin(attempt, 10)));
+    QElapsedTimer timer;
+    timer.start();
+    while (timer.elapsed() < delay) {
+        if (cancelled && cancelled())
+            return false;
+        QThread::msleep(static_cast<unsigned long>(qMin<qint64>(100, delay - timer.elapsed())));
+    }
+    return !(cancelled && cancelled());
+}
+
 } // namespace
 
 WebDavBackend::WebDavBackend(WebDavOptions options)
@@ -62,8 +117,7 @@ WebDavBackend::WebDavBackend(WebDavOptions options)
         m_baseUrl.setPath(path);
         m_baseUrl.setFragment({});
         m_baseUrl.setUserInfo({});
-        if (!m_options.username.isEmpty()
-            && !NetworkUtils::allowsCleartextCredentials(m_baseUrl)) {
+        if (!m_options.username.isEmpty() && !NetworkUtils::allowsCleartextCredentials(m_baseUrl)) {
             qWarning() << "NutSync: refusing to send WebDAV credentials over cleartext HTTP";
         }
     }
@@ -87,8 +141,7 @@ QNetworkRequest WebDavBackend::requestFor(const QString &path) const
     request.setTransferTimeout(m_options.timeoutMs);
     request.setAttribute(QNetworkRequest::RedirectPolicyAttribute,
                          QNetworkRequest::SameOriginRedirectPolicy);
-    if (!m_options.username.isEmpty()
-        && NetworkUtils::allowsCleartextCredentials(m_baseUrl)) {
+    if (!m_options.username.isEmpty() && NetworkUtils::allowsCleartextCredentials(m_baseUrl)) {
         request.setRawHeader("Authorization",
                              basicAuthValue(m_options.username, m_options.password));
     }
@@ -97,61 +150,69 @@ QNetworkRequest WebDavBackend::requestFor(const QString &path) const
 
 QByteArray WebDavBackend::propfindBody() const
 {
-    return QByteArrayLiteral(
-        "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
-        "<d:propfind xmlns:d=\"DAV:\">\n"
-        "  <d:prop>\n"
-        "    <d:resourcetype/>\n"
-        "    <d:getcontentlength/>\n"
-        "    <d:getlastmodified/>\n"
-        "    <d:getetag/>\n"
-        "  </d:prop>\n"
-        "</d:propfind>\n");
+    return QByteArrayLiteral("<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
+                             "<d:propfind xmlns:d=\"DAV:\">\n"
+                             "  <d:prop>\n"
+                             "    <d:resourcetype/>\n"
+                             "    <d:getcontentlength/>\n"
+                             "    <d:getlastmodified/>\n"
+                             "    <d:getetag/>\n"
+                             "  </d:prop>\n"
+                             "</d:propfind>\n");
 }
 
 bool WebDavBackend::propfind(const QString &path, int depth, QByteArray *body, int *status,
                              QString *error)
 {
-    QNetworkRequest request = requestFor(path);
-    request.setRawHeader("Depth", QByteArray::number(depth));
-    request.setHeader(QNetworkRequest::ContentTypeHeader,
-                      QStringLiteral("application/xml; charset=utf-8"));
+    for (int attempt = 0;; ++attempt) {
+        QNetworkRequest request = requestFor(path);
+        request.setRawHeader("Depth", QByteArray::number(depth));
+        request.setHeader(QNetworkRequest::ContentTypeHeader,
+                          QStringLiteral("application/xml; charset=utf-8"));
 
-    QNetworkReply *reply = m_network.sendCustomRequest(request, "PROPFIND", propfindBody());
-    QEventLoop loop;
-    QObject::connect(reply, &QNetworkReply::finished, &loop, &QEventLoop::quit);
-    loop.exec();
+        QNetworkReply *reply = m_network.sendCustomRequest(request, "PROPFIND", propfindBody());
+        QEventLoop loop;
+        QObject::connect(reply, &QNetworkReply::finished, &loop, &QEventLoop::quit);
+        loop.exec();
 
-    *status = statusCode(reply);
-    const QByteArray responseBody = reply->readAll();
-    if (body)
-        *body = responseBody;
-    const QNetworkReply::NetworkError networkError = reply->error();
-    const QString networkErrorString = reply->errorString();
-    reply->deleteLater();
+        *status = statusCode(reply);
+        const QByteArray responseBody = reply->readAll();
+        const int retryAfter = retryAfterDelayMs(reply);
+        const QNetworkReply::NetworkError networkError = reply->error();
+        const QString networkErrorString = reply->errorString();
+        reply->deleteLater();
 
-    if (*status == 0) {
-        if (error)
-            *error = QObject::tr("连接 %1 失败：%2")
-                         .arg(m_baseUrl.toDisplayString(QUrl::RemovePassword),
-                              networkErrorString);
+        if (*status == 207 || (*status != 0 && isSuccessStatus(*status))) {
+            if (body)
+                *body = responseBody;
+            return true;
+        }
+
+        const bool retry =
+            retryableFailure(*status, networkError) && attempt < m_options.retryCount;
+        if (retry
+            && waitBeforeRetry(attempt, retryAfter, m_options.retryBaseDelayMs,
+                               m_options.retryMaxDelayMs, {})) {
+            continue;
+        }
+
+        if (body)
+            *body = responseBody;
+        if (error) {
+            if (*status == 0) {
+                *error =
+                    QObject::tr("连接 %1 失败：%2")
+                        .arg(m_baseUrl.toDisplayString(QUrl::RemovePassword), networkErrorString);
+            } else {
+                *error = httpError(*status, responseBody, statusText(*status));
+            }
+        }
+        Q_UNUSED(networkError)
         return false;
     }
-    if (!isSuccessStatus(*status) && *status != 207) {
-        if (error)
-            *error = httpError(*status, responseBody, statusText(*status));
-        return false;
-    }
-    if (networkError != QNetworkReply::NoError && *status == 0) {
-        if (error)
-            *error = networkErrorString;
-        return false;
-    }
-    return true;
 }
 
-QString WebDavBackend::httpError(int status, const QByteArray &body,
-                                 const QString &fallback) const
+QString WebDavBackend::httpError(int status, const QByteArray &body, const QString &fallback) const
 {
     QString reason = fallback;
     if (status == 401) {
@@ -209,8 +270,7 @@ bool WebDavBackend::testConnection(QString *error)
     return true;
 }
 
-QString WebDavBackend::relativePathFromHref(const QString &href, const QUrl &requestUrl,
-                                            bool *ok)
+QString WebDavBackend::relativePathFromHref(const QString &href, const QUrl &requestUrl, bool *ok)
 {
     if (ok)
         *ok = false;
@@ -230,10 +290,8 @@ QString WebDavBackend::relativePathFromHref(const QString &href, const QUrl &req
         hrefUrl = base.resolved(hrefUrl);
     }
 
-    const QString hrefPath =
-        QUrl::fromPercentEncoding(hrefUrl.path(QUrl::FullyEncoded).toUtf8());
-    QString basePath =
-        QUrl::fromPercentEncoding(requestUrl.path(QUrl::FullyEncoded).toUtf8());
+    const QString hrefPath = QUrl::fromPercentEncoding(hrefUrl.path(QUrl::FullyEncoded).toUtf8());
+    QString basePath = QUrl::fromPercentEncoding(requestUrl.path(QUrl::FullyEncoded).toUtf8());
 
     if (!basePath.endsWith(QLatin1Char('/')))
         basePath.append(QLatin1Char('/'));
@@ -259,10 +317,8 @@ QString WebDavBackend::relativePathFromHref(const QString &href, const QUrl &req
     return relative;
 }
 
-QList<RemoteEntry> WebDavBackend::parseMultiStatus(const QByteArray &xml,
-                                                   const QUrl &requestUrl,
-                                                   QString *error,
-                                                   bool includeSelf,
+QList<RemoteEntry> WebDavBackend::parseMultiStatus(const QByteArray &xml, const QUrl &requestUrl,
+                                                   QString *error, bool includeSelf,
                                                    const QString &selfPath,
                                                    const QString &pathPrefix)
 {
@@ -329,8 +385,8 @@ QList<RemoteEntry> WebDavBackend::parseMultiStatus(const QByteArray &xml,
                 if (ok)
                     currentSize = value;
             } else if (name == QLatin1String("getlastmodified")) {
-                currentMtime = PathUtils::parseHttpDate(reader.readElementText())
-                                   .toMSecsSinceEpoch();
+                currentMtime =
+                    PathUtils::parseHttpDate(reader.readElementText()).toMSecsSinceEpoch();
             } else if (name == QLatin1String("getetag")) {
                 currentEtag = reader.readElementText().trimmed();
             } else if (name == QLatin1String("status") && inPropstat) {
@@ -367,8 +423,7 @@ QList<RemoteEntry> WebDavBackend::parseMultiStatus(const QByteArray &xml,
     return entries;
 }
 
-bool WebDavBackend::listDirectory(const QString &path, QList<RemoteEntry> *entries,
-                                  QString *error)
+bool WebDavBackend::listDirectory(const QString &path, QList<RemoteEntry> *entries, QString *error)
 {
     int status = 0;
     QByteArray body;
@@ -385,8 +440,8 @@ bool WebDavBackend::listDirectory(const QString &path, QList<RemoteEntry> *entri
     }
 
     QString parseError;
-    const QList<RemoteEntry> parsed = parseMultiStatus(
-        body, PathUtils::remoteUrl(m_baseUrl, path), &parseError, false, {}, path);
+    const QList<RemoteEntry> parsed =
+        parseMultiStatus(body, PathUtils::remoteUrl(m_baseUrl, path), &parseError, false, {}, path);
     if (!parseError.isEmpty()) {
         if (error)
             *error = parseError;
@@ -411,7 +466,7 @@ bool WebDavBackend::scan(QList<RemoteEntry> *entries, QString *error,
             *error = QObject::tr("WebDAV 地址无效");
         return false;
     }
-    QStringList directories {QString()};
+    QStringList directories{QString()};
     QSet<QString> seen;
     for (int index = 0; index < directories.size(); ++index) {
         if (cancelled && cancelled()) {
@@ -442,8 +497,7 @@ bool WebDavBackend::scan(QList<RemoteEntry> *entries, QString *error,
     return true;
 }
 
-bool WebDavBackend::stat(const QString &path, RemoteEntry *entry, bool *exists,
-                         QString *error)
+bool WebDavBackend::stat(const QString &path, RemoteEntry *entry, bool *exists, QString *error)
 {
     if (exists)
         *exists = false;
@@ -465,8 +519,8 @@ bool WebDavBackend::stat(const QString &path, RemoteEntry *entry, bool *exists,
         return false;
     }
     QString parseError;
-    const QList<RemoteEntry> parsed = parseMultiStatus(
-        body, PathUtils::remoteUrl(m_baseUrl, path), &parseError, true, path, {});
+    const QList<RemoteEntry> parsed =
+        parseMultiStatus(body, PathUtils::remoteUrl(m_baseUrl, path), &parseError, true, path, {});
     if (!parseError.isEmpty()) {
         if (error)
             *error = parseError;
@@ -481,104 +535,138 @@ bool WebDavBackend::stat(const QString &path, RemoteEntry *entry, bool *exists,
     return true;
 }
 
-bool WebDavBackend::download(const QString &path, const QString &localFile,
-                             DownloadResult *result, QString *error,
-                             const CancelledCallback &cancelled)
+bool WebDavBackend::download(const QString &path, const QString &localFile, DownloadResult *result,
+                             QString *error, const CancelledCallback &cancelled)
 {
-    QNetworkRequest request = requestFor(path);
-    QNetworkReply *reply = m_network.get(request);
-
-    QSaveFile file(localFile);
-    if (!file.open(QIODevice::WriteOnly)) {
-        reply->abort();
-        reply->deleteLater();
+    QTemporaryFile temporary(QDir::tempPath() + QStringLiteral("/nutsync-download-XXXXXX"));
+    if (!temporary.open()) {
         if (error)
-            *error = QObject::tr("无法写入本地文件“%1”：%2")
-                         .arg(localFile, file.errorString());
+            *error = QObject::tr("无法创建下载临时文件：%1").arg(temporary.errorString());
         return false;
     }
 
-    qint64 written = 0;
-    bool writeError = false;
-    QString writeErrorString;
-    QEventLoop loop;
-    QTimer cancelTimer;
-    cancelTimer.setInterval(200);
-
-    QObject::connect(reply, &QNetworkReply::readyRead, &loop, [&]() {
+    QString etag;
+    QDateTime lastModified;
+    for (int attempt = 0;; ++attempt) {
         if (cancelled && cancelled()) {
-            reply->abort();
-            return;
+            if (error)
+                *error = QObject::tr("同步已取消");
+            return false;
         }
-        const QByteArray data = reply->readAll();
-        if (!data.isEmpty() && file.write(data) != data.size()) {
-            writeError = true;
-            writeErrorString = file.errorString();
-            reply->abort();
-            return;
+        temporary.flush();
+        qint64 offset = temporary.size();
+        if (!temporary.seek(offset)) {
+            if (error)
+                *error = QObject::tr("无法写入下载临时文件：%1").arg(temporary.errorString());
+            return false;
         }
-        written += data.size();
-    });
-    QObject::connect(&cancelTimer, &QTimer::timeout, &loop, [&]() {
-        if (cancelled && cancelled())
-            reply->abort();
-    });
-    QObject::connect(reply, &QNetworkReply::finished, &loop, &QEventLoop::quit);
-    cancelTimer.start();
-    loop.exec();
-    cancelTimer.stop();
 
-    const QByteArray remaining = reply->readAll();
-    if (!remaining.isEmpty()) {
-        const qint64 remainingWritten = file.write(remaining);
-        if (remainingWritten != remaining.size()) {
-            writeError = true;
-            writeErrorString = file.errorString();
+        QNetworkRequest request = requestFor(path);
+        if (offset > 0) {
+            request.setRawHeader("Range", "bytes=" + QByteArray::number(offset) + "-");
         }
-        written += remainingWritten;
-    }
+        QNetworkReply *reply = m_network.get(request);
+        bool writeError = false;
+        QString writeErrorString;
 
-    const int status = statusCode(reply);
-    const auto networkError = reply->error();
-    const QString networkErrorString = reply->errorString();
-    const QString etag = PathUtils::normalizeEtag(
-        QString::fromLatin1(reply->rawHeader("ETag")));
-    const qint64 contentLength =
-        reply->header(QNetworkRequest::ContentLengthHeader).toLongLong();
-    const QDateTime lastModified = PathUtils::parseHttpDate(
-        QString::fromLatin1(reply->rawHeader("Last-Modified")));
-    reply->deleteLater();
+        auto consume = [&](const QByteArray &data) {
+            if (data.isEmpty() || writeError)
+                return;
+            if (statusCode(reply) == 200 && offset > 0) {
+                if (!temporary.resize(0) || !temporary.seek(0)) {
+                    writeError = true;
+                    writeErrorString = temporary.errorString();
+                    reply->abort();
+                    return;
+                }
+                offset = 0;
+            }
+            if (temporary.write(data) != data.size()) {
+                writeError = true;
+                writeErrorString = temporary.errorString();
+                reply->abort();
+            }
+        };
 
-    if (writeError) {
-        file.cancelWriting();
-        if (error)
-            *error = QObject::tr("写入本地文件失败：%1").arg(writeErrorString);
-        return false;
-    }
-    if (status != 200) {
-        file.cancelWriting();
+        QEventLoop loop;
+        QTimer cancelTimer;
+        cancelTimer.setInterval(200);
+        QObject::connect(reply, &QNetworkReply::readyRead, &loop, [&]() {
+            if (cancelled && cancelled()) {
+                reply->abort();
+                return;
+            }
+            consume(reply->readAll());
+        });
+        QObject::connect(&cancelTimer, &QTimer::timeout, &loop, [&]() {
+            if (cancelled && cancelled())
+                reply->abort();
+        });
+        QObject::connect(reply, &QNetworkReply::finished, &loop, &QEventLoop::quit);
+        cancelTimer.start();
+        loop.exec();
+        cancelTimer.stop();
+        consume(reply->readAll());
+
+        const int status = statusCode(reply);
+        const auto networkError = reply->error();
+        const QString networkErrorString = reply->errorString();
+        const int retryAfter = retryAfterDelayMs(reply);
+        etag = PathUtils::normalizeEtag(QString::fromLatin1(reply->rawHeader("ETag")));
+        lastModified =
+            PathUtils::parseHttpDate(QString::fromLatin1(reply->rawHeader("Last-Modified")));
+        reply->deleteLater();
+
+        if (writeError) {
+            if (error)
+                *error = QObject::tr("写入本地文件失败：%1").arg(writeErrorString);
+            return false;
+        }
+        if (cancelled && cancelled()) {
+            if (error)
+                *error = QObject::tr("同步已取消");
+            return false;
+        }
+        if ((status == 200 || status == 206) && networkError == QNetworkReply::NoError)
+            break;
+        if (retryableFailure(status, networkError) && attempt < m_options.retryCount
+            && waitBeforeRetry(attempt, retryAfter, m_options.retryBaseDelayMs,
+                               m_options.retryMaxDelayMs, cancelled)) {
+            continue;
+        }
         if (error) {
             *error = status == 0
                 ? QObject::tr("下载失败：%1").arg(networkErrorString)
-                : QObject::tr("下载失败：%1").arg(statusText(status));
+                : QObject::tr("下载失败：%1").arg(httpError(status, {}, statusText(status)));
         }
         return false;
     }
-    if (networkError != QNetworkReply::NoError && networkError != QNetworkReply::OperationCanceledError) {
-        file.cancelWriting();
+
+    temporary.flush();
+    if (!temporary.seek(0)) {
         if (error)
-            *error = QObject::tr("下载失败：%1").arg(networkErrorString);
+            *error = QObject::tr("无法读取下载临时文件：%1").arg(temporary.errorString());
         return false;
     }
-    if (cancelled && cancelled()) {
-        file.cancelWriting();
+    QSaveFile output(localFile);
+    if (!output.open(QIODevice::WriteOnly)) {
         if (error)
-            *error = QObject::tr("同步已取消");
+            *error = QObject::tr("无法写入本地文件“%1”：%2").arg(localFile, output.errorString());
         return false;
     }
-    if (!file.commit()) {
+    while (!temporary.atEnd()) {
+        const QByteArray chunk = temporary.read(1024 * 1024);
+        if (chunk.isEmpty())
+            break;
+        if (output.write(chunk) != chunk.size()) {
+            if (error)
+                *error = QObject::tr("写入本地文件失败：%1").arg(output.errorString());
+            return false;
+        }
+    }
+    if (!output.commit()) {
         if (error)
-            *error = QObject::tr("保存下载文件失败：%1").arg(file.errorString());
+            *error = QObject::tr("保存下载文件失败：%1").arg(output.errorString());
         return false;
     }
 
@@ -587,9 +675,8 @@ bool WebDavBackend::download(const QString &path, const QString &localFile,
         if (local.open(QIODevice::ReadWrite))
             local.setFileTime(lastModified, QFileDevice::FileModificationTime);
     }
-
     if (result) {
-        result->size = contentLength >= 0 ? contentLength : written;
+        result->size = temporary.size();
         result->mtimeMs = lastModified.isValid() ? lastModified.toMSecsSinceEpoch() : 0;
         result->etag = etag;
     }
@@ -608,76 +695,104 @@ bool WebDavBackend::upload(const QString &localFile, const QString &path,
     QFile file(localFile);
     if (!file.open(QIODevice::ReadOnly)) {
         if (error)
-            *error = QObject::tr("无法读取本地文件“%1”：%2")
-                         .arg(localFile, file.errorString());
+            *error = QObject::tr("无法读取本地文件“%1”：%2").arg(localFile, file.errorString());
         return false;
     }
 
-    QNetworkRequest request = requestFor(path);
-    request.setHeader(QNetworkRequest::ContentLengthHeader, file.size());
-    request.setHeader(QNetworkRequest::ContentTypeHeader,
-                      QStringLiteral("application/octet-stream"));
-    if (!expectedEtag.isEmpty()) {
-        if (expectedEtag == QLatin1String("*"))
-            request.setRawHeader("If-None-Match", "*");
-        else
-            request.setRawHeader("If-Match", expectedEtag.toUtf8());
+    for (int attempt = 0;; ++attempt) {
+        if (cancelled && cancelled()) {
+            if (error)
+                *error = QObject::tr("同步已取消");
+            return false;
+        }
+        if (!file.seek(0)) {
+            if (error)
+                *error = QObject::tr("无法读取本地文件“%1”：%2").arg(localFile, file.errorString());
+            return false;
+        }
+
+        QNetworkRequest request = requestFor(path);
+        request.setHeader(QNetworkRequest::ContentLengthHeader, file.size());
+        request.setHeader(QNetworkRequest::ContentTypeHeader,
+                          QStringLiteral("application/octet-stream"));
+        if (!expectedEtag.isEmpty()) {
+            if (expectedEtag == QLatin1String("*"))
+                request.setRawHeader("If-None-Match", "*");
+            else
+                request.setRawHeader("If-Match", expectedEtag.toUtf8());
+        }
+
+        QNetworkReply *reply = m_network.put(request, &file);
+        QEventLoop loop;
+        QTimer cancelTimer;
+        cancelTimer.setInterval(200);
+        QObject::connect(reply, &QNetworkReply::finished, &loop, &QEventLoop::quit);
+        QObject::connect(&cancelTimer, &QTimer::timeout, &loop, [&]() {
+            if (cancelled && cancelled())
+                reply->abort();
+        });
+        cancelTimer.start();
+        loop.exec();
+        cancelTimer.stop();
+
+        const int status = statusCode(reply);
+        const QByteArray body = reply->readAll();
+        const int retryAfter = retryAfterDelayMs(reply);
+        const auto networkError = reply->error();
+        const QString networkErrorString = reply->errorString();
+        reply->deleteLater();
+
+        if (status >= 200 && status < 300 && networkError == QNetworkReply::NoError)
+            return true;
+        if (retryableFailure(status, networkError) && attempt < m_options.retryCount
+            && waitBeforeRetry(attempt, retryAfter, m_options.retryBaseDelayMs,
+                               m_options.retryMaxDelayMs, cancelled)) {
+            continue;
+        }
+        if (error) {
+            *error = status == 0
+                ? QObject::tr("上传失败：%1").arg(networkErrorString)
+                : QObject::tr("上传失败：%1").arg(httpError(status, body, statusText(status)));
+        }
+        return false;
     }
-
-    QNetworkReply *reply = m_network.put(request, &file);
-    QEventLoop loop;
-    QTimer cancelTimer;
-    cancelTimer.setInterval(200);
-    QObject::connect(reply, &QNetworkReply::finished, &loop, &QEventLoop::quit);
-    QObject::connect(&cancelTimer, &QTimer::timeout, &loop, [&]() {
-        if (cancelled && cancelled())
-            reply->abort();
-    });
-    cancelTimer.start();
-    loop.exec();
-    cancelTimer.stop();
-
-    const int status = statusCode(reply);
-    const QByteArray body = reply->readAll();
-    const QString networkError = reply->errorString();
-    reply->deleteLater();
-
-    if (status >= 200 && status < 300)
-        return true;
-    if (error) {
-        *error = status == 0
-            ? QObject::tr("上传失败：%1").arg(networkError)
-            : QObject::tr("上传失败：%1").arg(httpError(status, body, statusText(status)));
-    }
-    return false;
 }
 
 bool WebDavBackend::makeDirectory(const QString &path, QString *error)
 {
-    QNetworkRequest request = requestFor(path);
-    QNetworkReply *reply = m_network.sendCustomRequest(request, "MKCOL");
-    QEventLoop loop;
-    QObject::connect(reply, &QNetworkReply::finished, &loop, &QEventLoop::quit);
-    loop.exec();
+    for (int attempt = 0;; ++attempt) {
+        QNetworkRequest request = requestFor(path);
+        QNetworkReply *reply = m_network.sendCustomRequest(request, "MKCOL");
+        QEventLoop loop;
+        QObject::connect(reply, &QNetworkReply::finished, &loop, &QEventLoop::quit);
+        loop.exec();
 
-    const int status = statusCode(reply);
-    const QByteArray body = reply->readAll();
-    const QString networkError = reply->errorString();
-    reply->deleteLater();
+        const int status = statusCode(reply);
+        const QByteArray body = reply->readAll();
+        const int retryAfter = retryAfterDelayMs(reply);
+        const auto networkError = reply->error();
+        const QString networkErrorString = reply->errorString();
+        reply->deleteLater();
 
-    if (isSuccessStatus(status) || status == 405)
-        return true;
-    if (status == 0) {
-        if (error)
-            *error = QObject::tr("创建远程目录失败：%1").arg(networkError);
+        if (isSuccessStatus(status) || status == 405)
+            return true;
+        if (retryableFailure(status, networkError) && attempt < m_options.retryCount
+            && waitBeforeRetry(attempt, retryAfter, m_options.retryBaseDelayMs,
+                               m_options.retryMaxDelayMs, {})) {
+            continue;
+        }
+        if (status == 0) {
+            if (error)
+                *error = QObject::tr("创建远程目录失败：%1").arg(networkErrorString);
+            return false;
+        }
+        if (error) {
+            *error = QObject::tr("创建远程目录“%1”失败：%2")
+                         .arg(path.isEmpty() ? QStringLiteral("/") : path,
+                              httpError(status, body, statusText(status)));
+        }
         return false;
     }
-    if (error) {
-        *error = QObject::tr("创建远程目录“%1”失败：%2")
-                     .arg(path.isEmpty() ? QStringLiteral("/") : path,
-                          httpError(status, body, statusText(status)));
-    }
-    return false;
 }
 
 bool WebDavBackend::remove(const QString &path, bool recursive, const QString &expectedEtag,
@@ -689,33 +804,47 @@ bool WebDavBackend::remove(const QString &path, bool recursive, const QString &e
             *error = QObject::tr("同步已取消");
         return false;
     }
-    QNetworkRequest request = requestFor(path);
-    if (!expectedEtag.isEmpty() && expectedEtag != QLatin1String("*"))
-        request.setRawHeader("If-Match", expectedEtag.toUtf8());
+    for (int attempt = 0;; ++attempt) {
+        if (cancelled && cancelled()) {
+            if (error)
+                *error = QObject::tr("同步已取消");
+            return false;
+        }
+        QNetworkRequest request = requestFor(path);
+        if (!expectedEtag.isEmpty() && expectedEtag != QLatin1String("*"))
+            request.setRawHeader("If-Match", expectedEtag.toUtf8());
 
-    QNetworkReply *reply = m_network.deleteResource(request);
-    QEventLoop loop;
-    QObject::connect(reply, &QNetworkReply::finished, &loop, &QEventLoop::quit);
-    loop.exec();
+        QNetworkReply *reply = m_network.deleteResource(request);
+        QEventLoop loop;
+        QObject::connect(reply, &QNetworkReply::finished, &loop, &QEventLoop::quit);
+        loop.exec();
 
-    const int status = statusCode(reply);
-    const QByteArray body = reply->readAll();
-    const QString networkError = reply->errorString();
-    reply->deleteLater();
+        const int status = statusCode(reply);
+        const QByteArray body = reply->readAll();
+        const int retryAfter = retryAfterDelayMs(reply);
+        const auto networkError = reply->error();
+        const QString networkErrorString = reply->errorString();
+        reply->deleteLater();
 
-    if (status == 404 || isSuccessStatus(status))
-        return true;
-    if (status == 0) {
-        if (error)
-            *error = QObject::tr("删除远程路径失败：%1").arg(networkError);
+        if (status == 404 || isSuccessStatus(status))
+            return true;
+        if (retryableFailure(status, networkError) && attempt < m_options.retryCount
+            && waitBeforeRetry(attempt, retryAfter, m_options.retryBaseDelayMs,
+                               m_options.retryMaxDelayMs, cancelled)) {
+            continue;
+        }
+        if (status == 0) {
+            if (error)
+                *error = QObject::tr("删除远程路径失败：%1").arg(networkErrorString);
+            return false;
+        }
+        if (error) {
+            *error = QObject::tr("删除远程路径“%1”失败：%2")
+                         .arg(path.isEmpty() ? QStringLiteral("/") : path,
+                              httpError(status, body, statusText(status)));
+        }
         return false;
     }
-    if (error) {
-        *error = QObject::tr("删除远程路径“%1”失败：%2")
-                     .arg(path.isEmpty() ? QStringLiteral("/") : path,
-                          httpError(status, body, statusText(status)));
-    }
-    return false;
 }
 
 } // namespace NutSync

@@ -105,8 +105,7 @@ QUrl remoteUrl(const QUrl &base, const QString &relativePath)
     return url;
 }
 
-QString conflictRelativePath(const QString &relativePath, const QDateTime &timestamp,
-                             int attempt)
+QString conflictRelativePath(const QString &relativePath, const QDateTime &timestamp, int attempt)
 {
     const QString date = timestamp.toUTC().toString(QStringLiteral("yyyyMMdd-HHmmss"));
     const QString parent = parentPath(relativePath);
@@ -159,9 +158,9 @@ QString formatBytes(qint64 bytes)
 {
     if (bytes < 0)
         return QStringLiteral("—");
-    static const QStringList units = {
-        QStringLiteral("B"), QStringLiteral("KiB"), QStringLiteral("MiB"),
-        QStringLiteral("GiB"), QStringLiteral("TiB")};
+    static const QStringList units = {QStringLiteral("B"), QStringLiteral("KiB"),
+                                      QStringLiteral("MiB"), QStringLiteral("GiB"),
+                                      QStringLiteral("TiB")};
     double value = static_cast<double>(bytes);
     int unit = 0;
     while (value >= 1024.0 && unit + 1 < units.size()) {

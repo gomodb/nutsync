@@ -48,8 +48,8 @@ private:
     void readEvents();
     void emitChange();
     void markDirty();
-    bool addDirectory(const QString &absolutePath, const QString &relativePath,
-                      QString *error, bool isRoot);
+    bool addDirectory(const QString &absolutePath, const QString &relativePath, QString *error,
+                      bool isRoot);
     void removeWatchesUnder(const QString &absolutePrefix);
     QString relativePathFor(const QString &absolutePath) const;
     void reportError(const QString &message);

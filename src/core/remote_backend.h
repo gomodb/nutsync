@@ -36,14 +36,11 @@ public:
     virtual bool testConnection(QString *error) = 0;
     virtual bool scan(QList<RemoteEntry> *entries, QString *error,
                       const CancelledCallback &cancelled) = 0;
-    virtual bool stat(const QString &path, RemoteEntry *entry, bool *exists,
-                      QString *error) = 0;
-    virtual bool download(const QString &path, const QString &localFile,
-                          DownloadResult *result, QString *error,
-                          const CancelledCallback &cancelled) = 0;
-    virtual bool upload(const QString &localFile, const QString &path,
-                        const QString &expectedEtag, QString *error,
-                        const CancelledCallback &cancelled) = 0;
+    virtual bool stat(const QString &path, RemoteEntry *entry, bool *exists, QString *error) = 0;
+    virtual bool download(const QString &path, const QString &localFile, DownloadResult *result,
+                          QString *error, const CancelledCallback &cancelled) = 0;
+    virtual bool upload(const QString &localFile, const QString &path, const QString &expectedEtag,
+                        QString *error, const CancelledCallback &cancelled) = 0;
     virtual bool makeDirectory(const QString &path, QString *error) = 0;
     virtual bool remove(const QString &path, bool recursive, const QString &expectedEtag,
                         QString *error, const CancelledCallback &cancelled) = 0;

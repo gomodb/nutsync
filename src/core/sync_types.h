@@ -86,8 +86,7 @@ struct SyncPair
 
     bool isValid() const
     {
-        return !id.isEmpty() && !name.isEmpty() && !localPath.isEmpty()
-            && !remoteUrl.isEmpty();
+        return !id.isEmpty() && !name.isEmpty() && !localPath.isEmpty() && !remoteUrl.isEmpty();
     }
 };
 

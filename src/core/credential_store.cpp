@@ -15,8 +15,7 @@ namespace NutSync {
 
 namespace {
 #ifdef NUTSYNC_HAVE_KEYCHAIN
-template<typename Job>
-bool runJob(Job &job, QString *error)
+template<typename Job> bool runJob(Job &job, QString *error)
 {
     QEventLoop loop;
     bool finished = false;
@@ -35,8 +34,8 @@ bool runJob(Job &job, QString *error)
     }
     return true;
 }
-QString readPasswordFromService(const QString &service, const QString &key,
-                                bool *found, QString *error)
+QString readPasswordFromService(const QString &service, const QString &key, bool *found,
+                                QString *error)
 {
     QKeychain::ReadPasswordJob job(service);
     job.setKey(key);
@@ -95,8 +94,8 @@ QString CredentialStore::readPassword(const QString &key, QString *error) const
 
     QString legacyError;
     bool legacyFound = false;
-    const QString legacyPassword = readPasswordFromService(
-        legacyServiceName(), key, &legacyFound, &legacyError);
+    const QString legacyPassword =
+        readPasswordFromService(legacyServiceName(), key, &legacyFound, &legacyError);
     if (legacyFound) {
         if (!legacyPassword.isEmpty()) {
             QString migrationError;

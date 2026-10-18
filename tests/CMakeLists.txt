@@ -4,6 +4,8 @@ add_executable(nutsync_tests
     test_autostart.h
     test_config_store.cpp
     test_config_store.h
+    test_credential_store.cpp
+    test_credential_store.h
     test_language.cpp
     test_language.h
     test_network_security.cpp
@@ -12,6 +14,8 @@ add_executable(nutsync_tests
     test_local_change_monitor.h
     test_rate_limiter.cpp
     test_rate_limiter.h
+    test_retry_policy.cpp
+    test_retry_policy.h
     mock_remote_backend.cpp
     mock_remote_backend.h
     test_path_utils.cpp

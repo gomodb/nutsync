@@ -15,17 +15,14 @@ public:
     bool testConnection(QString *error) override;
     bool scan(QList<RemoteEntry> *entries, QString *error,
               const CancelledCallback &cancelled) override;
-    bool stat(const QString &path, RemoteEntry *entry, bool *exists,
-              QString *error) override;
-    bool download(const QString &path, const QString &localFile,
-                  DownloadResult *result, QString *error,
-                  const CancelledCallback &cancelled) override;
-    bool upload(const QString &localFile, const QString &path,
-                const QString &expectedEtag, QString *error,
-                const CancelledCallback &cancelled) override;
-    bool makeDirectory(const QString &path, QString *error) override;
-    bool remove(const QString &path, bool recursive, const QString &expectedEtag,
+    bool stat(const QString &path, RemoteEntry *entry, bool *exists, QString *error) override;
+    bool download(const QString &path, const QString &localFile, DownloadResult *result,
+                  QString *error, const CancelledCallback &cancelled) override;
+    bool upload(const QString &localFile, const QString &path, const QString &expectedEtag,
                 QString *error, const CancelledCallback &cancelled) override;
+    bool makeDirectory(const QString &path, QString *error) override;
+    bool remove(const QString &path, bool recursive, const QString &expectedEtag, QString *error,
+                const CancelledCallback &cancelled) override;
 
     QString root() const;
     QString absolutePath(const QString &relativePath) const;

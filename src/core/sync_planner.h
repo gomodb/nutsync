@@ -13,8 +13,7 @@ class SyncPlanner
 public:
     static SyncPlan build(const QMap<QString, LocalEntry> &local,
                           const QMap<QString, RemoteEntry> &remote,
-                          const QHash<QString, StateEntry> &state,
-                          bool syncLocalDeletions = true);
+                          const QHash<QString, StateEntry> &state, bool syncLocalDeletions = true);
 
     static bool localUnchanged(const LocalEntry &local, const StateEntry &state);
     static bool remoteUnchanged(const RemoteEntry &remote, const StateEntry &state);

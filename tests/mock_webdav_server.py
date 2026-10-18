@@ -24,6 +24,10 @@ ROOT = Path(".")
 MOUNT = "/dav"
 AUTH = None
 VERBOSE = False
+FAIL_FIRST = 0
+REQUEST_COUNT = 0
+TRUNCATE_FIRST_GET = False
+GET_COUNT = 0
 
 
 def local_path(url_path: str) -> Path | None:
@@ -141,8 +145,18 @@ class Handler(BaseHTTPRequestHandler):
         if self.command != "HEAD":
             self.wfile.write(body)
 
+    def _maybe_transient_failure(self) -> bool:
+        global REQUEST_COUNT
+        REQUEST_COUNT += 1
+        if REQUEST_COUNT <= FAIL_FIRST:
+            self._send_bytes(503, b"retry", "text/plain", {"Retry-After": "0"})
+            return True
+        return False
+
     def do_PROPFIND(self) -> None:
         self._read_body()
+        if self._maybe_transient_failure():
+            return
         if not self._require_auth():
             return
         target = self._target()
@@ -164,6 +178,8 @@ class Handler(BaseHTTPRequestHandler):
                          {"DAV": "1, 2"})
 
     def do_GET(self) -> None:
+        global GET_COUNT
+        GET_COUNT += 1
         if not self._require_auth():
             return
         target = self._target()
@@ -172,10 +188,39 @@ class Handler(BaseHTTPRequestHandler):
             return
         data = target.read_bytes()
         stat = target.stat()
-        self._send_bytes(200, data, "application/octet-stream", {
-            "ETag": etag_for(target),
-            "Last-Modified": email.utils.formatdate(stat.st_mtime, usegmt=True),
-        })
+        etag = etag_for(target)
+        last_modified = email.utils.formatdate(stat.st_mtime, usegmt=True)
+        range_header = self.headers.get("Range", "")
+        start = 0
+        if range_header.startswith("bytes="):
+            try:
+                start = int(range_header[6:].split("-", 1)[0])
+            except ValueError:
+                start = 0
+        if start >= len(data):
+            self._send_bytes(416, b"range not satisfiable", "text/plain")
+            return
+        body = data[start:]
+        status = 206 if start > 0 else 200
+        headers = {
+            "ETag": etag,
+            "Last-Modified": last_modified,
+            "Accept-Ranges": "bytes",
+        }
+        if start > 0:
+            headers["Content-Range"] = f"bytes {start}-{len(data) - 1}/{len(data)}"
+        if TRUNCATE_FIRST_GET and GET_COUNT == 1 and len(body) > 1:
+            self.send_response(200)
+            self.send_header("Content-Type", "application/octet-stream")
+            self.send_header("Content-Length", str(len(body)))
+            for key, value in headers.items():
+                self.send_header(key, value)
+            self.end_headers()
+            self.wfile.write(body[: max(1, len(body) // 2)])
+            self.wfile.flush()
+            self.close_connection = True
+            return
+        self._send_bytes(status, body, "application/octet-stream", headers)
 
     def do_HEAD(self) -> None:
         self.do_GET()
@@ -251,18 +296,22 @@ class Handler(BaseHTTPRequestHandler):
 
 
 def main() -> int:
-    global ROOT, AUTH, VERBOSE
+    global ROOT, AUTH, VERBOSE, FAIL_FIRST, TRUNCATE_FIRST_GET
     parser = argparse.ArgumentParser()
     parser.add_argument("--root", required=True)
     parser.add_argument("--port", type=int, default=0)
     parser.add_argument("--user")
     parser.add_argument("--password")
     parser.add_argument("--verbose", action="store_true")
+    parser.add_argument("--fail-first", type=int, default=0)
+    parser.add_argument("--truncate-first-get", action="store_true")
     args = parser.parse_args()
 
     ROOT = Path(args.root).resolve()
     ROOT.mkdir(parents=True, exist_ok=True)
     VERBOSE = args.verbose
+    FAIL_FIRST = max(0, args.fail_first)
+    TRUNCATE_FIRST_GET = args.truncate_first_get
     if args.user is not None:
         AUTH = (args.user, args.password or "")
 
