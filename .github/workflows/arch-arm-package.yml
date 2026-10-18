@@ -24,6 +24,8 @@ jobs:
           set +e
           uname -m
           sed -i 's|^Server = http://|Server = https://|' /etc/pacman.d/mirrorlist
+          sed -i 's/^#DisableSandboxFilesystem/DisableSandboxFilesystem/' /etc/pacman.conf
+          sed -i 's/^#DisableSandboxSyscalls/DisableSandboxSyscalls/' /etc/pacman.conf
           pacman-key --init
           pacman-key --populate archlinuxarm
           pacman -Syu --noconfirm > /tmp/syu.log 2>&1
