@@ -278,6 +278,10 @@ find src tests -type f \( -name '*.cpp' -o -name '*.h' \) -print0 \
 
 代理与 CA 设置重启后生效，日志级别立即生效。
 
+## 打包状态
+
+当前构建产物和 AUR/Arch Linux ARM 阻塞条件见 [docs/packaging-status.md](docs/packaging-status.md)。
+
 ## 诊断信息
 
 “帮助 → 导出诊断信息”会生成文本报告，包含 NutSync/Qt 版本、系统、架构、语言、脱敏后的设置、同步对摘要和日志尾部。密码、用户名、远程 URL 路径和代理凭据会被隐藏。分享前请检查日志尾部，其中可能包含本地路径或服务器错误文本。

@@ -280,6 +280,10 @@ Network options are available in **Preferences → Network**:
 
 Proxy and CA changes take effect after restart. The log level is applied immediately.
 
+## Packaging status
+
+See [docs/packaging-status.md](docs/packaging-status.md) for current artifacts and the AUR/Arch Linux ARM blockers.
+
 ## Diagnostics
 
 **Help → Export diagnostics** writes a text report with the NutSync/Qt versions, OS, architecture, locale, sanitized settings, per-pair summary, and the tail of the log. Passwords, usernames, remote URL paths, and proxy credentials are redacted. Review the log tail before sharing it, since it may contain local paths or server error text.
