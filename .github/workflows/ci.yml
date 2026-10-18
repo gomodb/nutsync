@@ -29,7 +29,8 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends \
             cmake ninja-build g++ python3 \
-            qt6-base-dev libqt6sql6-sqlite
+            qt6-base-dev libqt6sql6-sqlite \
+            appstream desktop-file-utils
 
       - name: Configure
         run: >
@@ -54,6 +55,14 @@ jobs:
 
       - name: Test
         run: ctest --test-dir build --output-on-failure
+
+      - name: Install smoke test
+        run: |
+          DESTDIR="$RUNNER_TEMP/install" cmake --install build --prefix /usr
+          QT_QPA_PLATFORM=offscreen "$RUNNER_TEMP/install/usr/bin/nutsync" --version
+          desktop-file-validate "$RUNNER_TEMP/install/usr/share/applications/"*.desktop
+          appstreamcli validate --no-net "$RUNNER_TEMP/install/usr/share/metainfo/"*.xml
+          test -f "$RUNNER_TEMP/install/usr/share/licenses/nutsync/LICENSE"
 
       - name: Upload test log on failure
         if: failure()
@@ -109,6 +118,64 @@ jobs:
           name: arch-test-log
           path: build/Testing/Temporary/LastTest.log
           if-no-files-found: ignore
+
+  clang-build:
+    name: Clang / Ubuntu 24.04
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            build-essential clang cmake ninja-build python3 \
+            qt6-base-dev libqt6sql6-sqlite
+
+      - name: Configure
+        run: |
+          cmake -S . -B build -G Ninja \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_CXX_COMPILER=clang++ \
+            -DBUILD_TESTING=ON
+
+      - name: Build
+        run: cmake --build build --parallel
+
+      - name: Test
+        run: ctest --test-dir build --output-on-failure
+
+  sanitizers:
+    name: ASan + UBSan
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            build-essential cmake ninja-build python3 \
+            qt6-base-dev libqt6sql6-sqlite
+
+      - name: Configure
+        run: |
+          cmake -S . -B build -G Ninja \
+            -DCMAKE_BUILD_TYPE=Debug \
+            -DCMAKE_CXX_FLAGS="-fsanitize=address,undefined -fno-omit-frame-pointer" \
+            -DCMAKE_EXE_LINKER_FLAGS="-fsanitize=address,undefined" \
+            -DBUILD_TESTING=ON
+
+      - name: Build
+        run: cmake --build build --parallel
+
+      - name: Test
+        env:
+          ASAN_OPTIONS: detect_leaks=0:abort_on_error=1
+          UBSAN_OPTIONS: halt_on_error=1:print_stacktrace=1
+        run: ctest --test-dir build --output-on-failure
 
   metadata:
     name: Desktop and AppStream metadata
@@ -200,3 +267,33 @@ jobs:
           name: nutsync-arch-package
           path: packaging/arch/nutsync-[0-9]*.pkg.tar.zst
           if-no-files-found: error
+  release:
+    name: GitHub Release
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: aur-package
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Download AUR package
+        uses: actions/download-artifact@v7
+        with:
+          name: nutsync-arch-package
+          path: dist
+
+      - name: Create or update release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cd dist
+          sha256sum *.pkg.tar.zst > SHA256SUMS
+          if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
+            gh release upload "$GITHUB_REF_NAME" ./*.pkg.tar.zst SHA256SUMS --clobber
+          else
+            gh release create "$GITHUB_REF_NAME" ./*.pkg.tar.zst SHA256SUMS \
+              --title "NutSync $GITHUB_REF_NAME" \
+              --generate-notes
+          fi
