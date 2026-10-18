@@ -151,7 +151,11 @@ makepkg -f
 
 The AUR repository separately contains the `PKGBUILD`, `.SRCINFO`, and the 0BSD packaging license. Application source remains GPL-3.0-or-later; AUR packaging files are 0BSD.
 
-The first AUR release for this version is `0.4.2-1`. For a new release, update `pkgver`, `source`, and `sha256sums`, then run:
+The first AUR release for this version is `0.4.2-1`. The repository is prepared under `~/Projects/nutsync-aur` and expects the AUR SSH key to be registered before the first push.
+
+For automated publishing, configure the repository secret `AUR_SSH_PRIVATE_KEY`, create an `aur` environment, and manually run the **Publish to AUR** workflow with the release tag. The workflow also supports creating the AUR repository on its first push.
+
+For a new release, update `pkgver`, `source`, and `sha256sums`, then run:
 
 ```bash
 makepkg --printsrcinfo > .SRCINFO

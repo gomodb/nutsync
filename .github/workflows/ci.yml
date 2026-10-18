@@ -220,8 +220,9 @@ jobs:
         run: |
           pacman -Syu --noconfirm --needed \
             cmake ninja git python fakeroot namcap sudo curl qt6-tools \
-            qt6-base qt6-svg qtkeychain-qt6 \
-            kstatusnotifieritem knotifications
+            qt6-base qt6-svg qt6-translations qtkeychain-qt6 \
+            kstatusnotifieritem knotifications \
+            appstream desktop-file-utils
 
       - name: Ensure AUR metadata
         run: |
@@ -263,6 +264,15 @@ jobs:
           set -o pipefail
           sudo -u builder makepkg -f --noconfirm 2>&1 | tee aur-build.log
 
+
+      - name: Install package smoke test
+        run: |
+          package="$(find packaging/arch -maxdepth 1 -name 'nutsync-[0-9]*.pkg.tar.zst' | head -n1)"
+          test -n "$package"
+          pacman -U --noconfirm "$package"
+          QT_QPA_PLATFORM=offscreen nutsync --version
+          desktop-file-validate /usr/share/applications/io.github.gomodb.NutSync.desktop
+          appstreamcli validate --no-net /usr/share/metainfo/io.github.gomodb.NutSync.metainfo.xml
 
       - name: Run namcap
         run: |
