@@ -117,12 +117,12 @@ jobs:
           test -n "$target"
           ls -l dist
           if ! gh release view "$target" > /tmp/release-view.log 2>&1; then
-            cat /tmp/release-view.log
+            tail -n 20 /tmp/release-view.log | while IFS= read -r line; do echo "::error::${line}"; done
             exit 1
           fi
           cd dist
           sha256sum *.pkg.tar.* > SHA256SUMS-aarch64
           if ! gh release upload "$target" ./*.pkg.tar.* SHA256SUMS-aarch64 --clobber > /tmp/release-upload.log 2>&1; then
-            cat /tmp/release-upload.log
+            tail -n 20 /tmp/release-upload.log | while IFS= read -r line; do echo "::error::${line}"; done
             exit 1
           fi
