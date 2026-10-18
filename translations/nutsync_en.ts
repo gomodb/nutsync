@@ -844,6 +844,14 @@ Only NutSync's configuration and synchronization baseline are deleted, not local
       <translation>Transfer speed limit</translation>
     </message>
     <message>
+      <source>同时进行的文件上传/下载数量；状态写入仍按顺序执行。</source>
+      <translation>Number of simultaneous file uploads/downloads; state writes remain serialized.</translation>
+    </message>
+    <message>
+      <source>并行传输数</source>
+      <translation>Concurrent transfers</translation>
+    </message>
+    <message>
       <source>失败重试次数</source>
       <translation>Retry attempts</translation>
     </message>
@@ -1358,7 +1366,7 @@ Projects/notes.md</translation>
     </message>
     <message>
       <source>没有需要同步的更改</source>
-      <translation>No changes to sync</translation>
+      <translation type="vanished">No changes to sync</translation>
     </message>
     <message>
       <source>保存冲突记录失败：%1</source>

@@ -46,6 +46,7 @@ public:
     QString pairId() const { return m_pair.id; }
     void setIncludePaths(const QStringList &paths) { m_pair.includePaths = paths; }
     void setSyncMode(SyncMode mode) { m_pair.syncMode = mode; }
+    void setParallelTransfers(int count) { m_parallelTransfers = count; }
 
     bool writeLocal(const QString &relative, const QByteArray &content)
     {
@@ -141,6 +142,7 @@ public:
         engine.setBackendFactory([remote = m_remote]() {
             return std::make_unique<MockRemoteBackend>(remote);
         });
+        engine.setParallelTransfers(m_parallelTransfers);
         SyncSummary result;
         QObject::connect(&engine, &SyncEngine::finished, &engine,
                          [&result](const SyncSummary &summary) {
@@ -169,6 +171,7 @@ private:
     SyncPair m_pair;
     QStringList m_logs;
     qint64 m_clock = 0;
+    int m_parallelTransfers = 1;
 };
 
 } // namespace
@@ -258,6 +261,23 @@ void TestSyncEngine::oneWayModes()
     QCOMPARE(remoteToLocal.readLocal(QStringLiteral("remote.txt")), QByteArray("remote"));
     QVERIFY(!remoteToLocal.existsRemote(QStringLiteral("local.txt")));
     QVERIFY(remoteToLocal.existsLocal(QStringLiteral("local.txt")));
+}
+
+void TestSyncEngine::parallelTransfers()
+{
+    Harness harness;
+    harness.setParallelTransfers(3);
+    for (int i = 0; i < 6; ++i) {
+        QVERIFY(harness.writeLocal(QStringLiteral("file%1.txt").arg(i),
+                                   QStringLiteral("content %1").arg(i).toUtf8()));
+    }
+    const SyncSummary summary = harness.sync(ConflictPolicy::KeepBoth, {}, true);
+    QVERIFY2(summary.success, qPrintable(harness.diagnostics(summary)));
+    QCOMPARE(summary.uploaded, 6);
+    for (int i = 0; i < 6; ++i) {
+        QCOMPARE(harness.readRemote(QStringLiteral("file%1.txt").arg(i)),
+                 QStringLiteral("content %1").arg(i).toUtf8());
+    }
 }
 
 void TestSyncEngine::selectiveSync()

@@ -11,6 +11,7 @@ private slots:
     void basicBidirectionalTransfer();
     void deletedFilesAreBackedUp();
     void selectiveSync();
+    void parallelTransfers();
     void oneWayModes();
     void detectsSubsequentChanges();
     void sameContentMtimeChangeDoesNotUpload();

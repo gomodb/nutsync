@@ -2008,6 +2008,11 @@ void MainWindow::openSettings()
     transferLimit->setSuffix(tr(" KB/s"));
     transferLimit->setValue(m_config.settings.transferLimitKbps);
     networkForm->addRow(tr("传输限速"), transferLimit);
+    auto *parallelTransfers = new QSpinBox(networkGroup);
+    parallelTransfers->setRange(1, 4);
+    parallelTransfers->setValue(m_config.settings.parallelTransfers);
+    parallelTransfers->setToolTip(tr("同时进行的文件上传/下载数量；状态写入仍按顺序执行。"));
+    networkForm->addRow(tr("并行传输数"), parallelTransfers);
     networkForm->addRow(tr("失败重试次数"), retryCount);
     networkForm->addRow(tr("重试最大间隔"), retryDelay);
     layout->addWidget(networkGroup);
@@ -2119,6 +2124,7 @@ void MainWindow::openSettings()
     m_config.settings.retryCount = retryCount->value();
     m_config.settings.retryDelaySeconds = retryDelay->value();
     m_config.settings.transferLimitKbps = transferLimit->value();
+    m_config.settings.parallelTransfers = parallelTransfers->value();
     m_config.settings.notifications = notifications->isChecked();
     m_config.settings.syncOnNetworkRecovery = networkSync->isChecked();
     m_config.settings.closeToTray = closeToTray->isChecked();

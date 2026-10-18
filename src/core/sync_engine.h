@@ -16,6 +16,22 @@ namespace NutSync {
 
 class SyncStateStore;
 
+struct TransferJob
+{
+    int index = 0;
+    SyncAction action;
+    QString localFile;
+    QString expectedEtag;
+    qint64 bytes = 0;
+};
+
+struct TransferOutcome
+{
+    int index = 0;
+    bool success = false;
+    QString error;
+};
+
 class SyncEngine : public QObject
 {
     Q_OBJECT
@@ -28,6 +44,7 @@ public:
     void setBackendFactory(BackendFactory factory);
     void setRetryPolicy(int retryCount, int maxDelayMs);
     void setTransferLimit(int kbps);
+    void setParallelTransfers(int count);
     void requestCancel();
     SyncSummary lastSummary() const;
 
@@ -50,6 +67,10 @@ private:
     bool ensureTrashBatch(QString *error);
     bool includedInScope(const QString &path) const;
     void filterActionsForMode(SyncPlan *plan) const;
+    std::unique_ptr<RemoteBackend> createBackend(QString *error) const;
+    bool prepareTransferJob(const SyncAction &action, int index, TransferJob *job, bool *skipped,
+                            QString *error);
+    void executeTransferBatch(const QList<TransferJob> &jobs, SyncSummary *summary);
     bool localSubtreeStillMatchesSnapshot(const QString &prefix) const;
     bool ensureLocalParent(const QString &relativePath, QString *error) const;
     bool verifyRemoteUnchanged(const SyncAction &action, QString *error,
@@ -78,6 +99,7 @@ private:
     int m_retryBaseDelayMs = 1000;
     int m_retryMaxDelayMs = 30000;
     int m_transferLimitKbps = 0;
+    int m_parallelTransfers = 1;
     QAtomicInt m_cancelled{0};
     QMap<QString, LocalEntry> m_localSnapshot;
     std::unique_ptr<RemoteBackend> m_backend;

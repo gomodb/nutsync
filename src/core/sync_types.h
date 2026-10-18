@@ -141,6 +141,7 @@ struct AppSettings
     int retryCount = 2;
     int retryDelaySeconds = 30;
     int transferLimitKbps = 0;
+    int parallelTransfers = 1;
     bool notifications = true;
     bool closeToTray = true;
     bool autoSyncOnStartup = true;

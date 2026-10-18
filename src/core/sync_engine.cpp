@@ -8,6 +8,7 @@
 #include "core/webdav_backend.h"
 
 #include <QCryptographicHash>
+#include <QtConcurrent>
 #include <QDir>
 #include <QDirIterator>
 #include <QElapsedTimer>
@@ -100,6 +101,11 @@ void SyncEngine::setTransferLimit(int kbps)
     m_transferLimitKbps = qBound(0, kbps, 102400);
 }
 
+void SyncEngine::setParallelTransfers(int count)
+{
+    m_parallelTransfers = qBound(1, count, 4);
+}
+
 void SyncEngine::requestCancel()
 {
     m_cancelled.storeRelaxed(1);
@@ -131,6 +137,160 @@ void SyncEngine::addError(SyncSummary *summary, const QString &message)
         summary->errorDetails.append(message);
     qWarning().noquote() << "[sync]" << message;
     emit logMessage(QStringLiteral("错误：%1").arg(message));
+}
+
+std::unique_ptr<RemoteBackend> SyncEngine::createBackend(QString *error) const
+{
+    if (m_backendFactory) {
+        try {
+            return m_backendFactory();
+        } catch (const std::exception &exception) {
+            if (error)
+                *error = tr("创建远程后端失败：%1").arg(QString::fromUtf8(exception.what()));
+            return {};
+        }
+    }
+
+    if (m_pair.backendType != QLatin1String("webdav")) {
+        if (error)
+            *error = tr("不支持的同步后端类型：%1").arg(m_pair.backendType);
+        return {};
+    }
+    const QUrl url(m_pair.remoteUrl.trimmed());
+    if (!url.isValid() || url.host().isEmpty()
+        || (url.scheme() != QLatin1String("http") && url.scheme() != QLatin1String("https"))) {
+        if (error)
+            *error = tr("WebDAV 地址无效，必须以 http:// 或 https:// 开头");
+        return {};
+    }
+    WebDavOptions options;
+    options.baseUrl = url;
+    options.username = m_pair.username;
+    options.password = m_pair.password;
+    options.retryCount = m_retryCount;
+    options.retryBaseDelayMs = m_retryBaseDelayMs;
+    options.retryMaxDelayMs = m_retryMaxDelayMs;
+    options.transferLimitBytesPerSecond = m_transferLimitKbps * 1024;
+    if (options.username.isEmpty() && !url.userName().isEmpty()) {
+        options.username = url.userName();
+        options.password = url.password();
+    }
+    options.baseUrl.setUserInfo({});
+    return std::make_unique<WebDavBackend>(std::move(options));
+}
+
+bool SyncEngine::prepareTransferJob(const SyncAction &action, int index, TransferJob *job,
+                                    bool *skipped, QString *error)
+{
+    *skipped = false;
+    LocalEntry current;
+    bool exists = false;
+    statLocal(action.path, &current, &exists);
+    if (action.local.isValid()) {
+        if (!exists || current.type != action.local.type
+            || (current.type == EntryType::File
+                && (current.size != action.local.size
+                    || current.mtimeMs != action.local.mtimeMs))) {
+            if (error)
+                *error = tr("本地文件在开始同步后发生变化，将在下次同步处理");
+            return false;
+        }
+    } else if (exists) {
+        if (error)
+            *error = tr("本地路径在开始同步后发生变化，将在下次同步处理");
+        return false;
+    }
+
+    job->index = index;
+    job->action = action;
+    if (action.kind == ActionKind::Upload) {
+        QString etag;
+        if (!verifyRemoteUnchanged(action, error, &etag))
+            return false;
+        const QString absolute = PathUtils::localFilePath(m_pair.localPath, action.path);
+        if (action.remote.isValid()) {
+            QString compareError;
+            const bool equal = contentsEqual(absolute, action.remote, nullptr, &compareError);
+            if (!compareError.isEmpty()) {
+                emitLog(tr("检查远端内容失败，继续上传：%1").arg(compareError), action.path);
+            } else if (equal) {
+                if (!recordSynced(action.path, error))
+                    return false;
+                *skipped = true;
+                return true;
+            }
+        }
+        job->localFile = absolute;
+        job->expectedEtag = action.remote.isValid() ? etag : QStringLiteral("*");
+        job->bytes = action.local.size;
+        emitLog(tr("上传"), action.path);
+    } else {
+        if (!ensureLocalParent(action.path, error))
+            return false;
+        job->localFile = PathUtils::localFilePath(m_pair.localPath, action.path);
+        job->bytes = action.remote.size;
+        emitLog(tr("下载"), action.path);
+    }
+    return true;
+}
+
+void SyncEngine::executeTransferBatch(const QList<TransferJob> &jobs, SyncSummary *summary)
+{
+    QThreadPool pool;
+    pool.setMaxThreadCount(qMin(m_parallelTransfers, jobs.size()));
+    QFuture<TransferOutcome> future =
+        QtConcurrent::mapped(&pool, jobs, [this](const TransferJob &job) {
+            TransferOutcome outcome;
+            outcome.index = job.index;
+            QString error;
+            std::unique_ptr<RemoteBackend> backend = createBackend(&error);
+            if (!backend) {
+                outcome.error = error;
+                return outcome;
+            }
+            const CancelledCallback cancelled = [this]() {
+                return m_cancelled.loadRelaxed() != 0;
+            };
+            if (job.action.kind == ActionKind::Upload) {
+                outcome.success = backend->upload(job.localFile, job.action.path, job.expectedEtag,
+                                                  &error, cancelled);
+            } else {
+                DownloadResult result;
+                outcome.success =
+                    backend->download(job.action.path, job.localFile, &result, &error, cancelled);
+            }
+            outcome.error = error;
+            return outcome;
+        });
+    future.waitForFinished();
+    const QList<TransferOutcome> outcomes = future.results();
+    for (const TransferOutcome &outcome : outcomes) {
+        if (outcome.index < 0 || outcome.index >= jobs.size())
+            continue;
+        const TransferJob &job = jobs.at(outcome.index);
+        if (!outcome.success) {
+            if (!m_cancelled.loadRelaxed()) {
+                addError(summary, tr("“%1”：%2").arg(job.action.path, outcome.error));
+                if (!summary->failedPaths.contains(job.action.path))
+                    summary->failedPaths.append(job.action.path);
+            }
+        } else {
+            QString stateError;
+            if (!recordSynced(job.action.path, &stateError)) {
+                addError(summary, tr("“%1”：%2").arg(job.action.path, stateError));
+                if (!summary->failedPaths.contains(job.action.path))
+                    summary->failedPaths.append(job.action.path);
+            } else if (job.action.kind == ActionKind::Upload) {
+                ++summary->uploaded;
+            } else {
+                ++summary->downloaded;
+            }
+        }
+        m_bytesDone += job.bytes;
+        ++m_completedActions;
+        emit progress(m_completedActions, m_totalActions, m_bytesDone, m_bytesTotal,
+                      job.action.path);
+    }
 }
 
 void SyncEngine::run()
@@ -220,42 +380,10 @@ void SyncEngine::run()
             }
         }
 
-        if (!m_backendFactory) {
-            if (m_pair.backendType != QLatin1String("webdav")) {
-                fatalError = tr("不支持的同步后端类型：%1").arg(m_pair.backendType);
-                break;
-            }
-            const QUrl url(m_pair.remoteUrl.trimmed());
-            if (!url.isValid() || url.host().isEmpty()
-                || (url.scheme() != QLatin1String("http")
-                    && url.scheme() != QLatin1String("https"))) {
-                fatalError = tr("WebDAV 地址无效，必须以 http:// 或 https:// 开头");
-                break;
-            }
-            WebDavOptions options;
-            options.baseUrl = url;
-            options.username = m_pair.username;
-            options.password = m_pair.password;
-            options.retryCount = m_retryCount;
-            options.retryBaseDelayMs = m_retryBaseDelayMs;
-            options.retryMaxDelayMs = m_retryMaxDelayMs;
-            options.transferLimitBytesPerSecond = m_transferLimitKbps * 1024;
-            if (options.username.isEmpty() && !url.userName().isEmpty()) {
-                options.username = url.userName();
-                options.password = url.password();
-            }
-            options.baseUrl.setUserInfo({});
-            m_backend = std::make_unique<WebDavBackend>(std::move(options));
-        } else {
-            try {
-                m_backend = m_backendFactory();
-            } catch (const std::exception &exception) {
-                fatalError = tr("创建远程后端失败：%1").arg(QString::fromUtf8(exception.what()));
-                break;
-            }
-        }
+        m_backend = createBackend(&fatalError);
         if (!m_backend) {
-            fatalError = tr("无法创建远程后端");
+            if (fatalError.isEmpty())
+                fatalError = tr("无法创建远程后端");
             break;
         }
 
@@ -365,51 +493,73 @@ void SyncEngine::run()
         m_totalActions = plan.actions.size();
         m_bytesDone = 0;
         m_bytesTotal = 0;
-        for (const SyncAction &action : std::as_const(plan.actions)) {
-            if (action.kind == ActionKind::Upload)
-                m_bytesTotal += action.local.size;
-            else if (action.kind == ActionKind::Download)
-                m_bytesTotal += action.remote.size;
-            else if (action.kind == ActionKind::ResolveConflict)
-                m_bytesTotal += qMax(action.local.size, action.remote.size);
-        }
-        emit progress(0, m_totalActions, 0, m_bytesTotal, {});
-        if (m_totalActions == 0)
-            emitLog(tr("没有需要同步的更改"));
+        if (m_parallelTransfers > 1) {
+            for (int index = 0; index < plan.actions.size();) {
+                if (m_cancelled.loadRelaxed()) {
+                    summary.cancelled = true;
+                    break;
+                }
+                const SyncAction &action = plan.actions.at(index);
+                if (action.kind == ActionKind::Upload || action.kind == ActionKind::Download) {
+                    QList<TransferJob> jobs;
+                    while (index < plan.actions.size()) {
+                        const SyncAction &candidate = plan.actions.at(index);
+                        if (candidate.kind != ActionKind::Upload
+                            && candidate.kind != ActionKind::Download) {
+                            break;
+                        }
+                        emit progress(m_completedActions, m_totalActions, m_bytesDone, m_bytesTotal,
+                                      candidate.path);
+                        TransferJob job;
+                        QString error;
+                        bool skipped = false;
+                        if (!prepareTransferJob(candidate, index, &job, &skipped, &error)) {
+                            addError(&summary, tr("“%1”：%2").arg(candidate.path, error));
+                            if (!summary.failedPaths.contains(candidate.path))
+                                summary.failedPaths.append(candidate.path);
+                            ++m_completedActions;
+                        } else if (skipped) {
+                            ++summary.skipped;
+                            ++m_completedActions;
+                        } else {
+                            jobs.append(job);
+                        }
+                        emit progress(m_completedActions, m_totalActions, m_bytesDone, m_bytesTotal,
+                                      candidate.path);
+                        ++index;
+                    }
+                    if (!jobs.isEmpty())
+                        executeTransferBatch(jobs, &summary);
+                    continue;
+                }
 
-        for (const SyncAction &action : std::as_const(plan.actions)) {
-            if (m_cancelled.loadRelaxed()) {
-                summary.cancelled = true;
-                break;
+                emit progress(m_completedActions, m_totalActions, m_bytesDone, m_bytesTotal,
+                              action.path);
+                if (!executeAction(action, &summary) && !summary.cancelled
+                    && !summary.failedPaths.contains(action.path)) {
+                    summary.failedPaths.append(action.path);
+                }
+                ++m_completedActions;
+                emit progress(m_completedActions, m_totalActions, m_bytesDone, m_bytesTotal,
+                              action.path);
+                ++index;
             }
-            const qint64 actionBytes = action.kind == ActionKind::Upload
-                ? action.local.size
-                : (action.kind == ActionKind::Download
-                       ? action.remote.size
-                       : (action.kind == ActionKind::ResolveConflict
-                              ? qMax(action.local.size, action.remote.size)
-                              : 0));
-            m_backend->setTransferProgress([this, actionBytes,
-                                            actionPath = action.path](qint64 received, qint64) {
-                const qint64 done = qMin(m_bytesDone + received, m_bytesDone + actionBytes);
-                emit progress(m_completedActions, m_totalActions, done, m_bytesTotal, actionPath);
-            });
-            emit progress(m_completedActions, m_totalActions, m_bytesDone, m_bytesTotal,
-                          action.path);
-            if (!executeAction(action, &summary) && !summary.cancelled
-                && !summary.failedPaths.contains(action.path)) {
-                summary.failedPaths.append(action.path);
+        } else {
+            for (const SyncAction &action : std::as_const(plan.actions)) {
+                if (m_cancelled.loadRelaxed()) {
+                    summary.cancelled = true;
+                    break;
+                }
+                emit progress(m_completedActions, m_totalActions, m_bytesDone, m_bytesTotal,
+                              action.path);
+                if (!executeAction(action, &summary) && !summary.cancelled
+                    && !summary.failedPaths.contains(action.path)) {
+                    summary.failedPaths.append(action.path);
+                }
+                ++m_completedActions;
+                emit progress(m_completedActions, m_totalActions, m_bytesDone, m_bytesTotal,
+                              action.path);
             }
-            m_backend->setTransferProgress({});
-            if (action.kind == ActionKind::Upload)
-                m_bytesDone += action.local.size;
-            else if (action.kind == ActionKind::Download)
-                m_bytesDone += action.remote.size;
-            else if (action.kind == ActionKind::ResolveConflict)
-                m_bytesDone += qMax(action.local.size, action.remote.size);
-            ++m_completedActions;
-            emit progress(m_completedActions, m_totalActions, m_bytesDone, m_bytesTotal,
-                          action.path);
         }
 
         if (m_cancelled.loadRelaxed())

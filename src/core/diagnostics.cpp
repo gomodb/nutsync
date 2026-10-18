@@ -68,6 +68,7 @@ QString buildReport(const AppConfig &config)
     out << "  retryCount=" << config.settings.retryCount << '\n';
     out << "  retryMaxSeconds=" << config.settings.retryDelaySeconds << '\n';
     out << "  transferLimitKbps=" << config.settings.transferLimitKbps << '\n';
+    out << "  parallelTransfers=" << config.settings.parallelTransfers << '\n';
     out << '\n';
 
     out << "Sync pairs: " << config.pairs.size() << '\n';
