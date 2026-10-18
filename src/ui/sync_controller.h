@@ -22,6 +22,7 @@ public:
     ~SyncController() override;
 
     void enqueue(const SyncPair &pair);
+    void setSettings(const AppSettings &settings);
     bool isBusy() const;
     bool contains(const QString &pairId) const;
     QString currentPairId() const;
@@ -44,6 +45,7 @@ private:
     void onWorkerFinished();
 
     QString m_stateDatabasePath;
+    AppSettings m_settings;
     CredentialStore m_credentials;
     QQueue<SyncPair> m_queue;
     SyncPair m_currentPair;

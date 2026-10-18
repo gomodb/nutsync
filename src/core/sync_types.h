@@ -13,6 +13,24 @@ enum class EntryType {
     Directory,
 };
 
+enum class RemoteErrorClass {
+    None,
+    Network,
+    Timeout,
+    RateLimited,
+    Authentication,
+    Permission,
+    NotFound,
+    Conflict,
+    Redirect,
+    Protocol,
+    Server,
+    Quota,
+    LocalIo,
+    Cancelled,
+    Other,
+};
+
 enum class ConflictPolicy {
     KeepBoth,     //!< Never discard data: keep a conflict copy for content conflicts.
     PreferLocal,  //!< Local changes win.
@@ -162,6 +180,7 @@ struct SyncSummary
     int errors = 0;
     QString message;
     QStringList errorDetails;
+    QList<RemoteErrorClass> errorClasses;
     QStringList conflictPaths;
     qint64 elapsedMs = 0;
 };

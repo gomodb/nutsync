@@ -120,6 +120,7 @@ void TestWebDavBackend::backendOperations()
         QString error;
         QVERIFY(!wrongAuth.testConnection(&error));
         QVERIFY2(error.contains(QStringLiteral("401")), qPrintable(error));
+        QCOMPARE(wrongAuth.lastErrorClass(), RemoteErrorClass::Authentication);
     }
 
     WebDavBackend backend(optionsFor(server.port()));
@@ -226,6 +227,66 @@ void TestWebDavBackend::resumesTruncatedDownload()
     QVERIFY(downloaded.open(QIODevice::ReadOnly));
     QCOMPARE(downloaded.readAll(), payload);
     QCOMPARE(result.size, qint64(payload.size()));
+}
+
+void TestWebDavBackend::resumesAcrossDownloadCalls()
+{
+    QTemporaryDir remoteDir;
+    QVERIFY(remoteDir.isValid());
+    ServerProcess server(remoteDir.path(), {QStringLiteral("--truncate-first-get")});
+    QVERIFY2(server.isValid(), qPrintable(QString::fromUtf8(server.stderrText())));
+
+    QTemporaryDir localDir;
+    QVERIFY(localDir.isValid());
+    const QByteArray payload = QByteArray("0123456789").repeated(4096);
+    const QString source = writeLocalFile(localDir.filePath(QStringLiteral("source.bin")), payload);
+    QVERIFY(!source.isEmpty());
+
+    WebDavOptions options = optionsFor(server.port());
+    WebDavBackend uploadBackend(options);
+    QString error;
+    QVERIFY2(
+        uploadBackend.upload(source, QStringLiteral("resume.bin"), QStringLiteral("*"), &error, {}),
+        qPrintable(error));
+
+    const QString destination = localDir.filePath(QStringLiteral("destination.bin"));
+    DownloadResult result;
+    WebDavOptions firstOptions = options;
+    firstOptions.retryCount = 0;
+    WebDavBackend firstBackend(firstOptions);
+    QVERIFY(!firstBackend.download(QStringLiteral("resume.bin"), destination, &result, &error, {}));
+
+    WebDavBackend secondBackend(options);
+    QVERIFY2(secondBackend.download(QStringLiteral("resume.bin"), destination, &result, &error, {}),
+             qPrintable(error));
+    QFile downloaded(destination);
+    QVERIFY(downloaded.open(QIODevice::ReadOnly));
+    QCOMPARE(downloaded.readAll(), payload);
+    QCOMPARE(result.size, qint64(payload.size()));
+}
+
+void TestWebDavBackend::cancelsPropfindRetries()
+{
+    QTemporaryDir remoteDir;
+    QVERIFY(remoteDir.isValid());
+    ServerProcess server(remoteDir.path(), {QStringLiteral("--fail-first"), QStringLiteral("100")});
+    QVERIFY2(server.isValid(), qPrintable(QString::fromUtf8(server.stderrText())));
+
+    WebDavOptions options = optionsFor(server.port());
+    options.retryCount = 3;
+    options.retryBaseDelayMs = 50;
+    options.retryMaxDelayMs = 50;
+    WebDavBackend backend(options);
+    QList<RemoteEntry> entries;
+    QString error;
+    QElapsedTimer timer;
+    timer.start();
+    const bool ok = backend.scan(&entries, &error, [&timer]() {
+        return timer.elapsed() > 20;
+    });
+    QVERIFY(!ok);
+    QCOMPARE(backend.lastErrorClass(), RemoteErrorClass::Cancelled);
+    QVERIFY2(error.contains(QStringLiteral("取消")), qPrintable(error));
 }
 
 void TestWebDavBackend::engineEndToEnd()

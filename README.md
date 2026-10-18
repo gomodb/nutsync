@@ -37,7 +37,7 @@ Every sync compares both sides against that baseline before deciding whether to 
 - **KDE integration**: KStatusNotifierItem tray, KNotification desktop notifications, KWallet / Secret Service password storage, and optional per-user start at login.
 - **Languages**: English and Simplified Chinese interface. The initial language follows the system locale; Chinese systems use Simplified Chinese and all other/unknown locales fall back to English. The choice can be overridden in Preferences and takes effect after restart.
 - **Network configuration**: system, direct, or manual HTTP proxy with optional credentials; custom PEM CA bundle; TLS verification is never disabled.
-- **Reliability controls**: configurable automatic retry count with exponential backoff for failed automatic syncs, plus selectable log levels.
+- **Reliability controls**: configurable per-request retry count with exponential backoff, `Retry-After`, persistent resumable downloads, and selectable log levels.
 - **Monochrome panel icons**: the system tray uses a monochrome NutSync icon that follows the active KDE dark or light color scheme, including live theme changes.
 - **Automatic synchronization**: per-pair intervals, sync on application startup, and recursive Linux inotify monitoring with debounce.
 - **Request rate limiting**: each pair can allow at most a configurable number of sync starts per time window. The limit is disabled by default. Scheduled, inotify, and startup syncs consume the quota; manual syncs are always allowed but still consume it. Quota history is persisted across restarts.
@@ -134,7 +134,7 @@ AUR metadata lives in [packaging/arch/PKGBUILD](packaging/arch/PKGBUILD). The pa
 The package source is the GitHub tag archive:
 
 ```text
-https://github.com/gomodb/nutsync/archive/refs/tags/v0.4.2.tar.gz
+https://github.com/gomodb/nutsync/archive/refs/tags/v0.4.3.tar.gz
 ```
 
 Build from the project directory:
@@ -152,7 +152,7 @@ makepkg -f
 
 The AUR repository separately contains the `PKGBUILD`, `.SRCINFO`, and the 0BSD packaging license. Application source remains GPL-3.0-or-later; AUR packaging files are 0BSD.
 
-The first AUR release for this version is `0.4.2-2`. The repository is prepared under `~/Projects/nutsync-aur` and expects the AUR SSH key to be registered before the first push.
+The first AUR release for this version is `0.4.3-1`. The repository is prepared under `~/Projects/nutsync-aur` and expects the AUR SSH key to be registered before the first push.
 
 For automated publishing, configure the repository secret `AUR_SSH_PRIVATE_KEY`, create an `aur` environment, and manually run the **Publish to AUR** workflow with the release tag. The workflow also supports creating the AUR repository on its first push.
 
@@ -266,8 +266,8 @@ Network options are available in **Preferences → Network**:
 - **Credential transport**: HTTP credentials are rejected outside loopback; cross-origin redirects are not followed.
 - **Proxy password**: stored in the system keychain, never in `config.json`.
 - **CA certificate file**: an additional PEM bundle appended to the system CA certificates. Certificate verification is always enforced.
-- **Retry attempts / base delay**: failed automatic syncs retry with exponential backoff (30 s, 60 s, 120 s, ... up to 10 minutes). Permanent HTTP errors such as 401, 403, 409, and 412 are not retried, and manual syncs are never retried automatically.
-- **Request-level retries**: each WebDAV request retries network errors, 408, 425, 429, and 5xx responses up to three times, honoring `Retry-After`. Downloads resume from the partial temporary file with an HTTP `Range` request; uploads restart from the beginning because WebDAV PUT has no standard resumable form.
+- **Retry attempts / maximum delay**: each WebDAV request retries network errors, 408, 425, 429, and 5xx responses up to the configured count, using exponential backoff capped by the configured maximum delay and honoring `Retry-After`. Permanent errors such as 401, 403, 404, 409, 412, 423, and 507 are not retried. There is no separate whole-sync retry.
+- **Resumable downloads**: partial downloads are kept in the cache as `.part` files, validated with `If-Range`, and resumed across syncs and restarts. Uploads restart from the beginning because WebDAV PUT has no standard resumable form.
 - **Log level**: Debug, Info, Warning, or Error.
 
 Proxy and CA changes take effect after restart. The log level is applied immediately.

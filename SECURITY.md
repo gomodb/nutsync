@@ -30,6 +30,6 @@ feature. Do not open a public issue for a vulnerability.
 - Only Basic authentication is implemented; Digest and OAuth2 are not supported.
 - Proxy passwords are stored in the system keychain, but there is no per-proxy
   bypass list or SOCKS support.
-- Automatic retries are intended for transient network/server failures.
-  Permanent HTTP failures such as 401, 403, 409, and 412 are not retried;
-  408, 429, and 5xx are retryable.
+- WebDAV request retries are intended for transient network/server failures.
+  Permanent HTTP failures such as 401, 403, 404, 409, 412, 423, 507 are not
+  retried; network errors, 408, 425, 429, and 5xx are retryable.

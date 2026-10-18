@@ -37,7 +37,7 @@ NutSync 的目标不是做一次性的“上传/下载”，而是维护一条�
 - **KDE 集成**：KStatusNotifierItem 托盘、KNotification 桌面通知、KWallet / Secret Service 密码存储、可选的用户级开机自启。
 - **多语言**：界面支持英文和简体中文；默认跟随系统语言，中文系统使用简体中文，其他或无法匹配的语言回退英文。可在首选项中覆盖，重启后生效。
 - **网络配置**：支持系统代理、直连或手动 HTTP 代理（含认证）、自定义 PEM CA 证书；始终校验 TLS。
-- **可靠性**：自动同步失败可按配置重试并指数退避；日志级别可配置。
+- **可靠性**：可按配置对单个 WebDAV 请求重试并指数退避，支持 `Retry-After`、持久化断点续传和可配置日志级别。
 - **单色面板图标**：系统托盘使用单色 NutSync 图标，并按 KDE 深色/浅色配色方案自动切换，支持运行中切换主题。
 - **自动同步**：按同步对设置定时同步间隔、程序启动时同步，并通过 Linux inotify 递归监视本地目录；本地文件发生变化后经防抖自动触发同步。
 - **请求频率限制**：可按同步对配置“每 x 分钟/小时内最多启动 y 次同步”，默认不限制。定时同步、inotify 触发和启动同步受限制；手动同步始终允许，但会占用额度。限制记录持久化，重启不会重置额度。
@@ -134,7 +134,7 @@ AUR 元数据位于 [packaging/arch/PKGBUILD](packaging/arch/PKGBUILD)。由于 
 包源码直接取自 GitHub tag：
 
 ```text
-https://github.com/gomodb/nutsync/archive/refs/tags/v0.4.2.tar.gz
+https://github.com/gomodb/nutsync/archive/refs/tags/v0.4.3.tar.gz
 ```
 
 从项目内构建：
@@ -152,7 +152,7 @@ makepkg -f
 
 AUR 仓库单独保存 PKGBUILD、`.SRCINFO` 和 0BSD 打包许可证。应用源码继续使用 GPL-3.0-or-later，AUR 打包文件使用 0BSD。
 
-AUR 本版本发布为 `0.4.2-2`。本地 AUR 仓库准备在 `~/Projects/nutsync-aur`，首次推送前需要在 AUR 账户中注册 SSH 公钥。
+AUR 本版本发布为 `0.4.3-1`。本地 AUR 仓库准备在 `~/Projects/nutsync-aur`，首次推送前需要在 AUR 账户中注册 SSH 公钥。
 
 自动发布需要配置仓库 secret `AUR_SSH_PRIVATE_KEY`，创建 `aur` environment，然后手动运行 **Publish to AUR** workflow 并选择 release tag。该 workflow 也支持首次创建 AUR 仓库。
 
@@ -265,8 +265,8 @@ find src tests -type f \( -name '*.cpp' -o -name '*.h' \) -print0 \
 - **凭据传输**：非 loopback 地址拒绝 HTTP 凭据；不跟随跨 origin 重定向。
 - **代理密码**：保存在系统钥匙串，不写入 `config.json`。
 - **CA 证书文件**：附加到系统 CA 的 PEM 证书包；始终校验证书。
-- **失败重试次数 / 重试基础间隔**：自动同步失败后按 30 秒、60 秒、120 秒……最多 10 分钟退避重试；401、403、409、412 等永久错误不重试；手动同步不会自动重试。
-- **请求级重试**：每个 WebDAV 请求对网络错误、408、425、429 和 5xx 最多重试三次，并遵守 `Retry-After`；下载通过 HTTP `Range` 从临时文件断点续传；上传因 WebDAV PUT 没有标准断点格式而从头重试。
+- **失败重试次数 / 重试最大间隔**：每个 WebDAV 请求对网络错误、408、425、429 和 5xx 按配置次数重试，使用指数退避，并由“重试最大间隔”限制等待时间，同时遵守 `Retry-After`。401、403、404、409、412、423、507 等永久错误不重试；不再有额外的整轮同步重试。
+- **断点续传**：未完成的下载以 `.part` 文件保存在缓存目录，并通过 `If-Range` 校验，可跨同步和进程重启续传。上传因 WebDAV PUT 没有标准断点格式而从头重试。
 - **日志级别**：调试、信息、警告、错误。
 
 代理与 CA 设置重启后生效，日志级别立即生效。

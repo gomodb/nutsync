@@ -9,6 +9,5 @@ class TestRetryPolicy : public QObject
 
 private slots:
     void classifiesPermanentErrors();
-    void computesBackoff();
 };
 } // namespace NutSync::Test

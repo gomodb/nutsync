@@ -456,8 +456,12 @@ Only NutSync's configuration and synchronization baseline are deleted, not local
       <translation>"%1": %2</translation>
     </message>
     <message>
+      <source>重试最大间隔</source>
+      <translation>Maximum retry delay</translation>
+    </message>
+    <message>
       <source>同步失败，%1 秒后重试（%2/%3）</source>
-      <translation>Sync failed; retrying in %1 seconds (%2/%3)</translation>
+      <translation type="vanished">Sync failed; retrying in %1 seconds (%2/%3)</translation>
     </message>
     <message>
       <source>自动同步已暂停</source>
@@ -600,12 +604,16 @@ Only NutSync's configuration and synchronization baseline are deleted, not local
       <translation> seconds</translation>
     </message>
     <message>
+      <source>指数退避的最大等待时间</source>
+      <translation>Maximum wait for exponential backoff</translation>
+    </message>
+    <message>
       <source>失败重试次数</source>
       <translation>Retry attempts</translation>
     </message>
     <message>
       <source>重试基础间隔</source>
-      <translation>Retry base delay</translation>
+      <translation type="vanished">Retry base delay</translation>
     </message>
     <message>
       <source>无法清除代理密码</source>
@@ -1559,8 +1567,24 @@ cache/</translation>
       <translation>Failed to write to local file: %1</translation>
     </message>
     <message>
+      <source>无法创建下载临时文件：%1</source>
+      <translation>Could not create download temporary file: %1</translation>
+    </message>
+    <message>
+      <source>无法重置下载临时文件：%1</source>
+      <translation>Could not reset download temporary file: %1</translation>
+    </message>
+    <message>
+      <source>无法写入下载临时文件：%1</source>
+      <translation>Could not write download temporary file: %1</translation>
+    </message>
+    <message>
       <source>下载失败：%1</source>
       <translation>Download failed: %1</translation>
+    </message>
+    <message>
+      <source>无法读取下载临时文件：%1</source>
+      <translation>Could not read download temporary file: %1</translation>
     </message>
     <message>
       <source>保存下载文件失败：%1</source>

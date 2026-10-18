@@ -87,6 +87,13 @@ void SyncEngine::setBackendFactory(BackendFactory factory)
     m_backendFactory = std::move(factory);
 }
 
+void SyncEngine::setRetryPolicy(int retryCount, int maxDelayMs)
+{
+    m_retryCount = qBound(0, retryCount, 5);
+    m_retryMaxDelayMs = qBound(1000, maxDelayMs, 600000);
+    m_retryBaseDelayMs = qMin(1000, m_retryMaxDelayMs);
+}
+
 void SyncEngine::requestCancel()
 {
     m_cancelled.storeRelaxed(1);
@@ -108,6 +115,12 @@ void SyncEngine::emitLog(const QString &message, const QString &path)
 void SyncEngine::addError(SyncSummary *summary, const QString &message)
 {
     ++summary->errors;
+    const RemoteErrorClass errorClass =
+        m_backend && m_backend->lastErrorClass() != RemoteErrorClass::None
+        ? m_backend->lastErrorClass()
+        : RemoteErrorClass::Other;
+    if (!summary->errorClasses.contains(errorClass))
+        summary->errorClasses.append(errorClass);
     if (summary->errorDetails.size() < kMaxErrors)
         summary->errorDetails.append(message);
     qWarning().noquote() << "[sync]" << message;
@@ -193,6 +206,9 @@ void SyncEngine::run()
             options.baseUrl = url;
             options.username = m_pair.username;
             options.password = m_pair.password;
+            options.retryCount = m_retryCount;
+            options.retryBaseDelayMs = m_retryBaseDelayMs;
+            options.retryMaxDelayMs = m_retryMaxDelayMs;
             if (options.username.isEmpty() && !url.userName().isEmpty()) {
                 options.username = url.userName();
                 options.password = url.password();

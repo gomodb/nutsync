@@ -32,6 +32,7 @@ public:
 
     virtual QString typeName() const = 0;
     virtual QString endpointDescription() const = 0;
+    virtual RemoteErrorClass lastErrorClass() const { return RemoteErrorClass::Other; }
 
     virtual bool testConnection(QString *error) = 0;
     virtual bool scan(QList<RemoteEntry> *entries, QString *error,

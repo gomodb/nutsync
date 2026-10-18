@@ -28,6 +28,11 @@ SyncController::~SyncController()
     }
 }
 
+void SyncController::setSettings(const AppSettings &settings)
+{
+    m_settings = settings;
+}
+
 void SyncController::enqueue(const SyncPair &pair)
 {
     if (!pair.enabled || pair.id.isEmpty())
@@ -111,6 +116,7 @@ void SyncController::startNext()
     emit pairStarted(m_currentPairId);
 
     auto *engine = new SyncEngine(m_currentPair, m_stateDatabasePath, this);
+    engine->setRetryPolicy(m_settings.retryCount, m_settings.retryDelaySeconds * 1000);
     m_engine = engine;
     connect(engine, &SyncEngine::logMessage, this, [this](const QString &message) {
         emit logMessage(m_currentPairId, message);

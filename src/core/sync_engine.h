@@ -26,6 +26,7 @@ public:
     explicit SyncEngine(SyncPair pair, QString stateDatabasePath = {}, QObject *parent = nullptr);
 
     void setBackendFactory(BackendFactory factory);
+    void setRetryPolicy(int retryCount, int maxDelayMs);
     void requestCancel();
     SyncSummary lastSummary() const;
 
@@ -68,6 +69,9 @@ private:
     SyncPair m_pair;
     QString m_stateDatabasePath;
     BackendFactory m_backendFactory;
+    int m_retryCount = 3;
+    int m_retryBaseDelayMs = 1000;
+    int m_retryMaxDelayMs = 30000;
     QAtomicInt m_cancelled{0};
     QMap<QString, LocalEntry> m_localSnapshot;
     std::unique_ptr<RemoteBackend> m_backend;

@@ -74,8 +74,6 @@ private:
     void onLogMessage(const QString &pairId, const QString &message);
     void onProgress(const QString &pairId, int completed, int total, const QString &path);
     void onPairFinished(const SyncSummary &summary);
-    void cancelRetryTimer(const QString &id);
-    void cancelRetry(const QString &id);
     void onBusyChanged(bool busy);
     void onQueueChanged(int pending);
 
@@ -145,8 +143,6 @@ private:
     QSet<QString> m_deferredAutoSyncs;
     QSet<QString> m_monitorStartFailures;
     QHash<QString, qint64> m_rateLimitNoticeMs;
-    QHash<QString, int> m_autoRetryAttempts;
-    QHash<QString, QTimer *> m_retryTimers;
     bool m_busy = false;
     bool m_autoSyncPaused = false;
     bool m_quitting = false;

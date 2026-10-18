@@ -6,7 +6,6 @@
 #include "core/local_change_monitor.h"
 #include "core/logger.h"
 #include "core/path_utils.h"
-#include "core/retry_policy.h"
 #include "core/sync_state_store.h"
 #include "ui/pair_dialog.h"
 #include "ui/sync_controller.h"
@@ -172,6 +171,7 @@ MainWindow::MainWindow(QWidget *parent)
     qRegisterMetaType<SyncSummary>("NutSync::SyncSummary");
 
     m_controller = new SyncController(AppPaths::stateDatabase(), this);
+    m_controller->setSettings(m_config.settings);
     connect(m_controller, &SyncController::pairStarted, this, &MainWindow::onPairStarted);
     connect(m_controller, &SyncController::logMessage, this, &MainWindow::onLogMessage);
     connect(m_controller, &SyncController::progress, this, &MainWindow::onProgress);
@@ -544,6 +544,7 @@ void MainWindow::setupTray()
 
 void MainWindow::saveConfig(bool showError)
 {
+    m_controller->setSettings(m_config.settings);
     QString error;
     if (!m_configStore.save(m_config, &error)) {
         appendSystemStatus(tr("保存配置失败：%1").arg(error));
@@ -905,20 +906,6 @@ void MainWindow::resetPairState()
     appendSystemStatus(tr("已清空同步基线：%1").arg(pair->name));
 }
 
-void MainWindow::cancelRetryTimer(const QString &id)
-{
-    if (QTimer *timer = m_retryTimers.take(id)) {
-        timer->stop();
-        timer->deleteLater();
-    }
-}
-
-void MainWindow::cancelRetry(const QString &id)
-{
-    cancelRetryTimer(id);
-    m_autoRetryAttempts.remove(id);
-}
-
 void MainWindow::removePair()
 {
     const QString id = selectedPairId();
@@ -946,7 +933,6 @@ void MainWindow::removePairById(const QString &id)
     if (answer != QMessageBox::Yes)
         return;
 
-    cancelRetry(id);
     clearPairState(id);
     QString error;
     m_credentials.deletePassword(id, &error);
@@ -1087,7 +1073,6 @@ void MainWindow::requestSync(const QString &id, bool manual)
     }
 
     if (manual) {
-        cancelRetry(id);
         m_notifyOnSuccess.insert(id);
     }
     m_controller->enqueue(*pair);
@@ -1260,41 +1245,6 @@ void MainWindow::onPairFinished(const SyncSummary &summary)
             m_tray->showNotification(tr("NutSync 同步完成"), tr("“%1”：%2").arg(pair->name, detail),
                                      false);
         }
-    }
-    const bool manualSync = m_notifyOnSuccess.contains(summary.pairId);
-    if (summary.success || summary.cancelled || manualSync
-        || RetryPolicy::hasPermanentHttpError(summary)) {
-        cancelRetry(summary.pairId);
-    } else if (pair->enabled && m_config.settings.retryCount > 0) {
-        const int attempt = m_autoRetryAttempts.value(summary.pairId) + 1;
-        if (attempt <= m_config.settings.retryCount) {
-            m_autoRetryAttempts.insert(summary.pairId, attempt);
-            const int delay =
-                RetryPolicy::backoffSeconds(m_config.settings.retryDelaySeconds, attempt);
-            appendLog(summary.pairId,
-                      tr("同步失败，%1 秒后重试（%2/%3）")
-                          .arg(delay)
-                          .arg(attempt)
-                          .arg(m_config.settings.retryCount));
-            cancelRetryTimer(summary.pairId);
-            auto *timer = new QTimer(this);
-            timer->setSingleShot(true);
-            connect(timer, &QTimer::timeout, this, [this, pairId = summary.pairId]() {
-                m_retryTimers.remove(pairId);
-                const SyncPair *current = findPair(pairId);
-                if (current && current->enabled && m_config.settings.retryCount > 0
-                    && m_autoRetryAttempts.value(pairId) <= m_config.settings.retryCount
-                    && !m_controller->contains(pairId)) {
-                    requestSync(pairId, false);
-                }
-            });
-            m_retryTimers.insert(summary.pairId, timer);
-            timer->start(delay * 1000);
-        } else {
-            cancelRetry(summary.pairId);
-        }
-    } else {
-        cancelRetry(summary.pairId);
     }
     m_notifyOnSuccess.remove(summary.pairId);
     updateActions();
@@ -1532,9 +1482,10 @@ void MainWindow::openSettings()
     auto *retryDelay = new QSpinBox(networkGroup);
     retryDelay->setRange(5, 600);
     retryDelay->setSuffix(tr(" 秒"));
+    retryDelay->setToolTip(tr("指数退避的最大等待时间"));
     retryDelay->setValue(m_config.settings.retryDelaySeconds);
     networkForm->addRow(tr("失败重试次数"), retryCount);
-    networkForm->addRow(tr("重试基础间隔"), retryDelay);
+    networkForm->addRow(tr("重试最大间隔"), retryDelay);
     layout->addWidget(networkGroup);
 
     auto updateProxyFields = [=]() {
@@ -1655,11 +1606,6 @@ void MainWindow::openSettings()
         }
     }
     Logger::setLevel(m_config.settings.logLevel);
-    if (m_config.settings.retryCount == 0) {
-        const auto ids = m_retryTimers.keys();
-        for (const QString &id : ids)
-            cancelRetry(id);
-    }
     saveConfig(true);
     appendSystemStatus(tr("首选项已保存"));
     if (m_config.settings.language != previousLanguage) {

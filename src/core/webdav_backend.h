@@ -26,6 +26,7 @@ public:
 
     QString typeName() const override;
     QString endpointDescription() const override;
+    RemoteErrorClass lastErrorClass() const override;
 
     bool testConnection(QString *error) override;
     bool scan(QList<RemoteEntry> *entries, QString *error,
@@ -42,8 +43,10 @@ public:
 private:
     QNetworkRequest requestFor(const QString &path) const;
     QByteArray propfindBody() const;
-    bool listDirectory(const QString &path, QList<RemoteEntry> *entries, QString *error);
-    bool propfind(const QString &path, int depth, QByteArray *body, int *status, QString *error);
+    bool listDirectory(const QString &path, QList<RemoteEntry> *entries, QString *error,
+                       const CancelledCallback &cancelled = {});
+    bool propfind(const QString &path, int depth, QByteArray *body, int *status, QString *error,
+                  const CancelledCallback &cancelled = {});
     QString httpError(int status, const QByteArray &body, const QString &fallback) const;
     static QList<RemoteEntry> parseMultiStatus(const QByteArray &xml, const QUrl &requestUrl,
                                                QString *error, bool includeSelf = false,
@@ -54,6 +57,7 @@ private:
     WebDavOptions m_options;
     SecuredNetworkAccessManager m_network;
     QUrl m_baseUrl;
+    RemoteErrorClass m_lastErrorClass = RemoteErrorClass::None;
 };
 
 } // namespace NutSync

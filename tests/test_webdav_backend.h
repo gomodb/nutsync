@@ -11,6 +11,8 @@ private slots:
     void backendOperations();
     void retriesTransientRequests();
     void resumesTruncatedDownload();
+    void resumesAcrossDownloadCalls();
+    void cancelsPropfindRetries();
     void engineEndToEnd();
 };
 } // namespace NutSync::Test

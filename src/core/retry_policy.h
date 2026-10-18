@@ -4,7 +4,6 @@
 
 namespace NutSync::RetryPolicy {
 
-bool hasPermanentHttpError(const SyncSummary &summary);
-int backoffSeconds(int baseSeconds, int attempt, int maxSeconds = 600);
+bool isRetryable(RemoteErrorClass errorClass);
 
 } // namespace NutSync::RetryPolicy
