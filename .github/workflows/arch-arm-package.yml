@@ -52,7 +52,9 @@ jobs:
           rm -rf /tmp/nutsync-build
           cp -a "$PWD" /tmp/nutsync-build
           chown -R builder:builder /tmp/nutsync-build
-          runuser -u builder -- bash -c "cd /tmp/nutsync-build/packaging/arch && exec makepkg --noconfirm --force" > /tmp/build.log 2>&1
+          echo "::notice::pwd=$PWD"
+          ls -ld "$PWD" /tmp/nutsync-build /tmp/nutsync-build/packaging /tmp/nutsync-build/packaging/arch 2>&1 | while IFS= read -r line; do echo "::notice::$line"; done
+          runuser -u builder -- bash -c "ls -ld /tmp/nutsync-build; cd /tmp/nutsync-build/packaging/arch && exec makepkg --noconfirm --force" > /tmp/build.log 2>&1
           status=$?
           if [ "$status" -ne 0 ]; then
             tail -n 40 /tmp/build.log | while IFS= read -r line; do
