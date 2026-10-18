@@ -72,6 +72,9 @@ PairDialog::PairDialog(const SyncPair &pair, bool credentialsAvailable, QWidget 
     }
     m_rateLimitCount->setValue(pair.rateLimitMaxRequests > 0 ? pair.rateLimitMaxRequests : 10);
     m_rateLimitRow->setEnabled(pair.rateLimitEnabled);
+    const int modeIndex = m_syncMode->findData(static_cast<int>(pair.syncMode));
+    if (modeIndex >= 0)
+        m_syncMode->setCurrentIndex(modeIndex);
     m_enabled->setChecked(pair.enabled);
     m_syncOnStartup->setChecked(pair.syncOnStartup);
     m_watchLocalChanges->setChecked(pair.watchLocalChanges);
@@ -182,6 +185,17 @@ void PairDialog::buildUi(bool credentialsAvailable)
             tr("此构建未检测到系统钥匙串支持，密码只能在本次运行期间使用。"));
     }
     form->addRow(QString(), m_rememberPassword);
+
+    m_syncMode = new QComboBox(this);
+    m_syncMode->addItem(syncModeDisplayName(SyncMode::Bidirectional),
+                        static_cast<int>(SyncMode::Bidirectional));
+    m_syncMode->addItem(syncModeDisplayName(SyncMode::LocalToRemote),
+                        static_cast<int>(SyncMode::LocalToRemote));
+    m_syncMode->addItem(syncModeDisplayName(SyncMode::RemoteToLocal),
+                        static_cast<int>(SyncMode::RemoteToLocal));
+    m_syncMode->setToolTip(
+        tr("单向模式以源端为准：本地到远程忽略远程变化，远程到本地忽略本地变化。"));
+    form->addRow(tr("同步模式"), m_syncMode);
 
     m_enabled = new QCheckBox(tr("启用此同步对"), this);
     m_enabled->setChecked(true);
@@ -512,6 +526,7 @@ SyncPair PairDialog::syncPair() const
         pair.rateLimitWindowMinutes = 60;
     if (pair.rateLimitMaxRequests <= 0)
         pair.rateLimitMaxRequests = 10;
+    pair.syncMode = static_cast<SyncMode>(m_syncMode->currentData().toInt());
     pair.enabled = m_enabled->isChecked();
     pair.syncOnStartup = m_syncOnStartup->isChecked();
     pair.watchLocalChanges = m_watchLocalChanges->isChecked();

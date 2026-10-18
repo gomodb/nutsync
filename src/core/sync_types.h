@@ -31,6 +31,12 @@ enum class RemoteErrorClass {
     Other,
 };
 
+enum class SyncMode {
+    Bidirectional,
+    LocalToRemote,
+    RemoteToLocal,
+};
+
 enum class ConflictPolicy {
     KeepBoth,     //!< Never discard data: keep a conflict copy for content conflicts.
     PreferLocal,  //!< Local changes win.
@@ -38,6 +44,9 @@ enum class ConflictPolicy {
     NewerWins,    //!< The entry with the newest modification time wins.
 };
 
+QString syncModeToString(SyncMode mode);
+SyncMode syncModeFromString(const QString &value);
+QString syncModeDisplayName(SyncMode mode);
 QString conflictPolicyToString(ConflictPolicy policy);
 ConflictPolicy conflictPolicyFromString(const QString &value);
 QString conflictPolicyDisplayName(ConflictPolicy policy);
@@ -95,6 +104,7 @@ struct SyncPair
     bool rememberPassword = true;
     QStringList excludePatterns;
     QStringList includePaths;
+    SyncMode syncMode = SyncMode::Bidirectional;
     ConflictPolicy conflictPolicy = ConflictPolicy::KeepBoth;
     int intervalMinutes = 15;
     bool rateLimitEnabled = false;

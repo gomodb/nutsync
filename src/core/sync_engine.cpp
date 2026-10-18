@@ -137,6 +137,10 @@ void SyncEngine::run()
     summary.pairId = m_pair.id;
     summary.pairName = m_pair.name;
     emit started();
+    if (m_pair.syncMode == SyncMode::LocalToRemote)
+        m_pair.conflictPolicy = ConflictPolicy::PreferLocal;
+    else if (m_pair.syncMode == SyncMode::RemoteToLocal)
+        m_pair.conflictPolicy = ConflictPolicy::PreferRemote;
     emitLog(tr("开始同步“%1”").arg(m_pair.name));
 
     QString fatalError;
@@ -326,6 +330,10 @@ void SyncEngine::run()
         plan = SyncPlanner::build(m_localSnapshot, remoteSnapshot, state, m_pair.syncDeletions);
         planBuilt = true;
         summary.conflictPaths = plan.conflicts;
+        summary.conflictRecords.clear();
+        for (const QString &path : std::as_const(plan.conflicts))
+            summary.conflictRecords.append({path, {}});
+        filterActionsForMode(&plan);
         emitLog(tr("同步计划：上传 %1，下载 %2，删除 %3，冲突 %4")
                     .arg(plan.uploads)
                     .arg(plan.downloads)
@@ -720,6 +728,45 @@ bool SyncEngine::doDownload(const SyncAction &action, const QString &remotePath,
         return false;
     Q_UNUSED(action)
     return true;
+}
+
+void SyncEngine::filterActionsForMode(SyncPlan *plan) const
+{
+    if (m_pair.syncMode == SyncMode::Bidirectional)
+        return;
+    QList<SyncAction> filtered;
+    for (const SyncAction &action : std::as_const(plan->actions)) {
+        const bool localToRemote = m_pair.syncMode == SyncMode::LocalToRemote;
+        switch (action.kind) {
+        case ActionKind::Upload:
+        case ActionKind::CreateRemoteDir:
+        case ActionKind::DeleteRemote:
+            if (localToRemote)
+                filtered.append(action);
+            break;
+        case ActionKind::Download:
+        case ActionKind::CreateLocalDir:
+        case ActionKind::DeleteLocal:
+            if (!localToRemote)
+                filtered.append(action);
+            break;
+        case ActionKind::ResolveConflict:
+            filtered.append(action);
+            break;
+        }
+    }
+    plan->actions = filtered;
+    plan->uploads = 0;
+    plan->downloads = 0;
+    plan->deletes = 0;
+    for (const SyncAction &action : std::as_const(plan->actions)) {
+        if (action.kind == ActionKind::Upload)
+            ++plan->uploads;
+        else if (action.kind == ActionKind::Download)
+            ++plan->downloads;
+        else if (action.kind == ActionKind::DeleteLocal || action.kind == ActionKind::DeleteRemote)
+            ++plan->deletes;
+    }
 }
 
 bool SyncEngine::includedInScope(const QString &path) const

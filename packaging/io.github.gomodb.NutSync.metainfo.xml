@@ -12,7 +12,7 @@
       can distinguish local changes, remote changes, and conflicts.
     </p>
     <ul>
-      <li>Two-way synchronization with optional local-deletion propagation</li>
+      <li>Two-way, local-to-remote, and remote-to-local synchronization modes</li>
       <li>Content-aware uploads that avoid redundant transfers and overwrites</li>
       <li>English and Simplified Chinese interface with system-language detection</li>
       <li>Proxy, custom CA, retry backoff, and configurable logging</li>

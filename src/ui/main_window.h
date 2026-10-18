@@ -120,6 +120,7 @@ private:
     QLabel *m_remoteValue = nullptr;
     QLabel *m_accountValue = nullptr;
     QLabel *m_policyValue = nullptr;
+    QLabel *m_syncModeValue = nullptr;
     QLabel *m_intervalValue = nullptr;
     QLabel *m_rateLimitValue = nullptr;
     QLabel *m_watchLocalValue = nullptr;

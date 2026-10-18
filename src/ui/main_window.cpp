@@ -478,12 +478,13 @@ void MainWindow::buildUi()
     addField(1, tr("WebDAV 目录"), &m_remoteValue);
     addField(2, tr("账户"), &m_accountValue);
     addField(3, tr("冲突处理"), &m_policyValue);
-    addField(4, tr("定时同步"), &m_intervalValue);
-    addField(5, tr("请求频率"), &m_rateLimitValue);
-    addField(6, tr("本地监视"), &m_watchLocalValue);
-    addField(7, tr("同步删除"), &m_syncDeletionValue);
-    addField(8, tr("排除规则"), &m_excludesValue);
-    addField(9, tr("同步范围"), &m_scopeValue);
+    addField(4, tr("同步模式"), &m_syncModeValue);
+    addField(5, tr("定时同步"), &m_intervalValue);
+    addField(6, tr("请求频率"), &m_rateLimitValue);
+    addField(7, tr("本地监视"), &m_watchLocalValue);
+    addField(8, tr("同步删除"), &m_syncDeletionValue);
+    addField(9, tr("排除规则"), &m_excludesValue);
+    addField(10, tr("同步范围"), &m_scopeValue);
     detailsLayout->addLayout(grid);
 
     m_progress = new QProgressBar(details);
@@ -738,6 +739,7 @@ void MainWindow::updateDetails()
     m_remoteValue->setToolTip(m_remoteValue->text());
     m_accountValue->setText(pair->username.isEmpty() ? tr("匿名访问") : pair->username);
     m_policyValue->setText(conflictPolicyDisplayName(pair->conflictPolicy));
+    m_syncModeValue->setText(syncModeDisplayName(pair->syncMode));
     m_intervalValue->setText(pair->intervalMinutes == 0
                                  ? tr("不启用定时同步")
                                  : tr("每 %1 分钟").arg(pair->intervalMinutes));

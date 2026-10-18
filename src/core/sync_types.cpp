@@ -4,6 +4,41 @@
 
 namespace NutSync {
 
+QString syncModeToString(SyncMode mode)
+{
+    switch (mode) {
+    case SyncMode::LocalToRemote:
+        return QStringLiteral("local-to-remote");
+    case SyncMode::RemoteToLocal:
+        return QStringLiteral("remote-to-local");
+    case SyncMode::Bidirectional:
+        break;
+    }
+    return QStringLiteral("bidirectional");
+}
+
+SyncMode syncModeFromString(const QString &value)
+{
+    if (value == QLatin1String("local-to-remote"))
+        return SyncMode::LocalToRemote;
+    if (value == QLatin1String("remote-to-local"))
+        return SyncMode::RemoteToLocal;
+    return SyncMode::Bidirectional;
+}
+
+QString syncModeDisplayName(SyncMode mode)
+{
+    switch (mode) {
+    case SyncMode::LocalToRemote:
+        return QObject::tr("仅本地到远程");
+    case SyncMode::RemoteToLocal:
+        return QObject::tr("仅远程到本地");
+    case SyncMode::Bidirectional:
+        break;
+    }
+    return QObject::tr("双向同步");
+}
+
 QString conflictPolicyToString(ConflictPolicy policy)
 {
     switch (policy) {

@@ -18,7 +18,7 @@ Every sync compares both sides against that baseline before deciding whether to 
 
 ## Features
 
-- **Two-way synchronization**: changes on either the local or WebDAV side propagate to the other side.
+- **Sync modes**: two-way, local-to-remote only, or remote-to-local only. One-way modes treat the source side as authoritative: conflicts prefer the source, and destination-only changes are ignored. Deletion propagation still follows the per-pair synchronized-deletion setting.
 - **Deletion policy**: each sync pair can enable or disable synchronized deletion. It is disabled by default.
   - When enabled, local deletions propagate to the remote side.
   - When disabled, a local deletion only affects the local copy; the remote file is kept and restored by the next sync.

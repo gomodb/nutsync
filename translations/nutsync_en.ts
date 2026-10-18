@@ -162,6 +162,10 @@ NutSync uses three-way status records for two-way synchronization: when only one
       <translation>Conflict policy</translation>
     </message>
     <message>
+      <source>同步模式</source>
+      <translation>Sync mode</translation>
+    </message>
+    <message>
       <source>定时同步</source>
       <translation>Scheduled sync</translation>
     </message>
@@ -1035,6 +1039,14 @@ Only effective for the current user; unchecking will delete the entry.</translat
       <translation>System keychain support was not detected; the password will only be used for this session.</translation>
     </message>
     <message>
+      <source>单向模式以源端为准：本地到远程忽略远程变化，远程到本地忽略本地变化。</source>
+      <translation>One-way modes use the source as authoritative: local-to-remote ignores remote changes, and remote-to-local ignores local changes.</translation>
+    </message>
+    <message>
+      <source>同步模式</source>
+      <translation>Sync mode</translation>
+    </message>
+    <message>
       <source>启用此同步对</source>
       <translation>Enable this sync pair</translation>
     </message>
@@ -1777,6 +1789,18 @@ Projects/notes.md</translation>
     <message>
       <source>移除冲突记录失败：%1</source>
       <translation>Failed to remove conflict record: %1</translation>
+    </message>
+    <message>
+      <source>仅本地到远程</source>
+      <translation>Local to remote only</translation>
+    </message>
+    <message>
+      <source>仅远程到本地</source>
+      <translation>Remote to local only</translation>
+    </message>
+    <message>
+      <source>双向同步</source>
+      <translation>Two-way sync</translation>
     </message>
     <message>
       <source>保留双方副本（推荐）</source>

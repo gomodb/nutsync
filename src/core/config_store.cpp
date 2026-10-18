@@ -34,6 +34,7 @@ QJsonObject pairToJson(const SyncPair &pair)
     obj.insert(QStringLiteral("rememberPassword"), pair.rememberPassword);
     obj.insert(QStringLiteral("excludePatterns"), QJsonArray::fromStringList(pair.excludePatterns));
     obj.insert(QStringLiteral("includePaths"), QJsonArray::fromStringList(pair.includePaths));
+    obj.insert(QStringLiteral("syncMode"), syncModeToString(pair.syncMode));
     obj.insert(QStringLiteral("conflictPolicy"), conflictPolicyToString(pair.conflictPolicy));
     obj.insert(QStringLiteral("intervalMinutes"), pair.intervalMinutes);
     obj.insert(QStringLiteral("rateLimitEnabled"), pair.rateLimitEnabled);
@@ -92,6 +93,7 @@ SyncPair pairFromJson(const QJsonObject &obj)
         if (ok && !path.isEmpty() && !pair.includePaths.contains(path))
             pair.includePaths.append(path);
     }
+    pair.syncMode = syncModeFromString(obj.value(QStringLiteral("syncMode")).toString());
     pair.conflictPolicy =
         conflictPolicyFromString(obj.value(QStringLiteral("conflictPolicy")).toString());
     pair.intervalMinutes = obj.value(QStringLiteral("intervalMinutes")).toInt(15);

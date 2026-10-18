@@ -46,6 +46,7 @@ void TestConfigStore::stripsCredentialsEmbeddedInUrls()
     QCOMPARE(config.pairs.at(0).rateLimitMaxRequests, 10);
     QCOMPARE(config.pairs.at(0).watchLocalChanges, true);
     QCOMPARE(config.pairs.at(0).syncDeletions, false);
+    QCOMPARE(config.pairs.at(0).syncMode, SyncMode::Bidirectional);
     QVERIFY(config.pairs.at(0).includePaths.isEmpty());
     QCOMPARE(config.pairs.at(0).trashDeletedFiles, true);
     QCOMPARE(config.pairs.at(0).trashRetentionDays, 30);
@@ -113,6 +114,7 @@ void TestConfigStore::roundTripsPairSettings()
     pair.rememberPassword = true;
     pair.excludePatterns = {QStringLiteral(".git"), QStringLiteral("*.tmp")};
     pair.includePaths = {QStringLiteral("docs"), QStringLiteral("projects/notes.md")};
+    pair.syncMode = SyncMode::RemoteToLocal;
     pair.conflictPolicy = ConflictPolicy::PreferRemote;
     pair.intervalMinutes = 42;
     pair.rateLimitEnabled = true;
@@ -158,6 +160,7 @@ void TestConfigStore::roundTripsPairSettings()
     QCOMPARE(result.username, pair.username);
     QCOMPARE(result.excludePatterns, pair.excludePatterns);
     QCOMPARE(result.includePaths, pair.includePaths);
+    QCOMPARE(result.syncMode, SyncMode::RemoteToLocal);
     QCOMPARE(result.conflictPolicy, ConflictPolicy::PreferRemote);
     QCOMPARE(result.intervalMinutes, 42);
     QCOMPARE(result.rateLimitEnabled, true);

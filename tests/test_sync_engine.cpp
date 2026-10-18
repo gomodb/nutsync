@@ -45,6 +45,7 @@ public:
 
     QString pairId() const { return m_pair.id; }
     void setIncludePaths(const QStringList &paths) { m_pair.includePaths = paths; }
+    void setSyncMode(SyncMode mode) { m_pair.syncMode = mode; }
 
     bool writeLocal(const QString &relative, const QByteArray &content)
     {
@@ -234,6 +235,29 @@ void TestSyncEngine::sameContentMtimeChangeDoesNotUpload()
     QVERIFY2(summary.success, qPrintable(harness.diagnostics(summary)));
     QCOMPARE(summary.uploaded, 1);
     QCOMPARE(harness.readRemote(QStringLiteral("touched.txt")), QByteArray("new-content!"));
+}
+
+void TestSyncEngine::oneWayModes()
+{
+    Harness localToRemote;
+    localToRemote.setSyncMode(SyncMode::LocalToRemote);
+    QVERIFY(localToRemote.writeLocal(QStringLiteral("local.txt"), "local"));
+    QVERIFY(localToRemote.writeRemote(QStringLiteral("remote.txt"), "remote"));
+    const SyncSummary uploadOnly = localToRemote.sync(ConflictPolicy::KeepBoth, {}, true);
+    QVERIFY2(uploadOnly.success, qPrintable(localToRemote.diagnostics(uploadOnly)));
+    QCOMPARE(localToRemote.readRemote(QStringLiteral("local.txt")), QByteArray("local"));
+    QVERIFY(!localToRemote.existsLocal(QStringLiteral("remote.txt")));
+    QVERIFY(localToRemote.existsRemote(QStringLiteral("remote.txt")));
+
+    Harness remoteToLocal;
+    remoteToLocal.setSyncMode(SyncMode::RemoteToLocal);
+    QVERIFY(remoteToLocal.writeLocal(QStringLiteral("local.txt"), "local"));
+    QVERIFY(remoteToLocal.writeRemote(QStringLiteral("remote.txt"), "remote"));
+    const SyncSummary downloadOnly = remoteToLocal.sync(ConflictPolicy::KeepBoth, {}, true);
+    QVERIFY2(downloadOnly.success, qPrintable(remoteToLocal.diagnostics(downloadOnly)));
+    QCOMPARE(remoteToLocal.readLocal(QStringLiteral("remote.txt")), QByteArray("remote"));
+    QVERIFY(!remoteToLocal.existsRemote(QStringLiteral("local.txt")));
+    QVERIFY(remoteToLocal.existsLocal(QStringLiteral("local.txt")));
 }
 
 void TestSyncEngine::selectiveSync()

@@ -56,6 +56,7 @@ private:
     QSpinBox *m_rateLimitWindow = nullptr;
     QComboBox *m_rateLimitUnit = nullptr;
     QSpinBox *m_rateLimitCount = nullptr;
+    QComboBox *m_syncMode = nullptr;
     QCheckBox *m_enabled = nullptr;
     QCheckBox *m_syncOnStartup = nullptr;
     QCheckBox *m_watchLocalChanges = nullptr;

@@ -47,6 +47,7 @@ private:
     bool localDeleteStillSafe(const SyncAction &action) const;
     bool ensureTrashBatch(QString *error);
     bool includedInScope(const QString &path) const;
+    void filterActionsForMode(SyncPlan *plan) const;
     bool localSubtreeStillMatchesSnapshot(const QString &prefix) const;
     bool ensureLocalParent(const QString &relativePath, QString *error) const;
     bool verifyRemoteUnchanged(const SyncAction &action, QString *error,
