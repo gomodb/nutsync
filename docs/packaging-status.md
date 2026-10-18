@@ -2,15 +2,17 @@
 
 ## Current artifacts
 
-- Application version: `0.4.7`
-- GitHub release: <https://github.com/gomodb/nutsync/releases/tag/v0.4.7>
-- AUR repository commit: `5748139 nutsync 0.4.7-1`
-- x86_64 Arch package: `packaging/arch/nutsync-0.4.7-1-x86_64.pkg.tar.zst`
+- Application version: `0.5.0`
+- GitHub release: <https://github.com/gomodb/nutsync/releases/tag/v0.5.0>
+- AUR repository commit: `56ad7a9 nutsync 0.5.0-1` (local, not pushed)
+- x86_64 Arch package: `packaging/arch/nutsync-0.5.0-1-x86_64.pkg.tar.zst`
 - x86_64 package SHA-256:
-  `6d2b1af81d83a7422e87a4ae6963b6625751cb7554d732deadb46e4e40eb450d`
+  `e14d2225bbb08ba1364914a039911ffceb5e1a44989bcf941ebca03260d17a62`
+- Source archive SHA-256:
+  `2e73cf4ab887f7fa9034504f9c6680b4c5c75bd7e60d324234e5ed64fcf38101`
 
-The main branch contains newer unreleased features. No version bump, tag, GitHub
-release, or AUR update is performed automatically.
+NutSync 0.5.0 is released on GitHub. AUR publication remains blocked by the
+missing AUR public-key registration.
 
 ## AUR push blocker
 
@@ -30,7 +32,7 @@ ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIBpw077hEh6GPF6rv6Ar73HuRPLk2W5HdA9GGGVOSy4T
 AUR package name: `nutsync`
 
 Local AUR repository: `~/Projects/nutsync-aur` (branch `master`, package
-`0.4.7-1`).
+`0.5.0-1`).
 
 ## Arch Linux ARM native package blocker
 

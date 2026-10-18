@@ -20,7 +20,7 @@ makedepends=('cmake' 'ninja' 'qt6-tools')
 checkdepends=('python')
 options=('!debug')
 source=("$pkgname-$pkgver.tar.gz::https://github.com/gomodb/nutsync/archive/refs/tags/v$pkgver.tar.gz")
-sha256sums=('SKIP')
+sha256sums=('2e73cf4ab887f7fa9034504f9c6680b4c5c75bd7e60d324234e5ed64fcf38101')
 
 build() {
     cmake -S "$srcdir/$pkgname-$pkgver" -B build \
