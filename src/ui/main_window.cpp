@@ -535,6 +535,7 @@ void MainWindow::buildUi()
     detailButtons->addWidget(syncButton);
     detailButtons->addWidget(editButton);
     detailButtons->addWidget(m_conflictButton);
+    detailButtons->addWidget(m_retryFailedButton);
     detailButtons->addWidget(m_trashButton);
     detailButtons->addStretch(1);
     detailsLayout->addLayout(detailButtons);
@@ -736,6 +737,8 @@ void MainWindow::updateDetails()
             m_conflictButton->setVisible(false);
         if (m_trashButton)
             m_trashButton->setVisible(false);
+        if (m_retryFailedButton)
+            m_retryFailedButton->setVisible(false);
         return;
     }
 
@@ -789,6 +792,10 @@ void MainWindow::updateDetails()
     if (conflictCount > 0)
         m_conflictButton->setText(tr("查看冲突（%1）").arg(conflictCount));
     m_trashButton->setVisible(pair->trashDeletedFiles);
+    const int failedCount = m_failedPaths.value(pair->id).size();
+    m_retryFailedButton->setVisible(failedCount > 0);
+    if (failedCount > 0)
+        m_retryFailedButton->setText(tr("重试失败项（%1）").arg(failedCount));
 
     m_progress->setVisible(current);
     if (current) {
@@ -1228,6 +1235,14 @@ void MainWindow::showRateLimitNotice(const SyncPair &pair, const QDateTime &next
     appendSystemStatus(message);
 }
 
+void MainWindow::retryFailed()
+{
+    const SyncPair *pair = findPair(selectedPairId());
+    if (!pair)
+        return;
+    requestSync(pair->id, true);
+}
+
 void MainWindow::requestSyncSelected()
 {
     const QString id = selectedPairId();
@@ -1353,6 +1368,10 @@ void MainWindow::onPairFinished(const SyncSummary &summary)
     pair->lastError = summary.errorDetails.value(0);
     saveConfig(false);
 
+    if (summary.failedPaths.isEmpty())
+        m_failedPaths.remove(pair->id);
+    else
+        m_failedPaths.insert(pair->id, summary.failedPaths);
     if (summary.conflictRecords.isEmpty()) {
         m_conflictRecords.remove(pair->id);
         m_conflictPaths.remove(pair->id);

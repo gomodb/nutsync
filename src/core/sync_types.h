@@ -206,6 +206,7 @@ struct SyncSummary
     QStringList conflictPaths;
     QStringList conflictCopies;
     QList<ConflictRecord> conflictRecords;
+    QStringList failedPaths;
     qint64 elapsedMs = 0;
 };
 

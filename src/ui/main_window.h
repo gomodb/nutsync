@@ -72,6 +72,7 @@ private:
     void removePairById(const QString &id);
     void requestSync(const QString &id, bool manual = true);
     void requestSyncSelected();
+    void retryFailed();
     void requestSyncAll();
     void cancelSync();
     bool clearPairState(const QString &id, bool showError = true);
@@ -132,6 +133,7 @@ private:
     QLabel *m_statsLabel = nullptr;
     QPushButton *m_conflictButton = nullptr;
     QPushButton *m_trashButton = nullptr;
+    QPushButton *m_retryFailedButton = nullptr;
     QProgressBar *m_progress = nullptr;
     QPlainTextEdit *m_activity = nullptr;
     QLabel *m_globalStatus = nullptr;
@@ -160,6 +162,7 @@ private:
     QHash<QString, QStringList> m_logs;
     QHash<QString, QStringList> m_conflictPaths;
     QHash<QString, QStringList> m_conflictCopies;
+    QHash<QString, QStringList> m_failedPaths;
     QHash<QString, QList<ConflictRecord>> m_conflictRecords;
     QSet<QString> m_notifyOnSuccess;
     QSet<QString> m_deferredAutoSyncs;

@@ -390,7 +390,10 @@ void SyncEngine::run()
             });
             emit progress(m_completedActions, m_totalActions, m_bytesDone, m_bytesTotal,
                           action.path);
-            executeAction(action, &summary);
+            if (!executeAction(action, &summary) && !summary.cancelled
+                && !summary.failedPaths.contains(action.path)) {
+                summary.failedPaths.append(action.path);
+            }
             m_backend->setTransferProgress({});
             if (action.kind == ActionKind::Upload)
                 m_bytesDone += action.local.size;

@@ -284,6 +284,10 @@ NutSync will start with empty configuration.</translation>
       <translation>View conflicts (%1)</translation>
     </message>
     <message>
+      <source>重试失败项（%1）</source>
+      <translation>Retry failed items (%1)</translation>
+    </message>
+    <message>
       <source>队列：%1</source>
       <translation>Queue: %1</translation>
     </message>
