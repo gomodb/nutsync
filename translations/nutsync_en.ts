@@ -732,6 +732,10 @@ Only NutSync's configuration and synchronization baseline are deleted, not local
       <translation>Show desktop notifications</translation>
     </message>
     <message>
+      <source>网络恢复后自动同步</source>
+      <translation>Sync automatically when the network comes back</translation>
+    </message>
+    <message>
       <source>关闭窗口时最小化到托盘</source>
       <translation>Minimize to tray when closing window</translation>
     </message>

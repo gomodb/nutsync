@@ -149,6 +149,7 @@ private:
     QAction *m_quitAction = nullptr;
 
     QTimer *m_scheduler = nullptr;
+    QTimer *m_networkSyncTimer = nullptr;
     QFileSystemWatcher *m_themeWatcher = nullptr;
     SyncRateLimiter m_rateLimiter;
     QHash<QString, LocalChangeMonitor *> m_localMonitors;

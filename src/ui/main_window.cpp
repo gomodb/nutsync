@@ -46,6 +46,7 @@
 #include <QLabel>
 #include <QMenu>
 #include <QMenuBar>
+#include <QNetworkInformation>
 #include <QMessageBox>
 #include <QPlainTextEdit>
 #include <QPointer>
@@ -220,6 +221,29 @@ MainWindow::MainWindow(QWidget *parent)
     m_scheduler->setInterval(30000);
     connect(m_scheduler, &QTimer::timeout, this, &MainWindow::scheduleTick);
     m_scheduler->start();
+
+    m_networkSyncTimer = new QTimer(this);
+    m_networkSyncTimer->setSingleShot(true);
+    m_networkSyncTimer->setInterval(3000);
+    connect(m_networkSyncTimer, &QTimer::timeout, this, [this]() {
+        if (m_autoSyncPaused || m_quitting || !m_config.settings.syncOnNetworkRecovery)
+            return;
+        for (const SyncPair &pair : std::as_const(m_config.pairs)) {
+            if (pair.enabled && !m_controller->contains(pair.id))
+                requestSync(pair.id, false);
+        }
+    });
+    if (QNetworkInformation::loadBackendByFeatures(QNetworkInformation::Feature::Reachability)) {
+        if (QNetworkInformation *information = QNetworkInformation::instance()) {
+            connect(information, &QNetworkInformation::reachabilityChanged, this,
+                    [this](QNetworkInformation::Reachability reachability) {
+                        if (reachability == QNetworkInformation::Reachability::Online
+                            && m_config.settings.syncOnNetworkRecovery) {
+                            m_networkSyncTimer->start();
+                        }
+                    });
+        }
+    }
 
     if (m_config.pairs.isEmpty())
         m_globalStatus->setText(tr("添加一个同步对以开始使用 NutSync"));
@@ -1841,6 +1865,8 @@ void MainWindow::openSettings()
 
     auto *notifications = new QCheckBox(tr("显示桌面通知"), &dialog);
     notifications->setChecked(m_config.settings.notifications);
+    auto *networkSync = new QCheckBox(tr("网络恢复后自动同步"), &dialog);
+    networkSync->setChecked(m_config.settings.syncOnNetworkRecovery);
     auto *closeToTray = new QCheckBox(tr("关闭窗口时最小化到托盘"), &dialog);
     closeToTray->setChecked(m_config.settings.closeToTray);
     auto *autoStartup = new QCheckBox(tr("程序启动后同步标记为启动同步的同步对"), &dialog);
@@ -1857,6 +1883,7 @@ void MainWindow::openSettings()
                              "如果系统托盘不可用，则仍会显示主窗口。"));
 
     layout->addWidget(notifications);
+    layout->addWidget(networkSync);
     layout->addWidget(closeToTray);
     layout->addWidget(autoStartup);
     layout->addWidget(startMinimized);
@@ -2020,6 +2047,7 @@ void MainWindow::openSettings()
     m_config.settings.retryCount = retryCount->value();
     m_config.settings.retryDelaySeconds = retryDelay->value();
     m_config.settings.notifications = notifications->isChecked();
+    m_config.settings.syncOnNetworkRecovery = networkSync->isChecked();
     m_config.settings.closeToTray = closeToTray->isChecked();
     m_config.settings.autoSyncOnStartup = autoStartup->isChecked();
     m_config.settings.startMinimized = startMinimized->isChecked();

@@ -135,6 +135,7 @@ QJsonObject settingsToJson(const AppSettings &settings)
     obj.insert(QStringLiteral("notifications"), settings.notifications);
     obj.insert(QStringLiteral("closeToTray"), settings.closeToTray);
     obj.insert(QStringLiteral("autoSyncOnStartup"), settings.autoSyncOnStartup);
+    obj.insert(QStringLiteral("syncOnNetworkRecovery"), settings.syncOnNetworkRecovery);
     obj.insert(QStringLiteral("startMinimized"), settings.startMinimized);
     return obj;
 }
@@ -169,6 +170,8 @@ AppSettings settingsFromJson(const QJsonObject &obj)
     settings.notifications = obj.value(QStringLiteral("notifications")).toBool(true);
     settings.closeToTray = obj.value(QStringLiteral("closeToTray")).toBool(true);
     settings.autoSyncOnStartup = obj.value(QStringLiteral("autoSyncOnStartup")).toBool(true);
+    settings.syncOnNetworkRecovery =
+        obj.value(QStringLiteral("syncOnNetworkRecovery")).toBool(true);
     settings.startMinimized = obj.value(QStringLiteral("startMinimized")).toBool(false);
     return settings;
 }

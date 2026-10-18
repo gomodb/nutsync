@@ -50,6 +50,7 @@ void TestConfigStore::stripsCredentialsEmbeddedInUrls()
     QCOMPARE(config.pairs.at(0).trashDeletedFiles, true);
     QCOMPARE(config.pairs.at(0).trashRetentionDays, 30);
     QCOMPARE(config.settings.language, QStringLiteral("system"));
+    QCOMPARE(config.settings.syncOnNetworkRecovery, true);
     QCOMPARE(config.settings.proxyMode, QStringLiteral("system"));
     QCOMPARE(config.settings.proxyPort, 8080);
     QCOMPARE(config.settings.logLevel, QStringLiteral("info"));
@@ -90,6 +91,7 @@ void TestConfigStore::roundTripsPairSettings()
     config.settings.closeToTray = false;
     config.settings.autoSyncOnStartup = false;
     config.settings.startMinimized = true;
+    config.settings.syncOnNetworkRecovery = false;
     config.settings.language = QStringLiteral("en");
     config.settings.proxyMode = QStringLiteral("manual");
     config.settings.proxyHost = QStringLiteral("proxy.example.com");
@@ -135,6 +137,7 @@ void TestConfigStore::roundTripsPairSettings()
     QCOMPARE(loaded.settings.closeToTray, false);
     QCOMPARE(loaded.settings.autoSyncOnStartup, false);
     QCOMPARE(loaded.settings.startMinimized, true);
+    QCOMPARE(loaded.settings.syncOnNetworkRecovery, false);
     QCOMPARE(loaded.settings.language, QStringLiteral("en"));
     QCOMPARE(loaded.settings.proxyMode, QStringLiteral("manual"));
     QCOMPARE(loaded.settings.proxyHost, QStringLiteral("proxy.example.com"));

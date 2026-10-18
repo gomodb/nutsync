@@ -133,6 +133,7 @@ struct AppSettings
     bool notifications = true;
     bool closeToTray = true;
     bool autoSyncOnStartup = true;
+    bool syncOnNetworkRecovery = true;
     bool startMinimized = false;
 };
 
