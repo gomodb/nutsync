@@ -109,12 +109,20 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
+          set -x
           target="$GITHUB_REF_NAME"
           if [[ "$target" == arm-* ]]; then
             target="v${target#arm-}"
           fi
           test -n "$target"
-          gh release view "$target" >/dev/null
+          ls -l dist
+          if ! gh release view "$target" > /tmp/release-view.log 2>&1; then
+            cat /tmp/release-view.log
+            exit 1
+          fi
           cd dist
           sha256sum *.pkg.tar.* > SHA256SUMS-aarch64
-          gh release upload "$target" ./*.pkg.tar.* SHA256SUMS-aarch64 --clobber
+          if ! gh release upload "$target" ./*.pkg.tar.* SHA256SUMS-aarch64 --clobber > /tmp/release-upload.log 2>&1; then
+            cat /tmp/release-upload.log
+            exit 1
+          fi
