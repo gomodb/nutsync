@@ -21,11 +21,19 @@ jobs:
 
       - name: Bootstrap Arch Linux ARM
         run: |
-          set -x
-          sed -i 's|^Server = http://|Server = https://|' /etc/pacman.d/mirrorlist
-          pacman-key --init
-          pacman-key --populate archlinuxarm
-          pacman -Syu --noconfirm
+          set +e
+          {
+            uname -m
+            sed -i 's|^Server = http://|Server = https://|' /etc/pacman.d/mirrorlist
+            pacman-key --init
+            pacman-key --populate archlinuxarm
+            pacman -Syu --noconfirm
+          } > /tmp/bootstrap.log 2>&1
+          status=$?
+          tail -n 30 /tmp/bootstrap.log | while IFS= read -r line; do
+            echo "::error::${line}"
+          done
+          exit "$status"
 
       - name: Install packaging dependencies
         run: |
