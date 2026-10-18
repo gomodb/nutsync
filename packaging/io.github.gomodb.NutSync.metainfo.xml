@@ -44,6 +44,12 @@
     <name>NutSync contributors</name>
   </developer>
   <releases>
+    <release version="0.4.6" date="2026-10-18">
+      <description>
+        <p>Persists conflict records in the SQLite state database and migrates
+        the schema to version 2 with a pre-migration backup.</p>
+      </description>
+    </release>
     <release version="0.4.5" date="2026-10-18">
       <description>
         <p>Adds a conflict list with copy paths and a shortcut to open the

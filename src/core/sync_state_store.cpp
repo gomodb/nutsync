@@ -61,15 +61,18 @@ bool SyncStateStore::open(QString *error)
     pragma.exec(QStringLiteral("PRAGMA synchronous=NORMAL"));
     pragma.exec(QStringLiteral("PRAGMA busy_timeout=5000"));
     pragma.exec(QStringLiteral("PRAGMA foreign_keys=ON"));
+    pragma.finish();
 
     QSqlQuery check(m_database);
     if (check.exec(QStringLiteral("PRAGMA quick_check")) && check.next()
         && check.value(0).toString() != QLatin1String("ok")) {
         if (error)
             *error = QObject::tr("同步状态数据库损坏：%1").arg(check.value(0).toString());
+        check.finish();
         close();
         return false;
     }
+    check.finish();
 
     QFile::setPermissions(m_databasePath, QFileDevice::ReadOwner | QFileDevice::WriteOwner);
     if (!ensureSchema(error)) {
@@ -93,11 +96,12 @@ void SyncStateStore::close()
 
 bool SyncStateStore::ensureSchema(QString *error)
 {
-    constexpr int currentVersion = 1;
+    constexpr int currentVersion = 2;
     QSqlQuery versionQuery(m_database);
     int version = 0;
     if (versionQuery.exec(QStringLiteral("PRAGMA user_version")) && versionQuery.next())
         version = versionQuery.value(0).toInt();
+    versionQuery.finish();
     if (version > currentVersion) {
         if (error)
             *error = QObject::tr("同步状态数据库版本 %1 高于当前支持版本 %2")
@@ -128,7 +132,19 @@ bool SyncStateStore::ensureSchema(QString *error)
             *error = QObject::tr("创建同步状态表失败：%1").arg(queryError(query));
         return false;
     }
-    if (version == 0 && !query.exec(QStringLiteral("PRAGMA user_version=1"))) {
+    const QString conflictsSql = QStringLiteral("CREATE TABLE IF NOT EXISTS conflicts ("
+                                                "  pair_id TEXT NOT NULL,"
+                                                "  path TEXT NOT NULL,"
+                                                "  copy_path TEXT NOT NULL DEFAULT '',"
+                                                "  detected_at INTEGER NOT NULL,"
+                                                "  PRIMARY KEY (pair_id, path, copy_path)"
+                                                ")");
+    if (!query.exec(conflictsSql)) {
+        if (error)
+            *error = QObject::tr("创建冲突记录表失败：%1").arg(queryError(query));
+        return false;
+    }
+    if (version < currentVersion && !query.exec(QStringLiteral("PRAGMA user_version=2"))) {
         if (error)
             *error = QObject::tr("设置状态数据库版本失败：%1").arg(queryError(query));
         return false;
@@ -304,6 +320,72 @@ bool SyncStateStore::clearPair(const QString &pairId, QString *error)
             *error = QObject::tr("清空同步状态失败：%1").arg(queryError(query));
         return false;
     }
+    return true;
+}
+
+bool SyncStateStore::replaceConflicts(const QString &pairId, const QList<ConflictRecord> &records,
+                                      QString *error)
+{
+    if (!m_open)
+        return true;
+    if (!m_database.transaction()) {
+        if (error)
+            *error = QObject::tr("开始冲突记录事务失败：%1").arg(m_database.lastError().text());
+        return false;
+    }
+    QSqlQuery remove(m_database);
+    remove.prepare(QStringLiteral("DELETE FROM conflicts WHERE pair_id = ?"));
+    remove.addBindValue(pairId);
+    if (!remove.exec()) {
+        m_database.rollback();
+        if (error)
+            *error = QObject::tr("清理冲突记录失败：%1").arg(queryError(remove));
+        return false;
+    }
+    for (const ConflictRecord &record : records) {
+        QSqlQuery insert(m_database);
+        insert.prepare(QStringLiteral("INSERT OR REPLACE INTO conflicts"
+                                      " (pair_id, path, copy_path, detected_at)"
+                                      " VALUES (?, ?, ?, ?)"));
+        insert.addBindValue(pairId);
+        insert.addBindValue(record.path);
+        insert.addBindValue(record.copyPath);
+        insert.addBindValue(QDateTime::currentMSecsSinceEpoch());
+        if (!insert.exec()) {
+            m_database.rollback();
+            if (error)
+                *error = QObject::tr("写入冲突记录失败：%1").arg(queryError(insert));
+            return false;
+        }
+    }
+    if (!m_database.commit()) {
+        m_database.rollback();
+        if (error)
+            *error = QObject::tr("提交冲突记录事务失败：%1").arg(m_database.lastError().text());
+        return false;
+    }
+    return true;
+}
+
+bool SyncStateStore::loadConflicts(const QString &pairId, QList<ConflictRecord> *records,
+                                   QString *error) const
+{
+    if (!records)
+        return false;
+    records->clear();
+    if (!m_open)
+        return true;
+    QSqlQuery query(m_database);
+    query.prepare(QStringLiteral(
+        "SELECT path, copy_path FROM conflicts WHERE pair_id = ? ORDER BY path, copy_path"));
+    query.addBindValue(pairId);
+    if (!query.exec()) {
+        if (error)
+            *error = QObject::tr("读取冲突记录失败：%1").arg(queryError(query));
+        return false;
+    }
+    while (query.next())
+        records->append({query.value(0).toString(), query.value(1).toString()});
     return true;
 }
 

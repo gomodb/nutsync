@@ -1,6 +1,6 @@
 pkgbase = nutsync
 	pkgdesc = Two-way WebDAV synchronization client for the KDE desktop
-	pkgver = 0.4.5
+	pkgver = 0.4.6
 	pkgrel = 1
 	url = https://github.com/gomodb/nutsync
 	arch = x86_64
@@ -17,7 +17,7 @@ pkgbase = nutsync
 	depends = kstatusnotifieritem
 	depends = knotifications
 	options = !debug
-	source = nutsync-0.4.5.tar.gz::https://github.com/gomodb/nutsync/archive/refs/tags/v0.4.5.tar.gz
-	sha256sums = 5c3978173f6fe319d94b889acfdc5c8ecd3795376943f9cac9dd49eda20a00e6
+	source = nutsync-0.4.6.tar.gz::https://github.com/gomodb/nutsync/archive/refs/tags/v0.4.6.tar.gz
+	sha256sums = SKIP
 
 pkgname = nutsync

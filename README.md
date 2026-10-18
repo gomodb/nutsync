@@ -26,7 +26,7 @@ Every sync compares both sides against that baseline before deciding whether to 
   - Directory deletions only run when the entire subtree is unchanged. Subtrees containing exclusions or conflicts are skipped to avoid accidental data loss.
 - **Conflict protection**: the default policy is `KeepBoth`. The remote version is saved as `name.conflict-YYYYMMDD-HHMMSS.ext` while the local version is uploaded, so both versions remain available on both sides.
   - Other policies: prefer local, prefer remote, and newer wins.
-  - The details panel exposes a **View conflicts** button listing the affected paths and conflict copies, with a shortcut to open the containing folder.
+  - The details panel exposes a **View conflicts** button listing the affected paths and conflict copies, with a shortcut to open the containing folder. Conflict records are persisted in the state database and survive restarts.
 - **Content-based first-sync deduplication**: when a file exists on both sides, SHA-256 comparison updates the baseline without creating a conflict copy if the contents are identical.
 - **Safety checks**:
   - Synchronization stops if the local directory is not readable.
@@ -135,7 +135,7 @@ AUR metadata lives in [packaging/arch/PKGBUILD](packaging/arch/PKGBUILD). The pa
 The package source is the GitHub tag archive:
 
 ```text
-https://github.com/gomodb/nutsync/archive/refs/tags/v0.4.5.tar.gz
+https://github.com/gomodb/nutsync/archive/refs/tags/v0.4.6.tar.gz
 ```
 
 Build from the project directory:
@@ -153,7 +153,7 @@ makepkg -f
 
 The AUR repository separately contains the `PKGBUILD`, `.SRCINFO`, and the 0BSD packaging license. Application source remains GPL-3.0-or-later; AUR packaging files are 0BSD.
 
-The first AUR release for this version is `0.4.5-1`. The repository is prepared under `~/Projects/nutsync-aur` and expects the AUR SSH key to be registered before the first push.
+The first AUR release for this version is `0.4.6-1`. The repository is prepared under `~/Projects/nutsync-aur` and expects the AUR SSH key to be registered before the first push.
 
 For automated publishing, configure the repository secret `AUR_SSH_PRIVATE_KEY`, create an `aur` environment, and manually run the **Publish to AUR** workflow with the release tag. The workflow also supports creating the AUR repository on its first push.
 

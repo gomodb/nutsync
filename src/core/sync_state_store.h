@@ -28,6 +28,10 @@ public:
     bool removePath(const QString &pairId, const QString &path, QString *error = nullptr);
     bool removePrefix(const QString &pairId, const QString &path, QString *error = nullptr);
     bool clearPair(const QString &pairId, QString *error = nullptr);
+    bool replaceConflicts(const QString &pairId, const QList<ConflictRecord> &records,
+                          QString *error = nullptr);
+    bool loadConflicts(const QString &pairId, QList<ConflictRecord> *records,
+                       QString *error = nullptr) const;
 
 private:
     bool ensureSchema(QString *error);

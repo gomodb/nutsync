@@ -46,6 +46,7 @@ private:
     void buildUi();
     void buildActions();
     void loadConfig();
+    void loadPersistedConflicts();
     void saveConfig(bool showError);
     void setupTray();
     void refreshPairs(const QString &selectId = {});

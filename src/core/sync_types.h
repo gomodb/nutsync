@@ -65,6 +65,12 @@ struct RemoteEntry
     bool isValid() const { return !path.isEmpty(); }
 };
 
+struct ConflictRecord
+{
+    QString path;
+    QString copyPath;
+};
+
 struct StateEntry
 {
     QString path;
@@ -183,6 +189,7 @@ struct SyncSummary
     QList<RemoteErrorClass> errorClasses;
     QStringList conflictPaths;
     QStringList conflictCopies;
+    QList<ConflictRecord> conflictRecords;
     qint64 elapsedMs = 0;
 };
 

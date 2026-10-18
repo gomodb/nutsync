@@ -184,6 +184,7 @@ MainWindow::MainWindow(QWidget *parent)
     buildActions();
     buildUi();
     loadConfig();
+    loadPersistedConflicts();
     QString rateError;
     if (!m_rateLimiter.load(&rateError)) {
         Logger::log(QStringLiteral("rate-limit"), rateError);
@@ -535,6 +536,35 @@ void MainWindow::loadConfig()
     if (loaded) {
         // Persist migrations such as removing credentials embedded in WebDAV URLs.
         saveConfig(false);
+    }
+}
+
+void MainWindow::loadPersistedConflicts()
+{
+    SyncStateStore store(AppPaths::stateDatabase());
+    QString error;
+    if (!store.open(&error)) {
+        Logger::log(QStringLiteral("state"), error);
+        return;
+    }
+    for (const SyncPair &pair : std::as_const(m_config.pairs)) {
+        QList<ConflictRecord> records;
+        if (!store.loadConflicts(pair.id, &records, &error)) {
+            Logger::log(QStringLiteral("state"), error);
+            continue;
+        }
+        QStringList paths;
+        QStringList copies;
+        for (const ConflictRecord &record : records) {
+            if (record.copyPath.isEmpty())
+                paths.append(record.path);
+            else
+                copies.append(record.copyPath);
+        }
+        if (!paths.isEmpty() || !copies.isEmpty()) {
+            m_conflictPaths.insert(pair.id, paths);
+            m_conflictCopies.insert(pair.id, copies);
+        }
     }
 }
 
@@ -972,7 +1002,8 @@ bool MainWindow::clearPairState(const QString &id, bool showError)
 {
     SyncStateStore store(AppPaths::stateDatabase());
     QString error;
-    if (!store.open(&error) || !store.clearPair(id, &error)) {
+    if (!store.open(&error) || !store.clearPair(id, &error)
+        || !store.replaceConflicts(id, {}, &error)) {
         if (showError)
             QMessageBox::warning(this, tr("清空同步基线失败"), error);
         return false;

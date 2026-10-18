@@ -8,6 +8,8 @@ class TestStateStore : public QObject
     Q_OBJECT
 
 private slots:
+    void persistsConflicts();
+    void migratesVersionOne();
     void rejectsFutureSchemaVersion();
 };
 } // namespace NutSync::Test

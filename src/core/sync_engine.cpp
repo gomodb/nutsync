@@ -141,6 +141,7 @@ void SyncEngine::run()
     QString fatalError;
     QString settingsError;
     SyncPlan plan;
+    bool planBuilt = false;
 
     do {
         if (m_cancelled.loadRelaxed()) {
@@ -293,6 +294,7 @@ void SyncEngine::run()
         }
 
         plan = SyncPlanner::build(m_localSnapshot, remoteSnapshot, state, m_pair.syncDeletions);
+        planBuilt = true;
         summary.conflictPaths = plan.conflicts;
         emitLog(tr("同步计划：上传 %1，下载 %2，删除 %3，冲突 %4")
                     .arg(plan.uploads)
@@ -336,6 +338,11 @@ void SyncEngine::run()
             summary.cancelled = true;
     } while (false);
 
+    if (m_stateStore && planBuilt && !summary.cancelled) {
+        QString conflictError;
+        if (!m_stateStore->replaceConflicts(m_pair.id, summary.conflictRecords, &conflictError))
+            addError(&summary, tr("保存冲突记录失败：%1").arg(conflictError));
+    }
     m_stateStore = nullptr;
     m_backend.reset();
 
