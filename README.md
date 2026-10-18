@@ -27,7 +27,7 @@ Every sync compares both sides against that baseline before deciding whether to 
 - **Recycle bin**: before a local or remote deletion, NutSync copies the affected files into `~/.local/share/nutsync/trash/<pair>/<timestamp>/`. The retention period is configurable per pair and defaults to 30 days. The details-panel recycle-bin dialog lists backups, restores selected entries into the local sync folder, and can open the trash directory.
 - **Conflict protection**: the default policy is `KeepBoth`. The remote version is saved as `name.conflict-YYYYMMDD-HHMMSS.ext` while the local version is uploaded, so both versions remain available on both sides.
   - Other policies: prefer local, prefer remote, and newer wins.
-  - The details panel exposes a **View conflicts** button listing the affected paths and conflict copies, with a shortcut to open the containing folder. Conflict records are persisted in the state database and survive restarts.
+  - The details panel exposes a **View conflicts** button listing the affected paths and conflict copies, with a shortcut to open the containing folder. Conflict records are persisted in the state database and survive restarts. A conflict copy can be resolved directly with **Use local version** or **Use remote version**, updating local files, remote files, and the baseline.
 - **Content-based first-sync deduplication**: when a file exists on both sides, SHA-256 comparison updates the baseline without creating a conflict copy if the contents are identical.
 - **Safety checks**:
   - Synchronization stops if the local directory is not readable.

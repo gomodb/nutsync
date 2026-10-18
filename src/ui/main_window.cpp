@@ -6,8 +6,10 @@
 #include "core/local_change_monitor.h"
 #include "core/logger.h"
 #include "core/path_utils.h"
+#include "core/conflict_resolver.h"
 #include "core/sync_state_store.h"
 #include "core/trash_manager.h"
+#include "core/webdav_backend.h"
 #include "ui/pair_dialog.h"
 #include "ui/sync_controller.h"
 #include "ui/tray_controller.h"
@@ -562,17 +564,9 @@ void MainWindow::loadPersistedConflicts()
             Logger::log(QStringLiteral("state"), error);
             continue;
         }
-        QStringList paths;
-        QStringList copies;
-        for (const ConflictRecord &record : records) {
-            if (record.copyPath.isEmpty())
-                paths.append(record.path);
-            else
-                copies.append(record.copyPath);
-        }
-        if (!paths.isEmpty() || !copies.isEmpty()) {
-            m_conflictPaths.insert(pair.id, paths);
-            m_conflictCopies.insert(pair.id, copies);
+        if (!records.isEmpty()) {
+            m_conflictRecords.insert(pair.id, records);
+            rebuildConflictMaps(pair.id);
         }
     }
 }
@@ -999,6 +993,7 @@ void MainWindow::removePairById(const QString &id)
     m_rateLimitNoticeMs.remove(id);
     m_conflictPaths.remove(id);
     m_conflictCopies.remove(id);
+    m_conflictRecords.remove(id);
     m_config.pairs.erase(std::remove_if(m_config.pairs.begin(), m_config.pairs.end(),
                                         [&id](const SyncPair &candidate) {
                                             return candidate.id == id;
@@ -1278,12 +1273,13 @@ void MainWindow::onPairFinished(const SyncSummary &summary)
     pair->lastError = summary.errorDetails.value(0);
     saveConfig(false);
 
-    if (summary.conflictPaths.isEmpty() && summary.conflictCopies.isEmpty()) {
+    if (summary.conflictRecords.isEmpty()) {
+        m_conflictRecords.remove(pair->id);
         m_conflictPaths.remove(pair->id);
         m_conflictCopies.remove(pair->id);
     } else {
-        m_conflictPaths.insert(pair->id, summary.conflictPaths);
-        m_conflictCopies.insert(pair->id, summary.conflictCopies);
+        m_conflictRecords.insert(pair->id, summary.conflictRecords);
+        rebuildConflictMaps(pair->id);
     }
 
     updatePairRow(*pair);
@@ -1427,54 +1423,170 @@ void MainWindow::setAutoSyncPaused(bool paused)
         QTimer::singleShot(0, this, &MainWindow::scheduleTick);
 }
 
+void MainWindow::rebuildConflictMaps(const QString &pairId)
+{
+    QStringList paths;
+    QStringList copies;
+    for (const ConflictRecord &record : m_conflictRecords.value(pairId)) {
+        if (record.copyPath.isEmpty())
+            paths.append(record.path);
+        else
+            copies.append(record.copyPath);
+    }
+    m_conflictPaths.insert(pairId, paths);
+    m_conflictCopies.insert(pairId, copies);
+}
+
 void MainWindow::showConflicts()
 {
     const QString id = selectedPairId();
     const SyncPair *pair = findPair(id);
     if (!pair)
         return;
-    const QStringList paths = m_conflictPaths.value(id);
-    const QStringList copies = m_conflictCopies.value(id);
-    if (paths.isEmpty() && copies.isEmpty())
+    const QList<ConflictRecord> records = m_conflictRecords.value(id);
+    if (records.isEmpty())
         return;
 
     QDialog dialog(this);
     dialog.setWindowTitle(tr("冲突列表"));
     auto *layout = new QVBoxLayout(&dialog);
-    auto *label = new QLabel(tr("NutSync 保留了以下冲突副本，可打开所在目录手动处理。"), &dialog);
+    auto *label = new QLabel(tr("选择一个冲突副本，然后使用本地版本或远程版本解决冲突。"), &dialog);
     label->setWordWrap(true);
     layout->addWidget(label);
 
     auto *list = new QListWidget(&dialog);
-    for (const QString &path : paths) {
-        auto *item = new QListWidgetItem(tr("冲突：%1").arg(path), list);
-        item->setData(Qt::UserRole, path);
-    }
-    for (const QString &path : copies) {
-        auto *item = new QListWidgetItem(tr("副本：%1").arg(path), list);
-        item->setData(Qt::UserRole, path);
+    QHash<QString, ConflictRecord> recordsByCopy;
+    for (const ConflictRecord &record : records) {
+        const QString text = record.copyPath.isEmpty()
+            ? tr("冲突：%1").arg(record.path)
+            : tr("冲突：%1（副本：%2）").arg(record.path, record.copyPath);
+        auto *item = new QListWidgetItem(text, list);
+        item->setData(Qt::UserRole, record.copyPath);
+        item->setData(Qt::UserRole + 1, record.path);
+        if (!record.copyPath.isEmpty())
+            recordsByCopy.insert(record.copyPath, record);
     }
     layout->addWidget(list, 1);
 
+    auto *status = new QLabel(&dialog);
+    status->setWordWrap(true);
+    makeMuted(status);
+    layout->addWidget(status);
+
     auto *buttons = new QDialogButtonBox(QDialogButtonBox::Close, &dialog);
-    auto *openButton = new QPushButton(tr("打开所在目录"), &dialog);
-    buttons->addButton(openButton, QDialogButtonBox::ActionRole);
+    auto *keepLocal = new QPushButton(tr("使用本地版本"), &dialog);
+    auto *keepRemote = new QPushButton(tr("使用远程版本"), &dialog);
+    auto *openFolder = new QPushButton(tr("打开所在目录"), &dialog);
+    buttons->addButton(keepLocal, QDialogButtonBox::ActionRole);
+    buttons->addButton(keepRemote, QDialogButtonBox::ActionRole);
+    buttons->addButton(openFolder, QDialogButtonBox::ActionRole);
     layout->addWidget(buttons);
 
-    auto openItem = [&]() {
+    auto updateActions = [&]() {
+        QListWidgetItem *item = list->currentItem();
+        const bool hasCopy = item && !item->data(Qt::UserRole).toString().isEmpty();
+        keepLocal->setEnabled(hasCopy);
+        keepRemote->setEnabled(hasCopy);
+    };
+    connect(list, &QListWidget::currentItemChanged, &dialog,
+            [&updateActions](QListWidgetItem *, QListWidgetItem *) {
+                updateActions();
+            });
+    updateActions();
+
+    auto openItemFolder = [&]() {
         QListWidgetItem *item = list->currentItem();
         if (!item)
             return;
-        const QString path = item->data(Qt::UserRole).toString();
+        const QString path = item->data(Qt::UserRole + 1).toString();
         const QString absolute = PathUtils::localFilePath(pair->localPath, path);
         QDesktopServices::openUrl(QUrl::fromLocalFile(QFileInfo(absolute).absolutePath()));
     };
-    connect(openButton, &QPushButton::clicked, &dialog, openItem);
-    connect(list, &QListWidget::itemDoubleClicked, &dialog, [&](QListWidgetItem *) {
-        openItem();
+    connect(openFolder, &QPushButton::clicked, &dialog, openItemFolder);
+
+    auto resolve = [&](ConflictResolution resolution) {
+        QListWidgetItem *item = list->currentItem();
+        if (!item)
+            return;
+        const QString copyPath = item->data(Qt::UserRole).toString();
+        if (copyPath.isEmpty())
+            return;
+        const ConflictRecord record = recordsByCopy.value(copyPath);
+        if (record.copyPath.isEmpty())
+            return;
+
+        if (m_controller->contains(pair->id)) {
+            QMessageBox::information(&dialog, tr("同步正在进行"),
+                                     tr("此同步对正在同步，无法解决冲突。"));
+            return;
+        }
+        const QString target =
+            resolution == ConflictResolution::KeepLocal ? tr("远程冲突副本") : tr("本地文件");
+        const auto answer = QMessageBox::question(
+            &dialog, tr("解决冲突"),
+            tr("使用%1版本覆盖%2？")
+                .arg(resolution == ConflictResolution::KeepLocal ? tr("本地") : tr("远程"), target),
+            QMessageBox::Yes | QMessageBox::No, QMessageBox::No);
+        if (answer != QMessageBox::Yes)
+            return;
+
+        QString password = pair->password;
+        if (password.isEmpty() && pair->rememberPassword) {
+            QString passwordError;
+            password = m_credentials.readPassword(pair->id, &passwordError);
+            if (!passwordError.isEmpty()) {
+                QMessageBox::warning(&dialog, tr("无法读取密码"), passwordError);
+                return;
+            }
+        }
+
+        QUrl url(pair->remoteUrl);
+        WebDavOptions options;
+        options.baseUrl = url;
+        options.username = pair->username;
+        options.password = password;
+        if (options.username.isEmpty() && !url.userName().isEmpty()) {
+            options.username = url.userName();
+            options.password = url.password();
+        }
+        options.baseUrl.setUserInfo({});
+        options.retryCount = m_config.settings.retryCount;
+        options.retryBaseDelayMs = qMin(1000, m_config.settings.retryDelaySeconds * 1000);
+        options.retryMaxDelayMs = m_config.settings.retryDelaySeconds * 1000;
+
+        QApplication::setOverrideCursor(Qt::WaitCursor);
+        WebDavBackend backend(options);
+        const ConflictResolutionResult result =
+            NutSync::resolveConflict(*pair, record, resolution, backend, AppPaths::stateDatabase());
+        QApplication::restoreOverrideCursor();
+
+        if (!result.success) {
+            QMessageBox::warning(&dialog, tr("解决冲突失败"), result.error);
+            return;
+        }
+
+        QList<ConflictRecord> remaining;
+        for (const ConflictRecord &candidate : records) {
+            if (candidate.copyPath != record.copyPath)
+                remaining.append(candidate);
+        }
+        m_conflictRecords.insert(pair->id, remaining);
+        recordsByCopy.remove(record.copyPath);
+        rebuildConflictMaps(pair->id);
+        delete item;
+        status->setText(tr("已解决：%1").arg(record.path));
+        updateDetails();
+        updateActions();
+    };
+
+    connect(keepLocal, &QPushButton::clicked, &dialog, [&resolve]() {
+        resolve(ConflictResolution::KeepLocal);
+    });
+    connect(keepRemote, &QPushButton::clicked, &dialog, [&resolve]() {
+        resolve(ConflictResolution::KeepRemote);
     });
     connect(buttons, &QDialogButtonBox::rejected, &dialog, &QDialog::reject);
-    dialog.resize(620, 360);
+    dialog.resize(720, 420);
     dialog.exec();
 }
 
@@ -1554,6 +1666,7 @@ void MainWindow::importConfig()
     Logger::setLevel(m_config.settings.logLevel);
     m_conflictPaths.clear();
     m_conflictCopies.clear();
+    m_conflictRecords.clear();
     saveConfig(true);
     loadPersistedConflicts();
     refreshPairs();

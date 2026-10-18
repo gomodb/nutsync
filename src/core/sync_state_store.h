@@ -32,6 +32,8 @@ public:
                           QString *error = nullptr);
     bool loadConflicts(const QString &pairId, QList<ConflictRecord> *records,
                        QString *error = nullptr) const;
+    bool removeConflict(const QString &pairId, const QString &path, const QString &copyPath,
+                        QString *error = nullptr);
 
 private:
     bool ensureSchema(QString *error);

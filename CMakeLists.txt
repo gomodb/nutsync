@@ -48,6 +48,8 @@ add_library(nutsync_core STATIC
     src/core/autostart_manager.h
     src/core/config_store.cpp
     src/core/config_store.h
+    src/core/conflict_resolver.cpp
+    src/core/conflict_resolver.h
     src/core/credential_store.cpp
     src/core/credential_store.h
     src/core/local_change_monitor.cpp

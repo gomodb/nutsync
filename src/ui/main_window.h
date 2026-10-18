@@ -89,6 +89,7 @@ private:
     void showRateLimitNotice(const SyncPair &pair, const QDateTime &nextAllowed);
     void showConflicts();
     void showTrash();
+    void rebuildConflictMaps(const QString &pairId);
     void openSettings();
     void showAbout();
     void quitApplication();
@@ -151,6 +152,7 @@ private:
     QHash<QString, QStringList> m_logs;
     QHash<QString, QStringList> m_conflictPaths;
     QHash<QString, QStringList> m_conflictCopies;
+    QHash<QString, QList<ConflictRecord>> m_conflictRecords;
     QSet<QString> m_notifyOnSuccess;
     QSet<QString> m_deferredAutoSyncs;
     QSet<QString> m_monitorStartFailures;

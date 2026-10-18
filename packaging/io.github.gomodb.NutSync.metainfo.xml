@@ -16,7 +16,7 @@
       <li>Content-aware uploads that avoid redundant transfers and overwrites</li>
       <li>English and Simplified Chinese interface with system-language detection</li>
       <li>Proxy, custom CA, retry backoff, and configurable logging</li>
-      <li>Conflict copies by default, with local/remote/newest policy options</li>
+      <li>Conflict copies by default, with local/remote/newest policy options and direct conflict resolution</li>
       <li>Configurable recycle bin with deletion backups, restore, and retention</li>
       <li>Configuration export and import without exposing passwords</li>
       <li>KDE system tray integration with theme-aware monochrome icons</li>

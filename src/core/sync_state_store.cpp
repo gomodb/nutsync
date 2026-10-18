@@ -389,4 +389,23 @@ bool SyncStateStore::loadConflicts(const QString &pairId, QList<ConflictRecord> 
     return true;
 }
 
+bool SyncStateStore::removeConflict(const QString &pairId, const QString &path,
+                                    const QString &copyPath, QString *error)
+{
+    if (!m_open)
+        return true;
+    QSqlQuery query(m_database);
+    query.prepare(QStringLiteral("DELETE FROM conflicts"
+                                 " WHERE pair_id = ? AND path = ? AND copy_path = ?"));
+    query.addBindValue(pairId);
+    query.addBindValue(path);
+    query.addBindValue(copyPath);
+    if (!query.exec()) {
+        if (error)
+            *error = QObject::tr("移除冲突记录失败：%1").arg(queryError(query));
+        return false;
+    }
+    return true;
+}
+
 } // namespace NutSync

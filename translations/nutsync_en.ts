@@ -477,7 +477,7 @@ Only NutSync's configuration and synchronization baseline are deleted, not local
     </message>
     <message>
       <source>NutSync 保留了以下冲突副本，可打开所在目录手动处理。</source>
-      <translation>NutSync kept the following conflict copies. Open their folders to handle them manually.</translation>
+      <translation type="vanished">NutSync kept the following conflict copies. Open their folders to handle them manually.</translation>
     </message>
     <message>
       <source>冲突：%1</source>
@@ -485,7 +485,7 @@ Only NutSync's configuration and synchronization baseline are deleted, not local
     </message>
     <message>
       <source>副本：%1</source>
-      <translation>Copy: %1</translation>
+      <translation type="vanished">Copy: %1</translation>
     </message>
     <message>
       <source>打开所在目录</source>
@@ -566,6 +566,62 @@ Only NutSync's configuration and synchronization baseline are deleted, not local
     <message>
       <source>自动同步已恢复</source>
       <translation>Automatic sync has resumed</translation>
+    </message>
+    <message>
+      <source>选择一个冲突副本，然后使用本地版本或远程版本解决冲突。</source>
+      <translation>Select a conflict copy, then resolve it with the local or remote version.</translation>
+    </message>
+    <message>
+      <source>冲突：%1（副本：%2）</source>
+      <translation>Conflict: %1 (copy: %2)</translation>
+    </message>
+    <message>
+      <source>使用本地版本</source>
+      <translation>Use local version</translation>
+    </message>
+    <message>
+      <source>使用远程版本</source>
+      <translation>Use remote version</translation>
+    </message>
+    <message>
+      <source>此同步对正在同步，无法解决冲突。</source>
+      <translation>This sync pair is syncing; the conflict cannot be resolved now.</translation>
+    </message>
+    <message>
+      <source>远程冲突副本</source>
+      <translation>remote conflict copy</translation>
+    </message>
+    <message>
+      <source>本地文件</source>
+      <translation>local file</translation>
+    </message>
+    <message>
+      <source>解决冲突</source>
+      <translation>Resolve conflict</translation>
+    </message>
+    <message>
+      <source>使用%1版本覆盖%2？</source>
+      <translation>Overwrite %2 with the %1 version?</translation>
+    </message>
+    <message>
+      <source>本地</source>
+      <translation>local</translation>
+    </message>
+    <message>
+      <source>远程</source>
+      <translation>remote</translation>
+    </message>
+    <message>
+      <source>无法读取密码</source>
+      <translation>Could not read password</translation>
+    </message>
+    <message>
+      <source>解决冲突失败</source>
+      <translation>Conflict resolution failed</translation>
+    </message>
+    <message>
+      <source>已解决：%1</source>
+      <translation>Resolved: %1</translation>
     </message>
     <message>
       <source>此同步对还没有可恢复的删除备份。</source>
@@ -1651,6 +1707,10 @@ cache/</translation>
       <translation>Failed to read conflict records: %1</translation>
     </message>
     <message>
+      <source>移除冲突记录失败：%1</source>
+      <translation>Failed to remove conflict record: %1</translation>
+    </message>
+    <message>
       <source>保留双方副本（推荐）</source>
       <translation>Keep both copies (recommended)</translation>
     </message>
@@ -1767,12 +1827,36 @@ cache/</translation>
       <translation>Failed to read remote metadata: %1</translation>
     </message>
     <message>
+      <source>无法读取冲突副本“%1”：%2</source>
+      <translation>Could not read conflict copy "%1": %2</translation>
+    </message>
+    <message>
       <source>无法写入本地文件“%1”：%2</source>
       <translation>Unable to write to local file '%1': %2</translation>
     </message>
     <message>
       <source>写入本地文件失败：%1</source>
       <translation>Failed to write to local file: %1</translation>
+    </message>
+    <message>
+      <source>保存本地文件失败：%1</source>
+      <translation>Failed to save local file: %1</translation>
+    </message>
+    <message>
+      <source>无法删除本地冲突副本“%1”</source>
+      <translation>Could not remove local conflict copy "%1"</translation>
+    </message>
+    <message>
+      <source>冲突记录缺少原始路径或副本路径</source>
+      <translation>The conflict record is missing its original or copy path</translation>
+    </message>
+    <message>
+      <source>冲突副本不存在：%1</source>
+      <translation>Conflict copy does not exist: %1</translation>
+    </message>
+    <message>
+      <source>无法读取远程文件状态</source>
+      <translation>Could not read remote file state</translation>
     </message>
     <message>
       <source>无法创建下载临时文件：%1</source>
