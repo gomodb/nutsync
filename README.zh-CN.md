@@ -151,7 +151,7 @@ makepkg -f
 
 AUR 仓库单独保存 PKGBUILD、`.SRCINFO` 和 0BSD 打包许可证。应用源码继续使用 GPL-3.0-or-later，AUR 打包文件使用 0BSD。
 
-AUR 本版本发布为 `0.4.2-1`。本地 AUR 仓库准备在 `~/Projects/nutsync-aur`，首次推送前需要在 AUR 账户中注册 SSH 公钥。
+AUR 本版本发布为 `0.4.2-2`。本地 AUR 仓库准备在 `~/Projects/nutsync-aur`，首次推送前需要在 AUR 账户中注册 SSH 公钥。
 
 自动发布需要配置仓库 secret `AUR_SSH_PRIVATE_KEY`，创建 `aur` environment，然后手动运行 **Publish to AUR** workflow 并选择 release tag。该 workflow 也支持首次创建 AUR 仓库。
 

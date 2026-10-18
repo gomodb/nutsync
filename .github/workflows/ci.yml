@@ -276,8 +276,13 @@ jobs:
 
       - name: Run namcap
         run: |
-          namcap packaging/arch/PKGBUILD
-          namcap packaging/arch/nutsync-[0-9]*.pkg.tar.zst
+          set -o pipefail
+          namcap packaging/arch/PKGBUILD | tee namcap-pkgbuild.log
+          namcap packaging/arch/nutsync-[0-9]*.pkg.tar.zst | tee namcap-package.log
+          if grep -Eq '(^|[[:space:]])E: ' namcap-pkgbuild.log namcap-package.log; then
+            echo "namcap reported errors"
+            exit 1
+          fi
 
       - name: Upload package
         uses: actions/upload-artifact@v7
