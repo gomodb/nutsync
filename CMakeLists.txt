@@ -77,6 +77,8 @@ add_library(nutsync_core STATIC
     src/core/sync_state_store.h
     src/core/sync_types.cpp
     src/core/sync_types.h
+    src/core/trash_manager.cpp
+    src/core/trash_manager.h
     src/core/webdav_backend.cpp
     src/core/webdav_backend.h
     src/ui/sync_controller.cpp

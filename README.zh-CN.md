@@ -201,6 +201,7 @@ AArch64 已支持：代码中没有 x86 专用逻辑，CI 在 Ubuntu 24.04 ARM64
 | 请求频率记录 | `~/.local/share/nutsync/rate_limits.json` |
 | 开机自启条目 | `~/.config/autostart/io.github.gomodb.NutSync.desktop` |
 | 下载断点 / 冲突临时文件 | `~/.cache/nutsync/` |
+| 删除备份 | `~/.local/share/nutsync/trash/` |
 | 密码 | KWallet / Secret Service（service id `io.github.gomodb.NutSync`） |
 | 配置备份 | `~/.config/nutsync/config.json.bak` |
 | 状态库迁移备份 | `~/.local/share/nutsync/state.db.bak-*` |

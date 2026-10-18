@@ -86,6 +86,7 @@ private:
     void onLocalChange(const QString &pairId);
     void showRateLimitNotice(const SyncPair &pair, const QDateTime &nextAllowed);
     void showConflicts();
+    void showTrash();
     void openSettings();
     void showAbout();
     void quitApplication();
@@ -122,6 +123,7 @@ private:
     QLabel *m_excludesValue = nullptr;
     QLabel *m_statsLabel = nullptr;
     QPushButton *m_conflictButton = nullptr;
+    QPushButton *m_trashButton = nullptr;
     QProgressBar *m_progress = nullptr;
     QPlainTextEdit *m_activity = nullptr;
     QLabel *m_globalStatus = nullptr;

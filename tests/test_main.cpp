@@ -9,6 +9,7 @@
 #include "test_retry_policy.h"
 #include "test_state_store.h"
 #include "test_sync_controller.h"
+#include "test_trash_manager.h"
 #include "test_sync_engine.h"
 #include "test_sync_planner.h"
 #include "test_webdav_backend.h"
@@ -77,6 +78,10 @@ int main(int argc, char *argv[])
     }
     {
         NutSync::Test::TestStateStore test;
+        status |= QTest::qExec(&test, argc, argv);
+    }
+    {
+        NutSync::Test::TestTrashManager test;
         status |= QTest::qExec(&test, argc, argv);
     }
     return status;

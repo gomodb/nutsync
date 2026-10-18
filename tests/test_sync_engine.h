@@ -9,6 +9,7 @@ class TestSyncEngine : public QObject
 
 private slots:
     void basicBidirectionalTransfer();
+    void deletedFilesAreBackedUp();
     void detectsSubsequentChanges();
     void sameContentMtimeChangeDoesNotUpload();
     void propagatesRemoteDeletion();

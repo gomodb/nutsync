@@ -39,6 +39,8 @@ QJsonObject pairToJson(const SyncPair &pair)
     obj.insert(QStringLiteral("rateLimitMaxRequests"), pair.rateLimitMaxRequests);
     obj.insert(QStringLiteral("watchLocalChanges"), pair.watchLocalChanges);
     obj.insert(QStringLiteral("syncDeletions"), pair.syncDeletions);
+    obj.insert(QStringLiteral("trashDeletedFiles"), pair.trashDeletedFiles);
+    obj.insert(QStringLiteral("trashRetentionDays"), pair.trashRetentionDays);
     obj.insert(QStringLiteral("enabled"), pair.enabled);
     obj.insert(QStringLiteral("syncOnStartup"), pair.syncOnStartup);
     obj.insert(QStringLiteral("lastStatus"), pair.lastStatus);
@@ -90,6 +92,9 @@ SyncPair pairFromJson(const QJsonObject &obj)
     pair.rateLimitMaxRequests = qBound(1, pair.rateLimitMaxRequests, 100000);
     pair.watchLocalChanges = obj.value(QStringLiteral("watchLocalChanges")).toBool(true);
     pair.syncDeletions = obj.value(QStringLiteral("syncDeletions")).toBool(false);
+    pair.trashDeletedFiles = obj.value(QStringLiteral("trashDeletedFiles")).toBool(true);
+    pair.trashRetentionDays =
+        qBound(0, obj.value(QStringLiteral("trashRetentionDays")).toInt(30), 3650);
     pair.enabled = obj.value(QStringLiteral("enabled")).toBool(true);
     pair.syncOnStartup = obj.value(QStringLiteral("syncOnStartup")).toBool(true);
     pair.lastStatus = obj.value(QStringLiteral("lastStatus")).toString();

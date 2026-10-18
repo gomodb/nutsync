@@ -46,6 +46,8 @@ void TestConfigStore::stripsCredentialsEmbeddedInUrls()
     QCOMPARE(config.pairs.at(0).rateLimitMaxRequests, 10);
     QCOMPARE(config.pairs.at(0).watchLocalChanges, true);
     QCOMPARE(config.pairs.at(0).syncDeletions, false);
+    QCOMPARE(config.pairs.at(0).trashDeletedFiles, true);
+    QCOMPARE(config.pairs.at(0).trashRetentionDays, 30);
     QCOMPARE(config.settings.language, QStringLiteral("system"));
     QCOMPARE(config.settings.proxyMode, QStringLiteral("system"));
     QCOMPARE(config.settings.proxyPort, 8080);
@@ -110,6 +112,8 @@ void TestConfigStore::roundTripsPairSettings()
     pair.rateLimitMaxRequests = 7;
     pair.watchLocalChanges = false;
     pair.syncDeletions = true;
+    pair.trashDeletedFiles = false;
+    pair.trashRetentionDays = 90;
     pair.enabled = false;
     pair.syncOnStartup = true;
     pair.lastStatus = QStringLiteral("success");
@@ -149,6 +153,8 @@ void TestConfigStore::roundTripsPairSettings()
     QCOMPARE(result.rateLimitMaxRequests, 7);
     QCOMPARE(result.watchLocalChanges, false);
     QCOMPARE(result.syncDeletions, true);
+    QCOMPARE(result.trashDeletedFiles, false);
+    QCOMPARE(result.trashRetentionDays, 90);
     QCOMPARE(result.enabled, false);
     QVERIFY(result.lastSync.isValid());
 }

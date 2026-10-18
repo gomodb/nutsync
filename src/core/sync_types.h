@@ -101,6 +101,8 @@ struct SyncPair
     int rateLimitMaxRequests = 10;
     bool watchLocalChanges = true;
     bool syncDeletions = false;
+    bool trashDeletedFiles = true;
+    int trashRetentionDays = 30;
     bool enabled = true;
     bool syncOnStartup = true;
     QString lastStatus;

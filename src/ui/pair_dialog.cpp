@@ -75,6 +75,8 @@ PairDialog::PairDialog(const SyncPair &pair, bool credentialsAvailable, QWidget 
     m_syncOnStartup->setChecked(pair.syncOnStartup);
     m_watchLocalChanges->setChecked(pair.watchLocalChanges);
     m_syncDeletions->setChecked(pair.syncDeletions);
+    m_trashDeletedFiles->setChecked(pair.trashDeletedFiles);
+    m_trashRetention->setValue(pair.trashRetentionDays);
 
     connect(&m_testWatcher, &QFutureWatcher<TestResult>::finished, this, [this]() {
         if (!m_testWatcher.isFinished())
@@ -191,10 +193,20 @@ void PairDialog::buildUi(bool credentialsAvailable)
     m_syncDeletions->setToolTip(
         tr("关闭时，本地删除不会删除远程文件；下一次同步会从远程恢复该文件。"
            "远程删除始终会同步到本地。"));
+    m_trashDeletedFiles = new QCheckBox(tr("删除前保留副本到回收站"), this);
+    m_trashDeletedFiles->setChecked(true);
+    m_trashDeletedFiles->setToolTip(tr("本地或远程文件被删除前，先复制到 NutSync 的回收站目录。"));
+    m_trashRetention = new QSpinBox(this);
+    m_trashRetention->setRange(0, 3650);
+    m_trashRetention->setSpecialValueText(tr("永久保留"));
+    m_trashRetention->setSuffix(tr(" 天"));
+    m_trashRetention->setValue(30);
     form->addRow(QString(), m_enabled);
     form->addRow(QString(), m_syncOnStartup);
     form->addRow(QString(), m_watchLocalChanges);
     form->addRow(QString(), m_syncDeletions);
+    form->addRow(QString(), m_trashDeletedFiles);
+    form->addRow(tr("回收站保留"), m_trashRetention);
 
     auto *deleteHint =
         new QLabel(tr("“同步删除”关闭时，本地删除只会影响本地副本；远程文件会在下一次同步时恢复。"
@@ -478,6 +490,8 @@ SyncPair PairDialog::syncPair() const
     pair.syncOnStartup = m_syncOnStartup->isChecked();
     pair.watchLocalChanges = m_watchLocalChanges->isChecked();
     pair.syncDeletions = m_syncDeletions->isChecked();
+    pair.trashDeletedFiles = m_trashDeletedFiles->isChecked();
+    pair.trashRetentionDays = m_trashRetention->value();
     return pair;
 }
 

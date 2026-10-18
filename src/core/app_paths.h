@@ -10,6 +10,7 @@ QString dataDir();
 QString stateDatabase();
 QString logFile();
 QString cacheDir();
+QString trashDir();
 
 void ensureDirectories();
 

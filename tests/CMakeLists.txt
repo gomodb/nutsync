@@ -26,6 +26,8 @@ add_executable(nutsync_tests
     test_state_store.h
     test_sync_engine.cpp
     test_sync_engine.h
+    test_trash_manager.cpp
+    test_trash_manager.h
     test_webdav_backend.cpp
     test_webdav_backend.h
     test_sync_controller.cpp
@@ -45,6 +47,6 @@ target_compile_definitions(nutsync_tests PRIVATE
 
 add_test(NAME nutsync_tests COMMAND nutsync_tests)
 set_tests_properties(nutsync_tests PROPERTIES
-    ENVIRONMENT "QT_QPA_PLATFORM=offscreen;XDG_CACHE_HOME=${CMAKE_CURRENT_BINARY_DIR}/test-cache"
+    ENVIRONMENT "QT_QPA_PLATFORM=offscreen;XDG_CACHE_HOME=${CMAKE_CURRENT_BINARY_DIR}/test-cache;XDG_DATA_HOME=${CMAKE_CURRENT_BINARY_DIR}/test-data"
     TIMEOUT 180
 )

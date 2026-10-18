@@ -484,6 +484,14 @@ Only NutSync's configuration and synchronization baseline are deleted, not local
       <translation>Open containing folder</translation>
     </message>
     <message>
+      <source>回收站</source>
+      <translation>Recycle bin</translation>
+    </message>
+    <message>
+      <source>此同步对还没有删除备份。</source>
+      <translation>This sync pair has no deletion backups yet.</translation>
+    </message>
+    <message>
       <source>重试最大间隔</source>
       <translation>Maximum retry delay</translation>
     </message>
@@ -851,6 +859,26 @@ Only effective for the current user; unchecking will delete the entry.</translat
       <translation>When turned off, local deletion does not delete the remote file; the next sync will restore the file from the remote. Remote deletions are always synchronized locally.</translation>
     </message>
     <message>
+      <source>删除前保留副本到回收站</source>
+      <translation>Keep a copy in the recycle bin before deletion</translation>
+    </message>
+    <message>
+      <source>本地或远程文件被删除前，先复制到 NutSync 的回收站目录。</source>
+      <translation>Copy local or remote files to the NutSync recycle bin before deleting them.</translation>
+    </message>
+    <message>
+      <source>永久保留</source>
+      <translation>Keep forever</translation>
+    </message>
+    <message>
+      <source> 天</source>
+      <translation> days</translation>
+    </message>
+    <message>
+      <source>回收站保留</source>
+      <translation>Recycle bin retention</translation>
+    </message>
+    <message>
       <source>“同步删除”关闭时，本地删除只会影响本地副本；远程文件会在下一次同步时恢复。远程删除仍然会传播到本地。</source>
       <translation>When synchronized deletion is off, local deletions only affect the local copy; the remote file is restored on the next sync. Remote deletions still propagate locally.</translation>
     </message>
@@ -1069,6 +1097,10 @@ cache/</translation>
       <translation>No changes to sync</translation>
     </message>
     <message>
+      <source>保存冲突记录失败：%1</source>
+      <translation>Failed to save conflict records: %1</translation>
+    </message>
+    <message>
       <source>同步已取消</source>
       <translation>Sync cancelled</translation>
     </message>
@@ -1153,12 +1185,24 @@ cache/</translation>
       <translation>The remote file was changed during synchronization and deletion was not performed</translation>
     </message>
     <message>
+      <source>备份远程文件到回收站失败：%1</source>
+      <translation>Failed to back up remote file to the recycle bin: %1</translation>
+    </message>
+    <message>
+      <source>无法创建回收站目录“%1”</source>
+      <translation>Could not create recycle-bin directory "%1"</translation>
+    </message>
+    <message>
       <source>删除成功，但移除同步状态失败：%1</source>
       <translation>Deletion successful, but removal of sync status failed: %1</translation>
     </message>
     <message>
       <source>本地文件在同步期间发生变化，未执行删除</source>
       <translation>Local files changed during synchronization and deletion was not performed</translation>
+    </message>
+    <message>
+      <source>备份本地文件到回收站失败：%1</source>
+      <translation>Failed to back up local file to the recycle bin: %1</translation>
     </message>
     <message>
       <source>无法删除本地路径“%1”</source>
@@ -1451,6 +1495,10 @@ cache/</translation>
       <translation>Failed to create sync status table: %1</translation>
     </message>
     <message>
+      <source>创建冲突记录表失败：%1</source>
+      <translation>Failed to create the conflict record table: %1</translation>
+    </message>
+    <message>
       <source>设置状态数据库版本失败：%1</source>
       <translation>Failed to set state database version: %1</translation>
     </message>
@@ -1485,6 +1533,26 @@ cache/</translation>
     <message>
       <source>清空同步状态失败：%1</source>
       <translation>Failed to clear synchronization status: %1</translation>
+    </message>
+    <message>
+      <source>开始冲突记录事务失败：%1</source>
+      <translation>Failed to start the conflict record transaction: %1</translation>
+    </message>
+    <message>
+      <source>清理冲突记录失败：%1</source>
+      <translation>Failed to clear conflict records: %1</translation>
+    </message>
+    <message>
+      <source>写入冲突记录失败：%1</source>
+      <translation>Failed to write conflict records: %1</translation>
+    </message>
+    <message>
+      <source>提交冲突记录事务失败：%1</source>
+      <translation>Failed to commit the conflict record transaction: %1</translation>
+    </message>
+    <message>
+      <source>读取冲突记录失败：%1</source>
+      <translation>Failed to read conflict records: %1</translation>
     </message>
     <message>
       <source>保留双方副本（推荐）</source>
@@ -1747,6 +1815,22 @@ Please use the icon in the system tray to open the main window.</translation>
     <message>
       <source>无法读取 CA 证书文件“%1”</source>
       <translation>Unable to read CA certificate file "%1"</translation>
+    </message>
+    <message>
+      <source>无法创建回收站目录“%1”</source>
+      <translation>Could not create recycle-bin directory "%1"</translation>
+    </message>
+    <message>
+      <source>无法复制到回收站“%1”</source>
+      <translation>Could not copy to the recycle bin "%1"</translation>
+    </message>
+    <message>
+      <source>无法创建回收站批次“%1”</source>
+      <translation>Could not create recycle-bin batch "%1"</translation>
+    </message>
+    <message>
+      <source>无法备份特殊文件“%1”</source>
+      <translation>Could not back up special file "%1"</translation>
     </message>
   </context>
 </TS>

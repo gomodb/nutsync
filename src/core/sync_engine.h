@@ -45,6 +45,7 @@ private:
                             QString *error);
     bool statLocal(const QString &relativePath, LocalEntry *entry, bool *exists) const;
     bool localDeleteStillSafe(const SyncAction &action) const;
+    bool ensureTrashBatch(QString *error);
     bool localSubtreeStillMatchesSnapshot(const QString &prefix) const;
     bool ensureLocalParent(const QString &relativePath, QString *error) const;
     bool verifyRemoteUnchanged(const SyncAction &action, QString *error,
@@ -78,6 +79,8 @@ private:
     SyncStateStore *m_stateStore = nullptr;
     QSet<QString> m_excludedLocal;
     QSet<QString> m_excludedRemote;
+    QMap<QString, RemoteEntry> m_remoteSnapshot;
+    QString m_trashBatchPath;
     int m_completedActions = 0;
     int m_totalActions = 0;
     mutable QMutex m_summaryMutex;

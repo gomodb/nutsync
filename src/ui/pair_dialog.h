@@ -58,6 +58,8 @@ private:
     QCheckBox *m_syncOnStartup = nullptr;
     QCheckBox *m_watchLocalChanges = nullptr;
     QCheckBox *m_syncDeletions = nullptr;
+    QCheckBox *m_trashDeletedFiles = nullptr;
+    QSpinBox *m_trashRetention = nullptr;
     QPushButton *m_testButton = nullptr;
     QLabel *m_testStatus = nullptr;
     QFutureWatcher<TestResult> m_testWatcher;

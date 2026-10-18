@@ -1,11 +1,14 @@
 #include "test_sync_engine.h"
 
+#include "core/trash_manager.h"
+
 #include "core/sync_engine.h"
 #include "core/sync_state_store.h"
 #include "mock_remote_backend.h"
 
 #include <QDateTime>
 #include <QDir>
+#include <QDirIterator>
 #include <QFile>
 #include <QFileInfo>
 #include <QTest>
@@ -39,6 +42,8 @@ public:
     QString localPath(const QString &relative) const { return QDir(m_local).filePath(relative); }
 
     QString remotePath(const QString &relative) const { return QDir(m_remote).filePath(relative); }
+
+    QString pairId() const { return m_pair.id; }
 
     bool writeLocal(const QString &relative, const QByteArray &content)
     {
@@ -228,6 +233,33 @@ void TestSyncEngine::sameContentMtimeChangeDoesNotUpload()
     QVERIFY2(summary.success, qPrintable(harness.diagnostics(summary)));
     QCOMPARE(summary.uploaded, 1);
     QCOMPARE(harness.readRemote(QStringLiteral("touched.txt")), QByteArray("new-content!"));
+}
+
+void TestSyncEngine::deletedFilesAreBackedUp()
+{
+    Harness harness;
+    QVERIFY(harness.writeLocal(QStringLiteral("backup.txt"), "keep me"));
+    const SyncSummary first = harness.sync(ConflictPolicy::KeepBoth, {}, true);
+    QVERIFY2(first.success, qPrintable(harness.diagnostics(first)));
+
+    QVERIFY(QFile::remove(harness.localPath(QStringLiteral("backup.txt"))));
+    const SyncSummary second = harness.sync(ConflictPolicy::KeepBoth, {}, true);
+    QVERIFY2(second.success, qPrintable(harness.diagnostics(second)));
+    QCOMPARE(second.deletedRemote, 1);
+
+    const QString trashRoot = TrashManager::pairDir(harness.pairId());
+    bool found = false;
+    QDirIterator iterator(trashRoot, QDir::Files, QDirIterator::Subdirectories);
+    while (iterator.hasNext()) {
+        const QString path = iterator.next();
+        if (path.endsWith(QStringLiteral("/backup.txt"))) {
+            QFile file(path);
+            QVERIFY(file.open(QIODevice::ReadOnly));
+            QCOMPARE(file.readAll(), QByteArray("keep me"));
+            found = true;
+        }
+    }
+    QVERIFY(found);
 }
 
 void TestSyncEngine::propagatesRemoteDeletion()

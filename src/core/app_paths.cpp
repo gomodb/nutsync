@@ -45,6 +45,11 @@ QString cacheDir()
     return xdgDir(QStandardPaths::GenericCacheLocation, QStringLiteral("/.cache"));
 }
 
+QString trashDir()
+{
+    return dataDir() + QStringLiteral("/trash");
+}
+
 void ensureDirectories()
 {
     QDir().mkpath(configDir());

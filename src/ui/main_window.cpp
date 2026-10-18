@@ -7,6 +7,7 @@
 #include "core/logger.h"
 #include "core/path_utils.h"
 #include "core/sync_state_store.h"
+#include "core/trash_manager.h"
 #include "ui/pair_dialog.h"
 #include "ui/sync_controller.h"
 #include "ui/tray_controller.h"
@@ -470,6 +471,7 @@ void MainWindow::buildUi()
     detailButtons->addWidget(syncButton);
     detailButtons->addWidget(editButton);
     detailButtons->addWidget(m_conflictButton);
+    detailButtons->addWidget(m_trashButton);
     detailButtons->addStretch(1);
     detailsLayout->addLayout(detailButtons);
 
@@ -676,6 +678,8 @@ void MainWindow::updateDetails()
         m_activity->clear();
         if (m_conflictButton)
             m_conflictButton->setVisible(false);
+        if (m_trashButton)
+            m_trashButton->setVisible(false);
         return;
     }
 
@@ -724,6 +728,7 @@ void MainWindow::updateDetails()
     m_conflictButton->setVisible(conflictCount > 0);
     if (conflictCount > 0)
         m_conflictButton->setText(tr("查看冲突（%1）").arg(conflictCount));
+    m_trashButton->setVisible(pair->trashDeletedFiles);
 
     m_progress->setVisible(current);
     if (current) {
@@ -1464,6 +1469,19 @@ void MainWindow::showConflicts()
     connect(buttons, &QDialogButtonBox::rejected, &dialog, &QDialog::reject);
     dialog.resize(620, 360);
     dialog.exec();
+}
+
+void MainWindow::showTrash()
+{
+    const SyncPair *pair = findPair(selectedPairId());
+    if (!pair)
+        return;
+    const QString path = TrashManager::pairDir(pair->id);
+    if (!QFileInfo::exists(path)) {
+        QMessageBox::information(this, tr("回收站"), tr("此同步对还没有删除备份。"));
+        return;
+    }
+    QDesktopServices::openUrl(QUrl::fromLocalFile(path));
 }
 
 void MainWindow::openSettings()

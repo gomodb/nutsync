@@ -4,6 +4,7 @@
 #include "core/path_utils.h"
 #include "core/sync_planner.h"
 #include "core/sync_state_store.h"
+#include "core/trash_manager.h"
 #include "core/webdav_backend.h"
 
 #include <QCryptographicHash>
@@ -142,6 +143,8 @@ void SyncEngine::run()
     QString settingsError;
     SyncPlan plan;
     bool planBuilt = false;
+    m_remoteSnapshot.clear();
+    m_trashBatchPath.clear();
 
     do {
         if (m_cancelled.loadRelaxed()) {
@@ -288,6 +291,7 @@ void SyncEngine::run()
             remoteSnapshot.insert(entry.path, entry);
         }
         emitLog(tr("远程扫描完成：%1 个条目").arg(remoteSnapshot.size()));
+        m_remoteSnapshot = remoteSnapshot;
         if (m_cancelled.loadRelaxed()) {
             summary.cancelled = true;
             break;
@@ -692,6 +696,16 @@ bool SyncEngine::doDownload(const SyncAction &action, const QString &remotePath,
     return true;
 }
 
+bool SyncEngine::ensureTrashBatch(QString *error)
+{
+    if (!m_pair.trashDeletedFiles)
+        return true;
+    if (!m_trashBatchPath.isEmpty())
+        return true;
+    m_trashBatchPath = TrashManager::createBatch(m_pair.id, m_pair.trashRetentionDays, error);
+    return !m_trashBatchPath.isEmpty();
+}
+
 bool SyncEngine::deleteRemote(const SyncAction &action, QString *error)
 {
     RemoteEntry current;
@@ -734,6 +748,49 @@ bool SyncEngine::deleteRemote(const SyncAction &action, QString *error)
         return false;
     }
 
+    if (m_pair.trashDeletedFiles) {
+        QString trashError;
+        if (!ensureTrashBatch(&trashError)) {
+            if (error)
+                *error = trashError;
+            return false;
+        }
+        if (current.type == EntryType::File) {
+            if (!TrashManager::downloadRemoteFile(
+                    *m_backend, action.path, m_trashBatchPath, action.path,
+                    [this]() {
+                        return m_cancelled.loadRelaxed() != 0;
+                    },
+                    &trashError)) {
+                if (error)
+                    *error = tr("备份远程文件到回收站失败：%1").arg(trashError);
+                return false;
+            }
+        } else {
+            for (auto it = m_remoteSnapshot.constBegin(); it != m_remoteSnapshot.constEnd(); ++it) {
+                if (!PathUtils::isSameOrChild(it.key(), action.path))
+                    continue;
+                const QString destination = QDir(m_trashBatchPath).filePath(it.key());
+                if (it.value().type == EntryType::Directory) {
+                    if (!QDir().mkpath(destination)) {
+                        if (error)
+                            *error = tr("无法创建回收站目录“%1”").arg(destination);
+                        return false;
+                    }
+                } else if (!TrashManager::downloadRemoteFile(
+                               *m_backend, it.key(), m_trashBatchPath, it.key(),
+                               [this]() {
+                                   return m_cancelled.loadRelaxed() != 0;
+                               },
+                               &trashError)) {
+                    if (error)
+                        *error = tr("备份远程文件到回收站失败：%1").arg(trashError);
+                    return false;
+                }
+            }
+        }
+    }
+
     if (!m_backend->remove(action.path, current.type == EntryType::Directory,
                            PathUtils::normalizeEtag(current.etag), error, [this]() {
                                return m_cancelled.loadRelaxed() != 0;
@@ -770,6 +827,20 @@ bool SyncEngine::deleteLocal(const SyncAction &action, QString *error)
         if (error)
             *error = tr("本地文件在同步期间发生变化，未执行删除");
         return false;
+    }
+
+    if (m_pair.trashDeletedFiles) {
+        QString trashError;
+        if (!ensureTrashBatch(&trashError)) {
+            if (error)
+                *error = trashError;
+            return false;
+        }
+        if (!TrashManager::copyLocalPath(absolute, m_trashBatchPath, action.path, &trashError)) {
+            if (error)
+                *error = tr("备份本地文件到回收站失败：%1").arg(trashError);
+            return false;
+        }
     }
 
     bool removed = false;
