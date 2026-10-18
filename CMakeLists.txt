@@ -141,6 +141,8 @@ install(FILES packaging/nutsync.notifyrc
     DESTINATION ${CMAKE_INSTALL_DATADIR}/knotifications6)
 install(FILES resources/icons/nutsync.svg
     DESTINATION ${CMAKE_INSTALL_DATADIR}/icons/hicolor/scalable/apps)
+install(FILES LICENSE
+    DESTINATION ${CMAKE_INSTALL_DATADIR}/licenses/nutsync)
 
 if(BUILD_TESTING)
     add_subdirectory(tests)
