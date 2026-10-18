@@ -168,6 +168,8 @@ jobs:
       - name: Install packaging dependencies
         run: |
           set -x
+          pacman-key --init
+          pacman-key --populate archlinuxarm
           pacman -Syy --noconfirm
           pacman -S --noconfirm --needed base-devel shadow util-linux cmake ninja git python qt6-base qt6-svg qt6-translations qt6-tools qtkeychain-qt6 kstatusnotifieritem knotifications
 
