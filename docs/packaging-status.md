@@ -34,19 +34,26 @@ AUR package name: `nutsync`
 Local AUR repository: `~/Projects/nutsync-aur` (branch `master`, package
 `0.5.0-1`).
 
-## Arch Linux ARM native package blocker
+## Arch Linux ARM native package
 
-Native aarch64 packaging was not validated in this environment:
+Validated with the **Arch Linux ARM package** GitHub Actions workflow on the
+native `ubuntu-24.04-arm` runner using the `menci/archlinuxarm:base-devel`
+container.
 
-- local Docker daemon is inactive;
-- no root/sudo access is available to start it;
-- no qemu-user/proot fallback is installed;
-- a GitHub Actions ARM64 Arch Linux container job was attempted, but the
-  `pacman` dependency installation step failed;
-- container job logs require repository admin access, so the failing step could
-  not be inspected;
-- the failing job was removed to keep main CI green.
+Result:
 
-The PKGBUILD already declares `aarch64`, and the Ubuntu arm64 CI job compiles and
-tests the project. A real Arch Linux ARM `makepkg` run remains outstanding until
-a working Arch Linux ARM environment is available.
+- `makepkg` completed successfully;
+- package installed with `pacman -U`;
+- `nutsync --version` passed;
+- desktop file and AppStream metadata were present;
+- artifact uploaded as `nutsync-archlinuxarm`.
+
+The package produced by that run is:
+
+```text
+nutsync-0.5.0-1-aarch64.pkg.tar.xz
+```
+
+Workflow: [.github/workflows/arch-arm-package.yml](../.github/workflows/arch-arm-package.yml)
+
+The workflow runs on `v*` tags and can be started manually.

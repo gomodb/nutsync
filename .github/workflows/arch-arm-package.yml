@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
   push:
     tags:
-      - 'arm-test-*'
+      - 'v*'
 
 permissions:
   contents: read
@@ -50,7 +50,7 @@ jobs:
           set +e
           useradd -m builder
           rm -rf /tmp/nutsync-src
-          git clone --depth 1 https://github.com/gomodb/nutsync.git /tmp/nutsync-src
+          git clone --depth 1 --branch "${GITHUB_REF_NAME:-main}" https://github.com/gomodb/nutsync.git /tmp/nutsync-src
           chown -R builder:builder /tmp/nutsync-src
           runuser -u builder -- bash -c "cd /tmp/nutsync-src/packaging/arch && exec makepkg --noconfirm --force" > /tmp/build.log 2>&1
           status=$?
