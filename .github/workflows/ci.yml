@@ -193,10 +193,10 @@ jobs:
             appstream desktop-file-utils
 
       - name: Validate AppStream metadata
-        run: appstreamcli validate --no-net packaging/io.github.nutsync.NutSync.metainfo.xml
+        run: appstreamcli validate --no-net packaging/io.github.gomodb.NutSync.metainfo.xml
 
       - name: Validate desktop entry
-        run: desktop-file-validate packaging/io.github.nutsync.NutSync.desktop
+        run: desktop-file-validate packaging/io.github.gomodb.NutSync.desktop
 
       - name: Check Python test helper syntax
         run: python3 -m py_compile tests/mock_webdav_server.py
