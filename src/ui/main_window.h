@@ -125,6 +125,7 @@ private:
     QLabel *m_watchLocalValue = nullptr;
     QLabel *m_syncDeletionValue = nullptr;
     QLabel *m_excludesValue = nullptr;
+    QLabel *m_scopeValue = nullptr;
     QLabel *m_statsLabel = nullptr;
     QPushButton *m_conflictButton = nullptr;
     QPushButton *m_trashButton = nullptr;

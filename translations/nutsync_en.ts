@@ -182,6 +182,10 @@ NutSync uses three-way status records for two-way synchronization: when only one
       <translation>Exclusion patterns</translation>
     </message>
     <message>
+      <source>同步范围</source>
+      <translation>Sync scope</translation>
+    </message>
+    <message>
       <source>查看冲突</source>
       <translation>View conflicts</translation>
     </message>
@@ -258,6 +262,10 @@ NutSync will start with empty configuration.</translation>
     <message>
       <source>无</source>
       <translation>None</translation>
+    </message>
+    <message>
+      <source>整个目录</source>
+      <translation>Whole folder</translation>
     </message>
     <message>
       <source>上次同步：%1</source>
@@ -1083,6 +1091,22 @@ cache/</translation>
       <translation>Exclusion patterns</translation>
     </message>
     <message>
+      <source>留空同步全部；每行一个相对路径，例如：
+Documents
+Projects/notes.md</source>
+      <translation>Leave empty to sync everything. One relative path per line, for example:
+Documents
+Projects/notes.md</translation>
+    </message>
+    <message>
+      <source>只同步这些相对路径及其子路径；留空表示同步整个目录。</source>
+      <translation>Only sync these relative paths and their descendants. Leave empty to sync the whole folder.</translation>
+    </message>
+    <message>
+      <source>仅同步路径</source>
+      <translation>Only sync paths</translation>
+    </message>
+    <message>
       <source>冲突处理</source>
       <translation>Conflict policy</translation>
     </message>
@@ -1229,6 +1253,10 @@ cache/</translation>
       <translation>Local scan complete: %1 entries</translation>
     </message>
     <message>
+      <source>选择性同步：本地范围 %1 个条目</source>
+      <translation>Selective sync: %1 local entries in scope</translation>
+    </message>
+    <message>
       <source>不支持的同步后端类型：%1</source>
       <translation>Unsupported sync backend type: %1</translation>
     </message>
@@ -1267,6 +1295,10 @@ cache/</translation>
     <message>
       <source>跳过被本地符号链接或排除项遮挡的远程条目</source>
       <translation>Skip remote entries obscured by local symlinks or exclusions</translation>
+    </message>
+    <message>
+      <source>选择性同步：远程范围 %1 个条目</source>
+      <translation>Selective sync: %1 remote entries in scope</translation>
     </message>
     <message>
       <source>远程扫描完成：%1 个条目</source>

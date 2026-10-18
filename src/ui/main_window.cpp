@@ -459,6 +459,7 @@ void MainWindow::buildUi()
     addField(6, tr("本地监视"), &m_watchLocalValue);
     addField(7, tr("同步删除"), &m_syncDeletionValue);
     addField(8, tr("排除规则"), &m_excludesValue);
+    addField(9, tr("同步范围"), &m_scopeValue);
     detailsLayout->addLayout(grid);
 
     m_progress = new QProgressBar(details);
@@ -724,6 +725,9 @@ void MainWindow::updateDetails()
     m_excludesValue->setText(pair->excludePatterns.isEmpty()
                                  ? tr("无")
                                  : pair->excludePatterns.join(QStringLiteral("，")));
+    m_scopeValue->setText(pair->includePaths.isEmpty()
+                              ? tr("整个目录")
+                              : pair->includePaths.join(QStringLiteral("，")));
 
     m_statsLabel->setText(pair->lastSync.isValid() ? tr("上次同步：%1")
                                                          .arg(pair->lastSync.toLocalTime().toString(

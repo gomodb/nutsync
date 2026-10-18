@@ -94,6 +94,7 @@ struct SyncPair
     QString password; //!< Transient. Persisted through the credential store.
     bool rememberPassword = true;
     QStringList excludePatterns;
+    QStringList includePaths;
     ConflictPolicy conflictPolicy = ConflictPolicy::KeepBoth;
     int intervalMinutes = 15;
     bool rateLimitEnabled = false;

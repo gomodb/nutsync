@@ -44,6 +44,7 @@ public:
     QString remotePath(const QString &relative) const { return QDir(m_remote).filePath(relative); }
 
     QString pairId() const { return m_pair.id; }
+    void setIncludePaths(const QStringList &paths) { m_pair.includePaths = paths; }
 
     bool writeLocal(const QString &relative, const QByteArray &content)
     {
@@ -233,6 +234,20 @@ void TestSyncEngine::sameContentMtimeChangeDoesNotUpload()
     QVERIFY2(summary.success, qPrintable(harness.diagnostics(summary)));
     QCOMPARE(summary.uploaded, 1);
     QCOMPARE(harness.readRemote(QStringLiteral("touched.txt")), QByteArray("new-content!"));
+}
+
+void TestSyncEngine::selectiveSync()
+{
+    Harness harness;
+    harness.setIncludePaths({QStringLiteral("docs")});
+    QVERIFY(harness.writeLocal(QStringLiteral("docs/inside.txt"), "inside"));
+    QVERIFY(harness.writeLocal(QStringLiteral("outside.txt"), "outside"));
+
+    const SyncSummary summary = harness.sync(ConflictPolicy::KeepBoth, {}, true);
+    QVERIFY2(summary.success, qPrintable(harness.diagnostics(summary)));
+    QCOMPARE(harness.readRemote(QStringLiteral("docs/inside.txt")), QByteArray("inside"));
+    QVERIFY(!harness.existsRemote(QStringLiteral("outside.txt")));
+    QVERIFY(harness.existsLocal(QStringLiteral("outside.txt")));
 }
 
 void TestSyncEngine::deletedFilesAreBackedUp()

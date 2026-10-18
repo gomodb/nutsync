@@ -54,6 +54,7 @@ PairDialog::PairDialog(const SyncPair &pair, bool credentialsAvailable, QWidget 
     m_password->setText(pair.password);
     m_rememberPassword->setChecked(pair.rememberPassword && credentialsAvailable);
     m_excludes->setPlainText(pair.excludePatterns.join(QLatin1Char('\n')));
+    m_includePaths->setPlainText(pair.includePaths.join(QLatin1Char('\n')));
     const int policyIndex = m_conflictPolicy->findData(static_cast<int>(pair.conflictPolicy));
     if (policyIndex >= 0)
         m_conflictPolicy->setCurrentIndex(policyIndex);
@@ -220,6 +221,13 @@ void PairDialog::buildUi(bool credentialsAvailable)
     m_excludes->setPlaceholderText(tr("每行一个规则，例如：\n.git\n*.tmp\nnode_modules\n缓存/"));
     m_excludes->setFixedHeight(80);
     form->addRow(tr("排除规则"), m_excludes);
+
+    m_includePaths = new QPlainTextEdit(this);
+    m_includePaths->setPlaceholderText(
+        tr("留空同步全部；每行一个相对路径，例如：\nDocuments\nProjects/notes.md"));
+    m_includePaths->setFixedHeight(60);
+    m_includePaths->setToolTip(tr("只同步这些相对路径及其子路径；留空表示同步整个目录。"));
+    form->addRow(tr("仅同步路径"), m_includePaths);
 
     m_conflictPolicy = new QComboBox(this);
     m_conflictPolicy->addItem(conflictPolicyDisplayName(ConflictPolicy::KeepBoth),
@@ -449,6 +457,23 @@ QStringList PairDialog::parsedExcludes() const
     return result;
 }
 
+QStringList PairDialog::parsedIncludes() const
+{
+    const QStringList raw = m_includePaths->toPlainText().split(
+        QRegularExpression(QStringLiteral("[,;\\n]")), Qt::SkipEmptyParts);
+    QStringList result;
+    for (QString line : raw) {
+        line = line.trimmed();
+        while (line.startsWith(QLatin1Char('/')))
+            line.remove(0, 1);
+        bool ok = false;
+        const QString normalized = PathUtils::normalizeRelativePath(line, &ok);
+        if (ok && !normalized.isEmpty() && !result.contains(normalized))
+            result.append(normalized);
+    }
+    return result;
+}
+
 SyncPair PairDialog::syncPair() const
 {
     SyncPair pair = m_original;
@@ -476,6 +501,7 @@ SyncPair PairDialog::syncPair() const
     }
     pair.rememberPassword = m_rememberPassword->isChecked();
     pair.excludePatterns = parsedExcludes();
+    pair.includePaths = parsedIncludes();
     pair.conflictPolicy = static_cast<ConflictPolicy>(m_conflictPolicy->currentData().toInt());
     pair.intervalMinutes = m_interval->value();
     pair.rateLimitEnabled = m_rateLimitEnabled->isChecked();

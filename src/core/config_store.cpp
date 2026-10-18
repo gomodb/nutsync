@@ -1,6 +1,7 @@
 #include "core/config_store.h"
 
 #include "core/app_paths.h"
+#include "core/path_utils.h"
 
 #include <QDir>
 #include <QFile>
@@ -32,6 +33,7 @@ QJsonObject pairToJson(const SyncPair &pair)
     obj.insert(QStringLiteral("username"), pair.username);
     obj.insert(QStringLiteral("rememberPassword"), pair.rememberPassword);
     obj.insert(QStringLiteral("excludePatterns"), QJsonArray::fromStringList(pair.excludePatterns));
+    obj.insert(QStringLiteral("includePaths"), QJsonArray::fromStringList(pair.includePaths));
     obj.insert(QStringLiteral("conflictPolicy"), conflictPolicyToString(pair.conflictPolicy));
     obj.insert(QStringLiteral("intervalMinutes"), pair.intervalMinutes);
     obj.insert(QStringLiteral("rateLimitEnabled"), pair.rateLimitEnabled);
@@ -79,6 +81,16 @@ SyncPair pairFromJson(const QJsonObject &obj)
         const QString pattern = value.toString().trimmed();
         if (!pattern.isEmpty())
             pair.excludePatterns.append(pattern);
+    }
+    const QJsonArray includes = obj.value(QStringLiteral("includePaths")).toArray();
+    for (const auto &value : includes) {
+        bool ok = false;
+        QString path = value.toString().trimmed();
+        while (path.startsWith(QLatin1Char('/')))
+            path.remove(0, 1);
+        path = PathUtils::normalizeRelativePath(path, &ok);
+        if (ok && !path.isEmpty() && !pair.includePaths.contains(path))
+            pair.includePaths.append(path);
     }
     pair.conflictPolicy =
         conflictPolicyFromString(obj.value(QStringLiteral("conflictPolicy")).toString());

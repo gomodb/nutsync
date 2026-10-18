@@ -37,6 +37,7 @@ private:
     bool validateInputs(bool forTestOnly);
     QUrl normalizedRemoteUrl(bool *ok) const;
     QStringList parsedExcludes() const;
+    QStringList parsedIncludes() const;
 
     SyncPair m_original;
     QLineEdit *m_name = nullptr;
@@ -47,6 +48,7 @@ private:
     QCheckBox *m_showPassword = nullptr;
     QCheckBox *m_rememberPassword = nullptr;
     QPlainTextEdit *m_excludes = nullptr;
+    QPlainTextEdit *m_includePaths = nullptr;
     QComboBox *m_conflictPolicy = nullptr;
     QSpinBox *m_interval = nullptr;
     QCheckBox *m_rateLimitEnabled = nullptr;

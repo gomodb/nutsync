@@ -183,6 +183,15 @@ void SyncEngine::run()
             break;
         }
         emitLog(tr("本地扫描完成：%1 个条目").arg(m_localSnapshot.size()));
+        if (!m_pair.includePaths.isEmpty()) {
+            for (auto it = m_localSnapshot.begin(); it != m_localSnapshot.end();) {
+                if (includedInScope(it.key()))
+                    ++it;
+                else
+                    it = m_localSnapshot.erase(it);
+            }
+            emitLog(tr("选择性同步：本地范围 %1 个条目").arg(m_localSnapshot.size()));
+        }
         if (m_cancelled.loadRelaxed()) {
             summary.cancelled = true;
             break;
@@ -192,6 +201,14 @@ void SyncEngine::run()
         if (!stateStore.load(m_pair.id, &state, &settingsError)) {
             fatalError = settingsError;
             break;
+        }
+        if (!m_pair.includePaths.isEmpty()) {
+            for (auto it = state.begin(); it != state.end();) {
+                if (includedInScope(it.key()))
+                    ++it;
+                else
+                    it = state.erase(it);
+            }
         }
 
         if (!m_backendFactory) {
@@ -289,6 +306,15 @@ void SyncEngine::run()
                 continue;
             }
             remoteSnapshot.insert(entry.path, entry);
+        }
+        if (!m_pair.includePaths.isEmpty()) {
+            for (auto it = remoteSnapshot.begin(); it != remoteSnapshot.end();) {
+                if (includedInScope(it.key()))
+                    ++it;
+                else
+                    it = remoteSnapshot.erase(it);
+            }
+            emitLog(tr("选择性同步：远程范围 %1 个条目").arg(remoteSnapshot.size()));
         }
         emitLog(tr("远程扫描完成：%1 个条目").arg(remoteSnapshot.size()));
         m_remoteSnapshot = remoteSnapshot;
@@ -694,6 +720,18 @@ bool SyncEngine::doDownload(const SyncAction &action, const QString &remotePath,
         return false;
     Q_UNUSED(action)
     return true;
+}
+
+bool SyncEngine::includedInScope(const QString &path) const
+{
+    if (m_pair.includePaths.isEmpty())
+        return true;
+    for (const QString &include : m_pair.includePaths) {
+        if (PathUtils::isSameOrChild(path, include) || PathUtils::isSameOrChild(include, path)) {
+            return true;
+        }
+    }
+    return false;
 }
 
 bool SyncEngine::ensureTrashBatch(QString *error)
