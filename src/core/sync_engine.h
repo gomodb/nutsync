@@ -36,7 +36,8 @@ public:
 signals:
     void started();
     void logMessage(const QString &message);
-    void progress(int completed, int total, const QString &path);
+    void progress(int completed, int total, qint64 bytesDone, qint64 bytesTotal,
+                  const QString &path);
     void finished(const NutSync::SyncSummary &summary);
 
 private:
@@ -85,6 +86,8 @@ private:
     QString m_trashBatchPath;
     int m_completedActions = 0;
     int m_totalActions = 0;
+    qint64 m_bytesDone = 0;
+    qint64 m_bytesTotal = 0;
     mutable QMutex m_summaryMutex;
     SyncSummary m_lastSummary;
 };

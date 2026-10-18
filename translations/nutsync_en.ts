@@ -924,6 +924,10 @@ Only effective for the current user; unchecking will delete the entry.</translat
       <translation>Sync in progress</translation>
     </message>
     <message>
+      <source>%1/s，剩余 %2</source>
+      <translation>%1/s, %2 remaining</translation>
+    </message>
+    <message>
       <source>%1 项/秒，剩余 %2</source>
       <translation>%1 items/s, %2 remaining</translation>
     </message>
@@ -2027,6 +2031,18 @@ Projects/notes.md</translation>
 请使用系统托盘中的图标打开主窗口。</source>
       <translation>Another NutSync instance has been started.
 Please use the icon in the system tray to open the main window.</translation>
+    </message>
+    <message>
+      <source>%1 MB/s</source>
+      <translation>%1 MB/s</translation>
+    </message>
+    <message>
+      <source>%1 KB/s</source>
+      <translation>%1 KB/s</translation>
+    </message>
+    <message>
+      <source>%1 B/s</source>
+      <translation>%1 B/s</translation>
     </message>
     <message>
       <source>%1 秒</source>

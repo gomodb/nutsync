@@ -357,7 +357,17 @@ void SyncEngine::run()
 
         m_completedActions = 0;
         m_totalActions = plan.actions.size();
-        emit progress(0, m_totalActions, {});
+        m_bytesDone = 0;
+        m_bytesTotal = 0;
+        for (const SyncAction &action : std::as_const(plan.actions)) {
+            if (action.kind == ActionKind::Upload)
+                m_bytesTotal += action.local.size;
+            else if (action.kind == ActionKind::Download)
+                m_bytesTotal += action.remote.size;
+            else if (action.kind == ActionKind::ResolveConflict)
+                m_bytesTotal += qMax(action.local.size, action.remote.size);
+        }
+        emit progress(0, m_totalActions, 0, m_bytesTotal, {});
         if (m_totalActions == 0)
             emitLog(tr("没有需要同步的更改"));
 
@@ -366,10 +376,18 @@ void SyncEngine::run()
                 summary.cancelled = true;
                 break;
             }
-            emit progress(m_completedActions, m_totalActions, action.path);
+            emit progress(m_completedActions, m_totalActions, m_bytesDone, m_bytesTotal,
+                          action.path);
             executeAction(action, &summary);
+            if (action.kind == ActionKind::Upload)
+                m_bytesDone += action.local.size;
+            else if (action.kind == ActionKind::Download)
+                m_bytesDone += action.remote.size;
+            else if (action.kind == ActionKind::ResolveConflict)
+                m_bytesDone += qMax(action.local.size, action.remote.size);
             ++m_completedActions;
-            emit progress(m_completedActions, m_totalActions, action.path);
+            emit progress(m_completedActions, m_totalActions, m_bytesDone, m_bytesTotal,
+                          action.path);
         }
 
         if (m_cancelled.loadRelaxed())

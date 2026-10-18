@@ -121,10 +121,11 @@ void SyncController::startNext()
     connect(engine, &SyncEngine::logMessage, this, [this](const QString &message) {
         emit logMessage(m_currentPairId, message);
     });
-    connect(engine, &SyncEngine::progress, this,
-            [this](int completed, int total, const QString &path) {
-                emit progress(m_currentPairId, completed, total, path);
-            });
+    connect(
+        engine, &SyncEngine::progress, this,
+        [this](int completed, int total, qint64 bytesDone, qint64 bytesTotal, const QString &path) {
+            emit progress(m_currentPairId, completed, total, bytesDone, bytesTotal, path);
+        });
     connect(engine, &SyncEngine::finished, this, &SyncController::onEngineFinished);
 
     m_watcher.setFuture(QtConcurrent::run([engine]() {

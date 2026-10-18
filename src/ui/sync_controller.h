@@ -34,7 +34,8 @@ public:
 signals:
     void pairStarted(const QString &pairId);
     void logMessage(const QString &pairId, const QString &message);
-    void progress(const QString &pairId, int completed, int total, const QString &path);
+    void progress(const QString &pairId, int completed, int total, qint64 bytesDone,
+                  qint64 bytesTotal, const QString &path);
     void pairFinished(const NutSync::SyncSummary &summary);
     void busyChanged(bool busy);
     void queueChanged(int pending);

@@ -78,7 +78,8 @@ private:
 
     void onPairStarted(const QString &pairId);
     void onLogMessage(const QString &pairId, const QString &message);
-    void onProgress(const QString &pairId, int completed, int total, const QString &path);
+    void onProgress(const QString &pairId, int completed, int total, qint64 bytesDone,
+                    qint64 bytesTotal, const QString &path);
     void onPairFinished(const SyncSummary &summary);
     void onBusyChanged(bool busy);
     void onQueueChanged(int pending);

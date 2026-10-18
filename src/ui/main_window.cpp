@@ -80,6 +80,16 @@
 namespace NutSync {
 
 namespace {
+QString formatByteRate(double bytesPerSecond)
+{
+    if (bytesPerSecond >= 1024.0 * 1024.0)
+        return QObject::tr("%1 MB/s").arg(
+            QString::number(bytesPerSecond / (1024.0 * 1024.0), 'f', 1));
+    if (bytesPerSecond >= 1024.0)
+        return QObject::tr("%1 KB/s").arg(QString::number(bytesPerSecond / 1024.0, 'f', 1));
+    return QObject::tr("%1 B/s").arg(QString::number(bytesPerSecond, 'f', 0));
+}
+
 QString formatDuration(int seconds)
 {
     if (seconds < 60)
@@ -1287,7 +1297,8 @@ void MainWindow::appendLog(const QString &pairId, const QString &message)
     Logger::log(QStringLiteral("activity"), QStringLiteral("%1: %2").arg(pairId, message));
 }
 
-void MainWindow::onProgress(const QString &pairId, int completed, int total, const QString &path)
+void MainWindow::onProgress(const QString &pairId, int completed, int total, qint64 bytesDone,
+                            qint64 bytesTotal, const QString &path)
 {
     if (selectedPairId() != pairId)
         return;
@@ -1301,7 +1312,15 @@ void MainWindow::onProgress(const QString &pairId, int completed, int total, con
     m_progress->setVisible(true);
 
     QString detail;
-    if (m_progressTimer.isValid() && m_progressTimer.elapsed() >= 1000 && completed > 0) {
+    if (m_progressTimer.isValid() && m_progressTimer.elapsed() >= 1000 && bytesTotal > 0
+        && bytesDone > 0) {
+        const double bytesPerSecond = bytesDone * 1000.0 / m_progressTimer.elapsed();
+        const double remainingBytes = qMax<qint64>(0, bytesTotal - bytesDone);
+        const int remainingSeconds =
+            bytesPerSecond > 0 ? static_cast<int>(std::ceil(remainingBytes / bytesPerSecond)) : 0;
+        detail = tr("%1/s，剩余 %2")
+                     .arg(formatByteRate(bytesPerSecond), formatDuration(remainingSeconds));
+    } else if (m_progressTimer.isValid() && m_progressTimer.elapsed() >= 1000 && completed > 0) {
         const double rate = completed * 1000.0 / m_progressTimer.elapsed();
         const int remainingSeconds =
             rate > 0 ? static_cast<int>(std::ceil((total - completed) / rate)) : 0;
