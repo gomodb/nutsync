@@ -18,6 +18,6 @@ pkgbase = nutsync
 	depends = knotifications
 	options = !debug
 	source = nutsync-0.5.2.tar.gz::https://github.com/gomodb/nutsync/archive/refs/tags/v0.5.2.tar.gz
-	sha256sums = SKIP
+	sha256sums = fed7030255d3d3289dfa085aef4903d37f08305da39c39395f57f19620beb31b
 
 pkgname = nutsync
