@@ -63,10 +63,23 @@ jobs:
 
       - name: Install and smoke test
         run: |
+          set +e
           package="$(find /tmp/nutsync-src/packaging/arch -maxdepth 1 -name 'nutsync-[0-9]*.pkg.tar.zst' | head -n1)"
-          test -n "$package"
-          pacman -U --noconfirm "$package"
+          echo "::notice::package=$package"
+          test -n "$package" || { echo "::error::package missing"; exit 1; }
+          pacman -U --noconfirm "$package" > /tmp/install.log 2>&1
+          status=$?
+          if [ "$status" -ne 0 ]; then
+            tail -n 30 /tmp/install.log | while IFS= read -r line; do echo "::error::${line}"; done
+            exit "$status"
+          fi
           QT_QPA_PLATFORM=offscreen nutsync --version
+          status=$?
+          if [ "$status" -ne 0 ]; then
+            echo "::error::nutsync --version failed with $status"
+            ldd "$(command -v nutsync)" | while IFS= read -r line; do echo "::notice::$line"; done
+            exit "$status"
+          fi
           test -f /usr/share/applications/io.github.gomodb.NutSync.desktop
           test -f /usr/share/metainfo/io.github.gomodb.NutSync.metainfo.xml
 
