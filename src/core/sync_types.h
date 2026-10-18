@@ -182,6 +182,7 @@ struct SyncSummary
     QStringList errorDetails;
     QList<RemoteErrorClass> errorClasses;
     QStringList conflictPaths;
+    QStringList conflictCopies;
     qint64 elapsedMs = 0;
 };
 

@@ -170,6 +170,10 @@ NutSync uses three-way status records for two-way synchronization: when only one
       <translation>Exclusion patterns</translation>
     </message>
     <message>
+      <source>查看冲突</source>
+      <translation>View conflicts</translation>
+    </message>
+    <message>
       <source>活动</source>
       <translation>Activity</translation>
     </message>
@@ -250,6 +254,10 @@ NutSync will start with empty configuration.</translation>
     <message>
       <source>还没有同步记录</source>
       <translation>No sync history yet</translation>
+    </message>
+    <message>
+      <source>查看冲突（%1）</source>
+      <translation>View conflicts (%1)</translation>
     </message>
     <message>
       <source>队列：%1</source>
@@ -454,6 +462,26 @@ Only NutSync's configuration and synchronization baseline are deleted, not local
     <message>
       <source>“%1”：%2</source>
       <translation>"%1": %2</translation>
+    </message>
+    <message>
+      <source>冲突列表</source>
+      <translation>Conflict list</translation>
+    </message>
+    <message>
+      <source>NutSync 保留了以下冲突副本，可打开所在目录手动处理。</source>
+      <translation>NutSync kept the following conflict copies. Open their folders to handle them manually.</translation>
+    </message>
+    <message>
+      <source>冲突：%1</source>
+      <translation>Conflict: %1</translation>
+    </message>
+    <message>
+      <source>副本：%1</source>
+      <translation>Copy: %1</translation>
+    </message>
+    <message>
+      <source>打开所在目录</source>
+      <translation>Open containing folder</translation>
     </message>
     <message>
       <source>重试最大间隔</source>
@@ -1355,6 +1383,10 @@ cache/</translation>
       <translation>Configuration file root element is not a JSON object</translation>
     </message>
     <message>
+      <source>配置文件版本 %1 高于当前支持版本 1</source>
+      <translation>Configuration version %1 is newer than the supported version 1</translation>
+    </message>
+    <message>
       <source>无法创建配置目录 %1</source>
       <translation>Unable to create configuration directory %1</translation>
     </message>
@@ -1407,12 +1439,24 @@ cache/</translation>
       <translation>Unable to open sync state database: %1</translation>
     </message>
     <message>
+      <source>同步状态数据库损坏：%1</source>
+      <translation>The synchronization state database is corrupt: %1</translation>
+    </message>
+    <message>
+      <source>同步状态数据库版本 %1 高于当前支持版本 %2</source>
+      <translation>State database version %1 is newer than the supported version %2</translation>
+    </message>
+    <message>
       <source>创建同步状态表失败：%1</source>
       <translation>Failed to create sync status table: %1</translation>
     </message>
     <message>
       <source>设置状态数据库版本失败：%1</source>
       <translation>Failed to set state database version: %1</translation>
+    </message>
+    <message>
+      <source>备份状态数据库失败：%1</source>
+      <translation>Failed to back up the state database: %1</translation>
     </message>
     <message>
       <source>内部错误：状态输出为空</source>

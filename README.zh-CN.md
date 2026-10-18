@@ -26,6 +26,7 @@ NutSync 的目标不是做一次性的“上传/下载”，而是维护一条�
   - 目录删除只会在“整棵子树均未发生新修改”时执行，包含排除项或冲突的目录会跳过递归删除，避免误删。
 - **冲突保护**：默认 `KeepBoth`，将远程版本保存为 `name.conflict-YYYYMMDD-HHMMSS.ext`，同时把本地版本上传回去，两侧最终都保留两个版本。
   - 其他策略：本地优先、远程优先、较新者优先。
+  - 详情面板提供“查看冲突”按钮，列出冲突路径和冲突副本，并可直接打开所在目录。
 - **首次同步智能去重**：两侧都存在同名文件时会先按 SHA-256 比较，内容相同则只建立基线，不制造冲突副本。
 - **安全停止条件**：
   - 本地目录不可读时不会继续同步；
@@ -134,7 +135,7 @@ AUR 元数据位于 [packaging/arch/PKGBUILD](packaging/arch/PKGBUILD)。由于 
 包源码直接取自 GitHub tag：
 
 ```text
-https://github.com/gomodb/nutsync/archive/refs/tags/v0.4.4.tar.gz
+https://github.com/gomodb/nutsync/archive/refs/tags/v0.4.5.tar.gz
 ```
 
 从项目内构建：
@@ -152,7 +153,7 @@ makepkg -f
 
 AUR 仓库单独保存 PKGBUILD、`.SRCINFO` 和 0BSD 打包许可证。应用源码继续使用 GPL-3.0-or-later，AUR 打包文件使用 0BSD。
 
-AUR 本版本发布为 `0.4.4-1`。本地 AUR 仓库准备在 `~/Projects/nutsync-aur`，首次推送前需要在 AUR 账户中注册 SSH 公钥。
+AUR 本版本发布为 `0.4.5-1`。本地 AUR 仓库准备在 `~/Projects/nutsync-aur`，首次推送前需要在 AUR 账户中注册 SSH 公钥。
 
 自动发布需要配置仓库 secret `AUR_SSH_PRIVATE_KEY`，创建 `aur` environment，然后手动运行 **Publish to AUR** workflow 并选择 release tag。该 workflow 也支持首次创建 AUR 仓库。
 

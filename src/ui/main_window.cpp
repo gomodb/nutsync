@@ -37,6 +37,8 @@
 #include <QIcon>
 #include <QKeySequence>
 #include <QLineEdit>
+#include <QListWidget>
+#include <QListWidgetItem>
 #include <QLabel>
 #include <QMenu>
 #include <QMenuBar>
@@ -460,8 +462,13 @@ void MainWindow::buildUi()
     auto *editButton =
         new QPushButton(QIcon::fromTheme(QStringLiteral("document-edit")), tr("编辑"), details);
     editButton->setObjectName(QStringLiteral("detailEditButton"));
+    m_conflictButton = new QPushButton(QIcon::fromTheme(QStringLiteral("dialog-warning")),
+                                       tr("查看冲突"), details);
+    m_conflictButton->setVisible(false);
+    connect(m_conflictButton, &QPushButton::clicked, this, &MainWindow::showConflicts);
     detailButtons->addWidget(syncButton);
     detailButtons->addWidget(editButton);
+    detailButtons->addWidget(m_conflictButton);
     detailButtons->addStretch(1);
     detailsLayout->addLayout(detailButtons);
 
@@ -637,6 +644,8 @@ void MainWindow::updateDetails()
         m_detailStack->setCurrentWidget(m_emptyLabel);
         m_titleLabel->clear();
         m_activity->clear();
+        if (m_conflictButton)
+            m_conflictButton->setVisible(false);
         return;
     }
 
@@ -679,6 +688,12 @@ void MainWindow::updateDetails()
                                                          .arg(pair->lastSync.toLocalTime().toString(
                                                              QStringLiteral("yyyy-MM-dd HH:mm:ss")))
                                                    : tr("还没有同步记录"));
+
+    const int conflictCount =
+        m_conflictPaths.value(pair->id).size() + m_conflictCopies.value(pair->id).size();
+    m_conflictButton->setVisible(conflictCount > 0);
+    if (conflictCount > 0)
+        m_conflictButton->setText(tr("查看冲突（%1）").arg(conflictCount));
 
     m_progress->setVisible(current);
     if (current) {
@@ -940,6 +955,8 @@ void MainWindow::removePairById(const QString &id)
         Logger::log(QStringLiteral("rate-limit"), error);
     m_deferredAutoSyncs.remove(id);
     m_rateLimitNoticeMs.remove(id);
+    m_conflictPaths.remove(id);
+    m_conflictCopies.remove(id);
     m_config.pairs.erase(std::remove_if(m_config.pairs.begin(), m_config.pairs.end(),
                                         [&id](const SyncPair &candidate) {
                                             return candidate.id == id;
@@ -1218,6 +1235,14 @@ void MainWindow::onPairFinished(const SyncSummary &summary)
     pair->lastError = summary.errorDetails.value(0);
     saveConfig(false);
 
+    if (summary.conflictPaths.isEmpty() && summary.conflictCopies.isEmpty()) {
+        m_conflictPaths.remove(pair->id);
+        m_conflictCopies.remove(pair->id);
+    } else {
+        m_conflictPaths.insert(pair->id, summary.conflictPaths);
+        m_conflictCopies.insert(pair->id, summary.conflictCopies);
+    }
+
     updatePairRow(*pair);
     if (selectedPairId() == pair->id) {
         m_progress->setVisible(false);
@@ -1357,6 +1382,57 @@ void MainWindow::setAutoSyncPaused(bool paused)
     updateActions();
     if (!paused)
         QTimer::singleShot(0, this, &MainWindow::scheduleTick);
+}
+
+void MainWindow::showConflicts()
+{
+    const QString id = selectedPairId();
+    const SyncPair *pair = findPair(id);
+    if (!pair)
+        return;
+    const QStringList paths = m_conflictPaths.value(id);
+    const QStringList copies = m_conflictCopies.value(id);
+    if (paths.isEmpty() && copies.isEmpty())
+        return;
+
+    QDialog dialog(this);
+    dialog.setWindowTitle(tr("冲突列表"));
+    auto *layout = new QVBoxLayout(&dialog);
+    auto *label = new QLabel(tr("NutSync 保留了以下冲突副本，可打开所在目录手动处理。"), &dialog);
+    label->setWordWrap(true);
+    layout->addWidget(label);
+
+    auto *list = new QListWidget(&dialog);
+    for (const QString &path : paths) {
+        auto *item = new QListWidgetItem(tr("冲突：%1").arg(path), list);
+        item->setData(Qt::UserRole, path);
+    }
+    for (const QString &path : copies) {
+        auto *item = new QListWidgetItem(tr("副本：%1").arg(path), list);
+        item->setData(Qt::UserRole, path);
+    }
+    layout->addWidget(list, 1);
+
+    auto *buttons = new QDialogButtonBox(QDialogButtonBox::Close, &dialog);
+    auto *openButton = new QPushButton(tr("打开所在目录"), &dialog);
+    buttons->addButton(openButton, QDialogButtonBox::ActionRole);
+    layout->addWidget(buttons);
+
+    auto openItem = [&]() {
+        QListWidgetItem *item = list->currentItem();
+        if (!item)
+            return;
+        const QString path = item->data(Qt::UserRole).toString();
+        const QString absolute = PathUtils::localFilePath(pair->localPath, path);
+        QDesktopServices::openUrl(QUrl::fromLocalFile(QFileInfo(absolute).absolutePath()));
+    };
+    connect(openButton, &QPushButton::clicked, &dialog, openItem);
+    connect(list, &QListWidget::itemDoubleClicked, &dialog, [&](QListWidgetItem *) {
+        openItem();
+    });
+    connect(buttons, &QDialogButtonBox::rejected, &dialog, &QDialog::reject);
+    dialog.resize(620, 360);
+    dialog.exec();
 }
 
 void MainWindow::openSettings()

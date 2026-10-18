@@ -903,6 +903,7 @@ bool SyncEngine::resolveKeepBoth(const SyncAction &action, const QString &tempor
         }
     }
 
+    summary->conflictCopies.append(conflictPath);
     emitLog(tr("保留冲突副本"), conflictPath);
 
     QString uploadError;

@@ -314,6 +314,7 @@ void TestSyncEngine::keepsBothConflictCopies()
     const QString conflictName = localConflict.constFirst();
     QCOMPARE(harness.readLocal(conflictName), QByteArray("remote version"));
     QCOMPARE(harness.readRemote(conflictName), QByteArray("remote version"));
+    QCOMPARE(summary.conflictCopies, QStringList{conflictName});
 
     const SyncSummary second = harness.sync(ConflictPolicy::KeepBoth);
     QVERIFY2(second.success, qPrintable(harness.diagnostics(second)));

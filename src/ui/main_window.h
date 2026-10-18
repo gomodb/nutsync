@@ -13,6 +13,7 @@ class QAction;
 class QFileSystemWatcher;
 class QLabel;
 class QProgressBar;
+class QPushButton;
 class QPlainTextEdit;
 class QStackedWidget;
 class QTimer;
@@ -83,6 +84,7 @@ private:
     void rebuildLocalMonitors();
     void onLocalChange(const QString &pairId);
     void showRateLimitNotice(const SyncPair &pair, const QDateTime &nextAllowed);
+    void showConflicts();
     void openSettings();
     void showAbout();
     void quitApplication();
@@ -118,6 +120,7 @@ private:
     QLabel *m_syncDeletionValue = nullptr;
     QLabel *m_excludesValue = nullptr;
     QLabel *m_statsLabel = nullptr;
+    QPushButton *m_conflictButton = nullptr;
     QProgressBar *m_progress = nullptr;
     QPlainTextEdit *m_activity = nullptr;
     QLabel *m_globalStatus = nullptr;
@@ -139,6 +142,8 @@ private:
     SyncRateLimiter m_rateLimiter;
     QHash<QString, LocalChangeMonitor *> m_localMonitors;
     QHash<QString, QStringList> m_logs;
+    QHash<QString, QStringList> m_conflictPaths;
+    QHash<QString, QStringList> m_conflictCopies;
     QSet<QString> m_notifyOnSuccess;
     QSet<QString> m_deferredAutoSyncs;
     QSet<QString> m_monitorStartFailures;
