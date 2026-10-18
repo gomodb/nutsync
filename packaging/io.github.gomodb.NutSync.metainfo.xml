@@ -44,6 +44,12 @@
     <name>NutSync contributors</name>
   </developer>
   <releases>
+    <release version="0.4.7" date="2026-10-18">
+      <description>
+        <p>Fixes the lifetime of the state store while persisting conflict
+        records, found by AddressSanitizer.</p>
+      </description>
+    </release>
     <release version="0.4.6" date="2026-10-18">
       <description>
         <p>Persists conflict records in the SQLite state database and migrates

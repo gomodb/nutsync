@@ -6,7 +6,7 @@ on:
       tag:
         description: Release tag to publish (for example v0.4.2)
         required: true
-        default: v0.4.6
+        default: v0.4.7
 
 permissions:
   contents: read

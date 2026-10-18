@@ -336,13 +336,16 @@ void SyncEngine::run()
 
         if (m_cancelled.loadRelaxed())
             summary.cancelled = true;
+
+        if (planBuilt && !summary.cancelled) {
+            QString conflictError;
+            if (!m_stateStore->replaceConflicts(m_pair.id, summary.conflictRecords,
+                                                &conflictError)) {
+                addError(&summary, tr("保存冲突记录失败：%1").arg(conflictError));
+            }
+        }
     } while (false);
 
-    if (m_stateStore && planBuilt && !summary.cancelled) {
-        QString conflictError;
-        if (!m_stateStore->replaceConflicts(m_pair.id, summary.conflictRecords, &conflictError))
-            addError(&summary, tr("保存冲突记录失败：%1").arg(conflictError));
-    }
     m_stateStore = nullptr;
     m_backend.reset();
 
