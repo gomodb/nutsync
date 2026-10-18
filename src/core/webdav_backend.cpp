@@ -739,6 +739,10 @@ bool WebDavBackend::download(const QString &path, const QString &localFile, Down
             }
         };
 
+        QObject::connect(reply, &QNetworkReply::downloadProgress, reply,
+                         [this, offset](qint64 received, qint64 total) {
+                             reportTransferProgress(offset + received, total);
+                         });
         QEventLoop loop;
         QTimer cancelTimer;
         cancelTimer.setInterval(200);
@@ -902,6 +906,10 @@ bool WebDavBackend::upload(const QString &localFile, const QString &path,
         }
 
         QNetworkReply *reply = m_network.put(request, &file);
+        QObject::connect(reply, &QNetworkReply::uploadProgress, reply,
+                         [this](qint64 sent, qint64 total) {
+                             reportTransferProgress(sent, total);
+                         });
         QEventLoop loop;
         QTimer cancelTimer;
         cancelTimer.setInterval(200);

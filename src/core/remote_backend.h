@@ -6,10 +6,12 @@
 #include <QUrl>
 
 #include <functional>
+#include <utility>
 
 namespace NutSync {
 
 using CancelledCallback = std::function<bool()>;
+using TransferProgressCallback = std::function<void(qint64 received, qint64 total)>;
 
 struct DownloadResult
 {
@@ -45,6 +47,21 @@ public:
     virtual bool makeDirectory(const QString &path, QString *error) = 0;
     virtual bool remove(const QString &path, bool recursive, const QString &expectedEtag,
                         QString *error, const CancelledCallback &cancelled) = 0;
+
+    void setTransferProgress(TransferProgressCallback callback)
+    {
+        m_transferProgress = std::move(callback);
+    }
+
+protected:
+    void reportTransferProgress(qint64 received, qint64 total) const
+    {
+        if (m_transferProgress)
+            m_transferProgress(received, total);
+    }
+
+private:
+    TransferProgressCallback m_transferProgress;
 };
 
 } // namespace NutSync

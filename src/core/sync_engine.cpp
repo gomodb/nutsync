@@ -376,9 +376,22 @@ void SyncEngine::run()
                 summary.cancelled = true;
                 break;
             }
+            const qint64 actionBytes = action.kind == ActionKind::Upload
+                ? action.local.size
+                : (action.kind == ActionKind::Download
+                       ? action.remote.size
+                       : (action.kind == ActionKind::ResolveConflict
+                              ? qMax(action.local.size, action.remote.size)
+                              : 0));
+            m_backend->setTransferProgress([this, actionBytes,
+                                            actionPath = action.path](qint64 received, qint64) {
+                const qint64 done = qMin(m_bytesDone + received, m_bytesDone + actionBytes);
+                emit progress(m_completedActions, m_totalActions, done, m_bytesTotal, actionPath);
+            });
             emit progress(m_completedActions, m_totalActions, m_bytesDone, m_bytesTotal,
                           action.path);
             executeAction(action, &summary);
+            m_backend->setTransferProgress({});
             if (action.kind == ActionKind::Upload)
                 m_bytesDone += action.local.size;
             else if (action.kind == ActionKind::Download)
