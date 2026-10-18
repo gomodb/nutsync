@@ -24,7 +24,7 @@ Every sync compares both sides against that baseline before deciding whether to 
   - When disabled, a local deletion only affects the local copy; the remote file is kept and restored by the next sync.
   - Remote deletions always propagate to the local side.
   - Directory deletions only run when the entire subtree is unchanged. Subtrees containing exclusions or conflicts are skipped to avoid accidental data loss.
-- **Recycle bin**: before a local or remote deletion, NutSync copies the affected files into `~/.local/share/nutsync/trash/<pair>/<timestamp>/`. The retention period is configurable per pair and defaults to 30 days. A details-panel button opens the pair's recycle bin.
+- **Recycle bin**: before a local or remote deletion, NutSync copies the affected files into `~/.local/share/nutsync/trash/<pair>/<timestamp>/`. The retention period is configurable per pair and defaults to 30 days. The details-panel recycle-bin dialog lists backups, restores selected entries into the local sync folder, and can open the trash directory.
 - **Conflict protection**: the default policy is `KeepBoth`. The remote version is saved as `name.conflict-YYYYMMDD-HHMMSS.ext` while the local version is uploaded, so both versions remain available on both sides.
   - Other policies: prefer local, prefer remote, and newer wins.
   - The details panel exposes a **View conflicts** button listing the affected paths and conflict copies, with a shortcut to open the containing folder. Conflict records are persisted in the state database and survive restarts.

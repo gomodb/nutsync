@@ -7,7 +7,9 @@
 #include <QDir>
 #include <QFile>
 #include <QFileInfo>
+#include <QDirIterator>
 #include <QObject>
+#include <algorithm>
 
 namespace NutSync::TrashManager {
 
@@ -134,6 +136,76 @@ void cleanupOldBatches(const QString &pairId, int retentionDays)
         if (batch.lastModified() < cutoff)
             QDir(batch.absoluteFilePath()).removeRecursively();
     }
+}
+
+QList<TrashEntry> listEntries(const QString &pairId)
+{
+    QList<TrashEntry> entries;
+    const QDir pairRoot(pairDir(pairId));
+    if (!pairRoot.exists())
+        return entries;
+
+    QDirIterator iterator(pairRoot.absolutePath(),
+                          QDir::AllEntries | QDir::NoDotAndDotDot | QDir::Hidden | QDir::System,
+                          QDirIterator::Subdirectories);
+    while (iterator.hasNext()) {
+        const QString absolute = iterator.next();
+        const QFileInfo info(absolute);
+        if (info.isSymLink() || (!info.isFile() && !info.isDir()))
+            continue;
+        const QString relativeToPair = pairRoot.relativeFilePath(absolute);
+        const int slash = relativeToPair.indexOf(QLatin1Char('/'));
+        if (slash < 0)
+            continue;
+        TrashEntry entry;
+        entry.absolutePath = absolute;
+        entry.relativePath = relativeToPair.mid(slash + 1);
+        entry.directory = info.isDir();
+        entry.size = info.size();
+        entry.modified = info.lastModified();
+        entries.append(entry);
+    }
+    std::sort(entries.begin(), entries.end(), [](const TrashEntry &left, const TrashEntry &right) {
+        return left.relativePath < right.relativePath;
+    });
+    return entries;
+}
+
+bool restoreEntry(const TrashEntry &entry, const QString &localRoot, bool overwrite, QString *error)
+{
+    const QString destination = PathUtils::localFilePath(localRoot, entry.relativePath);
+    const QFileInfo destinationInfo(destination);
+    if (destinationInfo.exists() && !overwrite) {
+        if (error)
+            *error = QObject::tr("目标已存在：“%1”").arg(destination);
+        return false;
+    }
+    if (entry.directory) {
+        if (!QDir().mkpath(destination)) {
+            if (error)
+                *error = QObject::tr("无法创建恢复目录“%1”").arg(destination);
+            return false;
+        }
+        return true;
+    }
+    if (!QDir().mkpath(QFileInfo(destination).absolutePath())) {
+        if (error)
+            *error = QObject::tr("无法创建恢复目录“%1”").arg(QFileInfo(destination).absolutePath());
+        return false;
+    }
+    if (destinationInfo.exists())
+        QFile::remove(destination);
+    if (!QFile::copy(entry.absolutePath, destination)) {
+        if (error)
+            *error = QObject::tr("无法恢复文件“%1”").arg(destination);
+        return false;
+    }
+    if (entry.modified.isValid()) {
+        QFile file(destination);
+        if (file.open(QIODevice::ReadWrite))
+            file.setFileTime(entry.modified, QFileDevice::FileModificationTime);
+    }
+    return true;
 }
 
 } // namespace NutSync::TrashManager

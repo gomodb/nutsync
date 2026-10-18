@@ -9,5 +9,6 @@ class TestTrashManager : public QObject
 
 private slots:
     void copiesFilesAndDirectories();
+    void listsAndRestoresEntries();
 };
 } // namespace NutSync::Test

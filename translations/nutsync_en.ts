@@ -489,7 +489,7 @@ Only NutSync's configuration and synchronization baseline are deleted, not local
     </message>
     <message>
       <source>此同步对还没有删除备份。</source>
-      <translation>This sync pair has no deletion backups yet.</translation>
+      <translation type="vanished">This sync pair has no deletion backups yet.</translation>
     </message>
     <message>
       <source>重试最大间隔</source>
@@ -510,6 +510,46 @@ Only NutSync's configuration and synchronization baseline are deleted, not local
     <message>
       <source>自动同步已恢复</source>
       <translation>Automatic sync has resumed</translation>
+    </message>
+    <message>
+      <source>此同步对还没有可恢复的删除备份。</source>
+      <translation>This sync pair has no deletion backups to restore.</translation>
+    </message>
+    <message>
+      <source>选择要恢复到本地同步目录的备份：</source>
+      <translation>Select a backup to restore into the local sync folder:</translation>
+    </message>
+    <message>
+      <source>%1（目录）</source>
+      <translation>%1 (directory)</translation>
+    </message>
+    <message>
+      <source>%1（%2 字节）</source>
+      <translation>%1 (%2 bytes)</translation>
+    </message>
+    <message>
+      <source>恢复选中</source>
+      <translation>Restore selected</translation>
+    </message>
+    <message>
+      <source>打开回收站目录</source>
+      <translation>Open recycle-bin folder</translation>
+    </message>
+    <message>
+      <source>目标已存在</source>
+      <translation>Destination already exists</translation>
+    </message>
+    <message>
+      <source>“%1”已存在，是否覆盖？</source>
+      <translation>"%1" already exists. Overwrite it?</translation>
+    </message>
+    <message>
+      <source>恢复失败</source>
+      <translation>Restore failed</translation>
+    </message>
+    <message>
+      <source>已恢复：%1</source>
+      <translation>Restored: %1</translation>
     </message>
     <message>
       <source>NutSync 首选项</source>
@@ -1831,6 +1871,18 @@ Please use the icon in the system tray to open the main window.</translation>
     <message>
       <source>无法备份特殊文件“%1”</source>
       <translation>Could not back up special file "%1"</translation>
+    </message>
+    <message>
+      <source>目标已存在：“%1”</source>
+      <translation>Destination already exists: "%1"</translation>
+    </message>
+    <message>
+      <source>无法创建恢复目录“%1”</source>
+      <translation>Could not create restore directory "%1"</translation>
+    </message>
+    <message>
+      <source>无法恢复文件“%1”</source>
+      <translation>Could not restore file "%1"</translation>
     </message>
   </context>
 </TS>

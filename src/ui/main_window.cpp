@@ -1476,12 +1476,77 @@ void MainWindow::showTrash()
     const SyncPair *pair = findPair(selectedPairId());
     if (!pair)
         return;
-    const QString path = TrashManager::pairDir(pair->id);
-    if (!QFileInfo::exists(path)) {
-        QMessageBox::information(this, tr("回收站"), tr("此同步对还没有删除备份。"));
+    const QList<TrashManager::TrashEntry> entries = TrashManager::listEntries(pair->id);
+    if (entries.isEmpty()) {
+        QMessageBox::information(this, tr("回收站"), tr("此同步对还没有可恢复的删除备份。"));
         return;
     }
-    QDesktopServices::openUrl(QUrl::fromLocalFile(path));
+
+    QDialog dialog(this);
+    dialog.setWindowTitle(tr("回收站"));
+    auto *layout = new QVBoxLayout(&dialog);
+    auto *label = new QLabel(tr("选择要恢复到本地同步目录的备份："), &dialog);
+    label->setWordWrap(true);
+    layout->addWidget(label);
+
+    auto *list = new QListWidget(&dialog);
+    QHash<QString, TrashManager::TrashEntry> entriesByPath;
+    for (const TrashManager::TrashEntry &entry : entries) {
+        entriesByPath.insert(entry.relativePath, entry);
+        const QString text = entry.directory
+            ? tr("%1（目录）").arg(entry.relativePath)
+            : tr("%1（%2 字节）").arg(entry.relativePath).arg(entry.size);
+        auto *item = new QListWidgetItem(text, list);
+        item->setData(Qt::UserRole, entry.relativePath);
+    }
+    layout->addWidget(list, 1);
+
+    auto *status = new QLabel(&dialog);
+    status->setWordWrap(true);
+    makeMuted(status);
+    layout->addWidget(status);
+
+    auto *buttons = new QDialogButtonBox(QDialogButtonBox::Close, &dialog);
+    auto *restore = new QPushButton(tr("恢复选中"), &dialog);
+    auto *openFolder = new QPushButton(tr("打开回收站目录"), &dialog);
+    buttons->addButton(restore, QDialogButtonBox::ActionRole);
+    buttons->addButton(openFolder, QDialogButtonBox::ActionRole);
+    layout->addWidget(buttons);
+
+    connect(restore, &QPushButton::clicked, &dialog, [&]() {
+        QListWidgetItem *item = list->currentItem();
+        if (!item)
+            return;
+        const QString relativePath = item->data(Qt::UserRole).toString();
+        const TrashManager::TrashEntry entry = entriesByPath.value(relativePath);
+        if (entry.relativePath.isEmpty())
+            return;
+
+        const QString destination = PathUtils::localFilePath(pair->localPath, entry.relativePath);
+        if (QFileInfo::exists(destination)) {
+            const auto answer = QMessageBox::question(
+                &dialog, tr("目标已存在"), tr("“%1”已存在，是否覆盖？").arg(entry.relativePath),
+                QMessageBox::Yes | QMessageBox::No, QMessageBox::No);
+            if (answer != QMessageBox::Yes)
+                return;
+        }
+        QString error;
+        if (!TrashManager::restoreEntry(entry, pair->localPath, true, &error)) {
+            QMessageBox::warning(&dialog, tr("恢复失败"), error);
+            return;
+        }
+        entriesByPath.remove(relativePath);
+        delete item;
+        status->setText(tr("已恢复：%1").arg(entry.relativePath));
+        if (list->count() == 0)
+            restore->setEnabled(false);
+    });
+    connect(openFolder, &QPushButton::clicked, &dialog, [&]() {
+        QDesktopServices::openUrl(QUrl::fromLocalFile(TrashManager::pairDir(pair->id)));
+    });
+    connect(buttons, &QDialogButtonBox::rejected, &dialog, &QDialog::reject);
+    dialog.resize(680, 420);
+    dialog.exec();
 }
 
 void MainWindow::openSettings()
