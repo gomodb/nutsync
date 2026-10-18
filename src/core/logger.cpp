@@ -17,6 +17,8 @@ namespace {
 QMutex g_mutex;
 bool g_installed = false;
 QString g_level = QStringLiteral("info");
+qint64 g_maxFileBytes = 2 * 1024 * 1024;
+int g_retentionFiles = 3;
 
 int levelRank(const QString &level)
 {
@@ -39,11 +41,20 @@ void writeLine(const QString &line)
 {
     QMutexLocker locker(&g_mutex);
     QFile file(AppPaths::logFile());
-    if (file.size() > 2 * 1024 * 1024) {
+    if (file.size() > g_maxFileBytes) {
         file.close();
-        const QString old = AppPaths::logFile() + QStringLiteral(".1");
-        QFile::remove(old);
-        QFile::rename(AppPaths::logFile(), old);
+        const QString log = AppPaths::logFile();
+        for (int index = g_retentionFiles; index >= 1; --index) {
+            const QString target = log + QStringLiteral(".%1").arg(index);
+            if (index == g_retentionFiles) {
+                QFile::remove(target);
+            } else {
+                const QString previous = log + QStringLiteral(".%1").arg(index + 1);
+                if (QFile::exists(target))
+                    QFile::rename(target, previous);
+            }
+        }
+        QFile::rename(log, log + QStringLiteral(".1"));
     }
     if (file.open(QIODevice::WriteOnly | QIODevice::Append | QIODevice::Text)) {
         file.setPermissions(QFileDevice::ReadOwner | QFileDevice::WriteOwner);
@@ -102,6 +113,13 @@ void Logger::install()
     qInstallMessageHandler(messageHandler);
     g_installed = true;
     qInfo() << "NutSync started, log file:" << AppPaths::logFile();
+}
+
+void Logger::setRetention(int maxSizeMb, int files)
+{
+    QMutexLocker locker(&g_mutex);
+    g_maxFileBytes = qBound(1, maxSizeMb, 100) * 1024LL * 1024LL;
+    g_retentionFiles = qBound(1, files, 10);
 }
 
 void Logger::setLevel(const QString &level)

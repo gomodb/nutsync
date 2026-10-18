@@ -1664,6 +1664,7 @@ void MainWindow::importConfig()
     if (m_tray)
         m_tray->setNotificationsEnabled(m_config.settings.notifications);
     Logger::setLevel(m_config.settings.logLevel);
+    Logger::setRetention(m_config.settings.logMaxSizeMb, m_config.settings.logRetentionFiles);
     m_conflictPaths.clear();
     m_conflictCopies.clear();
     m_conflictRecords.clear();
@@ -1810,6 +1811,23 @@ void MainWindow::openSettings()
     logLevelRow->addWidget(logLevelLabel);
     logLevelRow->addWidget(logLevel, 1);
     layout->addLayout(logLevelRow);
+
+    auto *logSizeRow = new QHBoxLayout();
+    auto *logSizeLabel = new QLabel(tr("日志最大大小"), &dialog);
+    auto *logSize = new QSpinBox(&dialog);
+    logSize->setRange(1, 100);
+    logSize->setSuffix(tr(" MB"));
+    logSize->setValue(m_config.settings.logMaxSizeMb);
+    auto *logFilesLabel = new QLabel(tr("保留文件数"), &dialog);
+    auto *logFiles = new QSpinBox(&dialog);
+    logFiles->setRange(1, 10);
+    logFiles->setValue(m_config.settings.logRetentionFiles);
+    logSizeRow->addWidget(logSizeLabel);
+    logSizeRow->addWidget(logSize);
+    logSizeRow->addWidget(logFilesLabel);
+    logSizeRow->addWidget(logFiles);
+    logSizeRow->addStretch(1);
+    layout->addLayout(logSizeRow);
 
     auto *notifications = new QCheckBox(tr("显示桌面通知"), &dialog);
     notifications->setChecked(m_config.settings.notifications);
@@ -1987,6 +2005,8 @@ void MainWindow::openSettings()
     m_config.settings.proxyUser = proxyUser->text().trimmed();
     m_config.settings.caBundlePath = caPath->text().trimmed();
     m_config.settings.logLevel = logLevel->currentData().toString();
+    m_config.settings.logMaxSizeMb = logSize->value();
+    m_config.settings.logRetentionFiles = logFiles->value();
     m_config.settings.retryCount = retryCount->value();
     m_config.settings.retryDelaySeconds = retryDelay->value();
     m_config.settings.notifications = notifications->isChecked();

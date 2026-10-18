@@ -48,6 +48,8 @@ int main(int argc, char *argv[])
 
     NutSync::Logger::install();
     NutSync::Logger::setLevel(startupConfig.settings.logLevel);
+    NutSync::Logger::setRetention(startupConfig.settings.logMaxSizeMb,
+                                  startupConfig.settings.logRetentionFiles);
     NutSync::AppPaths::ensureDirectories();
     NutSync::AutostartManager::migrateLegacy();
 

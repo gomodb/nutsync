@@ -52,6 +52,8 @@ void TestConfigStore::stripsCredentialsEmbeddedInUrls()
     QCOMPARE(config.settings.proxyMode, QStringLiteral("system"));
     QCOMPARE(config.settings.proxyPort, 8080);
     QCOMPARE(config.settings.logLevel, QStringLiteral("info"));
+    QCOMPARE(config.settings.logMaxSizeMb, 2);
+    QCOMPARE(config.settings.logRetentionFiles, 3);
     QCOMPARE(config.settings.retryCount, 2);
     QCOMPARE(config.settings.retryDelaySeconds, 30);
 
@@ -94,6 +96,8 @@ void TestConfigStore::roundTripsPairSettings()
     config.settings.proxyUser = QStringLiteral("proxy-user");
     config.settings.caBundlePath = QStringLiteral("/etc/ssl/custom.pem");
     config.settings.logLevel = QStringLiteral("warning");
+    config.settings.logMaxSizeMb = 5;
+    config.settings.logRetentionFiles = 7;
     config.settings.retryCount = 3;
     config.settings.retryDelaySeconds = 45;
 
@@ -136,6 +140,8 @@ void TestConfigStore::roundTripsPairSettings()
     QCOMPARE(loaded.settings.proxyUser, QStringLiteral("proxy-user"));
     QCOMPARE(loaded.settings.caBundlePath, QStringLiteral("/etc/ssl/custom.pem"));
     QCOMPARE(loaded.settings.logLevel, QStringLiteral("warning"));
+    QCOMPARE(loaded.settings.logMaxSizeMb, 5);
+    QCOMPARE(loaded.settings.logRetentionFiles, 7);
     QCOMPARE(loaded.settings.retryCount, 3);
     QCOMPARE(loaded.settings.retryDelaySeconds, 45);
     QCOMPARE(loaded.pairs.size(), 1);

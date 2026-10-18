@@ -125,6 +125,8 @@ struct AppSettings
     QString proxyUser;
     QString caBundlePath;
     QString logLevel = QStringLiteral("info");
+    int logMaxSizeMb = 2;
+    int logRetentionFiles = 3;
     int retryCount = 2;
     int retryDelaySeconds = 30;
     bool notifications = true;

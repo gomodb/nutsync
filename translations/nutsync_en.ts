@@ -704,6 +704,18 @@ Only NutSync's configuration and synchronization baseline are deleted, not local
       <translation>Error</translation>
     </message>
     <message>
+      <source>日志最大大小</source>
+      <translation>Maximum log size</translation>
+    </message>
+    <message>
+      <source> MB</source>
+      <translation> MB</translation>
+    </message>
+    <message>
+      <source>保留文件数</source>
+      <translation>Retained files</translation>
+    </message>
+    <message>
       <source>显示桌面通知</source>
       <translation>Show desktop notifications</translation>
     </message>

@@ -273,7 +273,7 @@ Network options are available in **Preferences → Network**:
 - **CA certificate file**: an additional PEM bundle appended to the system CA certificates. Certificate verification is always enforced.
 - **Retry attempts / maximum delay**: each WebDAV request retries network errors, 408, 425, 429, and 5xx responses up to the configured count, using exponential backoff capped by the configured maximum delay and honoring `Retry-After`. Permanent errors such as 401, 403, 404, 409, 412, 423, and 507 are not retried. There is no separate whole-sync retry.
 - **Resumable downloads**: partial downloads are kept in the cache as `.part` files, validated with `If-Range`, and resumed across syncs and restarts. Uploads restart from the beginning because WebDAV PUT has no standard resumable form.
-- **Log level**: Debug, Info, Warning, or Error.
+- **Log level / rotation**: Debug, Info, Warning, or Error; maximum log size and the number of retained rotated files are configurable.
 
 Proxy and CA changes take effect after restart. The log level is applied immediately.
 

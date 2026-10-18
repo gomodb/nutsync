@@ -116,6 +116,8 @@ QJsonObject settingsToJson(const AppSettings &settings)
     obj.insert(QStringLiteral("proxyUser"), settings.proxyUser);
     obj.insert(QStringLiteral("caBundlePath"), settings.caBundlePath);
     obj.insert(QStringLiteral("logLevel"), settings.logLevel);
+    obj.insert(QStringLiteral("logMaxSizeMb"), settings.logMaxSizeMb);
+    obj.insert(QStringLiteral("logRetentionFiles"), settings.logRetentionFiles);
     obj.insert(QStringLiteral("retryCount"), settings.retryCount);
     obj.insert(QStringLiteral("retryDelaySeconds"), settings.retryDelaySeconds);
     obj.insert(QStringLiteral("notifications"), settings.notifications);
@@ -146,6 +148,9 @@ AppSettings settingsFromJson(const QJsonObject &obj)
                          || logLevel == QLatin1String("error"))
         ? logLevel
         : QStringLiteral("info");
+    settings.logMaxSizeMb = qBound(1, obj.value(QStringLiteral("logMaxSizeMb")).toInt(2), 100);
+    settings.logRetentionFiles =
+        qBound(1, obj.value(QStringLiteral("logRetentionFiles")).toInt(3), 10);
     settings.retryCount = qBound(0, obj.value(QStringLiteral("retryCount")).toInt(2), 5);
     settings.retryDelaySeconds =
         qBound(5, obj.value(QStringLiteral("retryDelaySeconds")).toInt(30), 600);
