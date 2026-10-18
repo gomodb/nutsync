@@ -32,6 +32,95 @@ namespace {
 
 constexpr auto kUserAgent = "NutSync/" NUTSYNC_VERSION;
 
+class ByteThrottle
+{
+public:
+    explicit ByteThrottle(qint64 bytesPerSecond)
+        : m_limit(bytesPerSecond)
+    {
+        if (m_limit > 0)
+            m_timer.start();
+    }
+
+    void add(qint64 bytes)
+    {
+        if (m_limit <= 0 || bytes <= 0)
+            return;
+        m_bytes += bytes;
+        const qint64 targetMs = m_bytes * 1000 / m_limit;
+        const qint64 elapsedMs = m_timer.elapsed();
+        if (targetMs > elapsedMs)
+            QThread::msleep(static_cast<unsigned long>(targetMs - elapsedMs));
+    }
+
+private:
+    qint64 m_limit = 0;
+    qint64 m_bytes = 0;
+    QElapsedTimer m_timer;
+};
+
+class RateLimitedFile final : public QIODevice
+{
+public:
+    RateLimitedFile(QString path, qint64 bytesPerSecond)
+        : m_path(std::move(path))
+        , m_limit(bytesPerSecond)
+    {
+    }
+
+    bool open(OpenMode mode) override
+    {
+        if (!m_file.open(mode))
+            return false;
+        m_read = 0;
+        if (m_limit > 0)
+            m_timer.start();
+        return QIODevice::open(mode);
+    }
+
+    void close() override
+    {
+        m_file.close();
+        QIODevice::close();
+    }
+
+    bool isSequential() const override { return false; }
+    qint64 size() const override { return m_file.size(); }
+    qint64 pos() const override { return m_file.pos(); }
+    bool seek(qint64 position) override
+    {
+        m_read = 0;
+        if (m_limit > 0)
+            m_timer.restart();
+        return m_file.seek(position);
+    }
+    QString errorString() const { return m_file.errorString(); }
+
+protected:
+    qint64 readData(char *data, qint64 maxSize) override
+    {
+        const qint64 chunk = m_limit > 0 ? qMax<qint64>(4096, m_limit / 10) : maxSize;
+        const qint64 read = m_file.read(data, qMin(maxSize, chunk));
+        if (read > 0 && m_limit > 0) {
+            m_read += read;
+            const qint64 targetMs = m_read * 1000 / m_limit;
+            const qint64 elapsedMs = m_timer.elapsed();
+            if (targetMs > elapsedMs)
+                QThread::msleep(static_cast<unsigned long>(targetMs - elapsedMs));
+        }
+        return read;
+    }
+
+    qint64 writeData(const char *, qint64) override { return -1; }
+
+private:
+    QString m_path;
+    QFile m_file{m_path};
+    qint64 m_limit = 0;
+    qint64 m_read = 0;
+    QElapsedTimer m_timer;
+};
+
 QByteArray basicAuthValue(const QString &username, const QString &password)
 {
     const QByteArray credentials = (username + QLatin1Char(':') + password).toUtf8();
@@ -746,12 +835,15 @@ bool WebDavBackend::download(const QString &path, const QString &localFile, Down
         QEventLoop loop;
         QTimer cancelTimer;
         cancelTimer.setInterval(200);
+        ByteThrottle downloadThrottle(m_options.transferLimitBytesPerSecond);
         QObject::connect(reply, &QNetworkReply::readyRead, &loop, [&]() {
             if (cancelled && cancelled()) {
                 reply->abort();
                 return;
             }
-            consume(reply->readAll());
+            const QByteArray data = reply->readAll();
+            downloadThrottle.add(data.size());
+            consume(data);
         });
         QObject::connect(&cancelTimer, &QTimer::timeout, &loop, [&]() {
             if (cancelled && cancelled())
@@ -872,7 +964,7 @@ bool WebDavBackend::upload(const QString &localFile, const QString &path,
             *error = QObject::tr("同步已取消");
         return false;
     }
-    QFile file(localFile);
+    RateLimitedFile file(localFile, m_options.transferLimitBytesPerSecond);
     if (!file.open(QIODevice::ReadOnly)) {
         m_lastErrorClass = RemoteErrorClass::LocalIo;
         if (error)

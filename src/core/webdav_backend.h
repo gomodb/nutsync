@@ -17,6 +17,7 @@ struct WebDavOptions
     int retryCount = 3;
     int retryBaseDelayMs = 500;
     int retryMaxDelayMs = 30000;
+    int transferLimitBytesPerSecond = 0;
 };
 
 class WebDavBackend final : public RemoteBackend

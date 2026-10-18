@@ -1652,6 +1652,7 @@ void MainWindow::showConflicts()
         options.retryCount = m_config.settings.retryCount;
         options.retryBaseDelayMs = qMin(1000, m_config.settings.retryDelaySeconds * 1000);
         options.retryMaxDelayMs = m_config.settings.retryDelaySeconds * 1000;
+        options.transferLimitBytesPerSecond = m_config.settings.transferLimitKbps * 1024;
 
         QApplication::setOverrideCursor(Qt::WaitCursor);
         WebDavBackend backend(options);
@@ -2001,6 +2002,12 @@ void MainWindow::openSettings()
     retryDelay->setSuffix(tr(" 秒"));
     retryDelay->setToolTip(tr("指数退避的最大等待时间"));
     retryDelay->setValue(m_config.settings.retryDelaySeconds);
+    auto *transferLimit = new QSpinBox(networkGroup);
+    transferLimit->setRange(0, 102400);
+    transferLimit->setSpecialValueText(tr("不限制"));
+    transferLimit->setSuffix(tr(" KB/s"));
+    transferLimit->setValue(m_config.settings.transferLimitKbps);
+    networkForm->addRow(tr("传输限速"), transferLimit);
     networkForm->addRow(tr("失败重试次数"), retryCount);
     networkForm->addRow(tr("重试最大间隔"), retryDelay);
     layout->addWidget(networkGroup);
@@ -2111,6 +2118,7 @@ void MainWindow::openSettings()
     m_config.settings.logRetentionFiles = logFiles->value();
     m_config.settings.retryCount = retryCount->value();
     m_config.settings.retryDelaySeconds = retryDelay->value();
+    m_config.settings.transferLimitKbps = transferLimit->value();
     m_config.settings.notifications = notifications->isChecked();
     m_config.settings.syncOnNetworkRecovery = networkSync->isChecked();
     m_config.settings.closeToTray = closeToTray->isChecked();

@@ -275,6 +275,7 @@ Network options are available in **Preferences → Network**:
 - **Resumable downloads**: partial downloads are kept in the cache as `.part` files, validated with `If-Range`, and resumed across syncs and restarts. Uploads restart from the beginning because WebDAV PUT has no standard resumable form.
 - **Log level / rotation**: Debug, Info, Warning, or Error; maximum log size and the number of retained rotated files are configurable.
 - **Network recovery**: optionally start a sync of all enabled pairs when the network becomes online again.
+- **Transfer speed limit**: optional per-transfer byte limit for downloads and uploads; `0` means unlimited.
 
 Proxy and CA changes take effect after restart. The log level is applied immediately.
 

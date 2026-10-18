@@ -117,6 +117,7 @@ void SyncController::startNext()
 
     auto *engine = new SyncEngine(m_currentPair, m_stateDatabasePath, this);
     engine->setRetryPolicy(m_settings.retryCount, m_settings.retryDelaySeconds * 1000);
+    engine->setTransferLimit(m_settings.transferLimitKbps);
     m_engine = engine;
     connect(engine, &SyncEngine::logMessage, this, [this](const QString &message) {
         emit logMessage(m_currentPairId, message);

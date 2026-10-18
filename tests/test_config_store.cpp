@@ -58,6 +58,7 @@ void TestConfigStore::stripsCredentialsEmbeddedInUrls()
     QCOMPARE(config.settings.logMaxSizeMb, 2);
     QCOMPARE(config.settings.logRetentionFiles, 3);
     QCOMPARE(config.settings.retryCount, 2);
+    QCOMPARE(config.settings.transferLimitKbps, 0);
     QCOMPARE(config.settings.retryDelaySeconds, 30);
 
     QVERIFY2(store.save(config, &error), qPrintable(error));

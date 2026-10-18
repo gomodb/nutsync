@@ -140,6 +140,7 @@ struct AppSettings
     int logRetentionFiles = 3;
     int retryCount = 2;
     int retryDelaySeconds = 30;
+    int transferLimitKbps = 0;
     bool notifications = true;
     bool closeToTray = true;
     bool autoSyncOnStartup = true;

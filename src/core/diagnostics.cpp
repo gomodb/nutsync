@@ -67,6 +67,7 @@ QString buildReport(const AppConfig &config)
     out << "  logRetentionFiles=" << config.settings.logRetentionFiles << '\n';
     out << "  retryCount=" << config.settings.retryCount << '\n';
     out << "  retryMaxSeconds=" << config.settings.retryDelaySeconds << '\n';
+    out << "  transferLimitKbps=" << config.settings.transferLimitKbps << '\n';
     out << '\n';
 
     out << "Sync pairs: " << config.pairs.size() << '\n';

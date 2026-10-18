@@ -832,6 +832,18 @@ Only NutSync's configuration and synchronization baseline are deleted, not local
       <translation>Maximum wait for exponential backoff</translation>
     </message>
     <message>
+      <source>不限制</source>
+      <translation>Unlimited</translation>
+    </message>
+    <message>
+      <source> KB/s</source>
+      <translation> KB/s</translation>
+    </message>
+    <message>
+      <source>传输限速</source>
+      <translation>Transfer speed limit</translation>
+    </message>
+    <message>
       <source>失败重试次数</source>
       <translation>Retry attempts</translation>
     </message>

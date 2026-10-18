@@ -95,6 +95,11 @@ void SyncEngine::setRetryPolicy(int retryCount, int maxDelayMs)
     m_retryBaseDelayMs = qMin(1000, m_retryMaxDelayMs);
 }
 
+void SyncEngine::setTransferLimit(int kbps)
+{
+    m_transferLimitKbps = qBound(0, kbps, 102400);
+}
+
 void SyncEngine::requestCancel()
 {
     m_cancelled.storeRelaxed(1);
@@ -234,6 +239,7 @@ void SyncEngine::run()
             options.retryCount = m_retryCount;
             options.retryBaseDelayMs = m_retryBaseDelayMs;
             options.retryMaxDelayMs = m_retryMaxDelayMs;
+            options.transferLimitBytesPerSecond = m_transferLimitKbps * 1024;
             if (options.username.isEmpty() && !url.userName().isEmpty()) {
                 options.username = url.userName();
                 options.password = url.password();

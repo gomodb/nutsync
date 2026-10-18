@@ -27,6 +27,7 @@ public:
 
     void setBackendFactory(BackendFactory factory);
     void setRetryPolicy(int retryCount, int maxDelayMs);
+    void setTransferLimit(int kbps);
     void requestCancel();
     SyncSummary lastSummary() const;
 
@@ -76,6 +77,7 @@ private:
     int m_retryCount = 3;
     int m_retryBaseDelayMs = 1000;
     int m_retryMaxDelayMs = 30000;
+    int m_transferLimitKbps = 0;
     QAtomicInt m_cancelled{0};
     QMap<QString, LocalEntry> m_localSnapshot;
     std::unique_ptr<RemoteBackend> m_backend;
