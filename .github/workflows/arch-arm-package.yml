@@ -49,12 +49,10 @@ jobs:
         run: |
           set +e
           useradd -m builder
-          chown -R builder:builder "$GITHUB_WORKSPACE"
-          runuser -u builder -- bash -c '
-            set -euo pipefail
-            cd "$GITHUB_WORKSPACE/packaging/arch"
-            makepkg --noconfirm --force
-          ' > /tmp/build.log 2>&1
+          workspace="$(pwd)"
+          chown -R builder:builder "$workspace"
+          echo "::notice::workspace=$workspace"
+          runuser -u builder -- bash -c "cd '$workspace/packaging/arch' && exec makepkg --noconfirm --force" > /tmp/build.log 2>&1
           status=$?
           if [ "$status" -ne 0 ]; then
             tail -n 40 /tmp/build.log | while IFS= read -r line; do
