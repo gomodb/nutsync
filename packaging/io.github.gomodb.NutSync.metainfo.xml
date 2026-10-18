@@ -48,10 +48,15 @@
     <name>NutSync contributors</name>
   </developer>
   <releases>
+    <release version="0.5.2" date="2026-10-18">
+      <description>
+        <p>NutSync 0.5.2.</p>
+      </description>
+    </release>
     <release version="0.5.1" date="2026-10-18">
       <description>
-        <p>Packaging release: the GitHub release now includes both x86_64 and
-        aarch64 Arch Linux packages, built and smoke-tested in CI.</p>
+        <p>Packaging fix: the GitHub release includes both x86_64 and aarch64
+        Arch Linux packages, built and smoke-tested in CI.</p>
       </description>
     </release>
     <release version="0.5.0" date="2026-10-18">
