@@ -50,6 +50,7 @@ NutSync 的目标不是做一次性的“上传/下载”，而是维护一条�
 
 - CMake ≥ 3.21、Ninja、C++20 编译器
 - Qt 6.4+：Core、Gui、Widgets、Network、Sql（SQLite 驱动）、Concurrent、Test、LinguistTools，以及 SVG 图标插件（`qt6-svg` / `libqt6svg6`）
+- 架构：x86_64 与 aarch64。CI 在 Ubuntu 24.04 ARM64 上原生构建并运行测试。
 - 可选：QtKeychain（密码保存）
 - 可选：KStatusNotifierItem、KNotifications（KDE 原生托盘与通知）
 
@@ -186,6 +187,8 @@ makepkg --printsrcinfo > .SRCINFO
 ```
 
 ## 配置与数据位置
+
+AArch64 已支持：代码中没有 x86 专用逻辑，CI 在 Ubuntu 24.04 ARM64 上原生构建并运行测试，AUR 包声明了 `aarch64`。正式依赖 Arch Linux ARM 前，仍建议在 ALARM 系统上验证原生打包。
 
 遵循 XDG 目录规范：
 

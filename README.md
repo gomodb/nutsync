@@ -50,6 +50,7 @@ Requirements:
 
 - CMake ≥ 3.21, Ninja, and a C++20 compiler
 - Qt 6.4+: Core, Gui, Widgets, Network, Sql (SQLite driver), Concurrent, Test, LinguistTools, and the SVG icon plugin (`qt6-svg` / `libqt6svg6`)
+- Architecture: x86_64 and aarch64; CI builds and tests natively on Ubuntu 24.04 ARM64
 - Optional: QtKeychain for password storage
 - Optional: KStatusNotifierItem and KNotifications for native KDE tray and notifications
 
@@ -186,6 +187,8 @@ makepkg --printsrcinfo > .SRCINFO
 ```
 
 ## Configuration and data locations
+
+AArch64 is supported: the code contains no x86-specific logic, CI builds and tests it natively on Ubuntu 24.04 ARM64, and the AUR package declares `aarch64`. Native Arch Linux ARM packaging should still be validated on an ALARM system before relying on it in production.
 
 NutSync follows the XDG directory specification:
 
