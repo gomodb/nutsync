@@ -48,6 +48,15 @@
     <name>NutSync contributors</name>
   </developer>
   <releases>
+    <release version="0.5.0" date="2026-10-18">
+      <description>
+        <p>NutSync 0.5.0 adds selective and one-way sync modes, a configurable
+        recycle bin with restore, conflict resolution actions, configuration
+        import/export, redacted diagnostics, log rotation, network-recovery
+        sync, byte-level transfer limits, 1–4 parallel transfers, live
+        byte-level progress, and failed-item retry.</p>
+      </description>
+    </release>
     <release version="0.4.7" date="2026-10-18">
       <description>
         <p>Fixes the lifetime of the state store while persisting conflict
