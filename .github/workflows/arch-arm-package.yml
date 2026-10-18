@@ -1,0 +1,62 @@
+name: Arch Linux ARM package
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - 'arm-test-*'
+
+permissions:
+  contents: read
+
+jobs:
+  package:
+    name: Arch Linux ARM / native aarch64 package
+    runs-on: ubuntu-24.04-arm
+    container: menci/archlinuxarm:base-devel
+    timeout-minutes: 45
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Bootstrap Arch Linux ARM
+        run: |
+          set -x
+          sed -i 's|^Server = http://|Server = https://|' /etc/pacman.d/mirrorlist
+          pacman-key --init
+          pacman-key --populate archlinuxarm
+          pacman -Syu --noconfirm
+
+      - name: Install packaging dependencies
+        run: |
+          set -x
+          pacman -S --noconfirm --needed \
+            base-devel shadow util-linux cmake ninja git python \
+            qt6-base qt6-svg qt6-translations qt6-tools \
+            qtkeychain-qt6 kstatusnotifieritem knotifications
+
+      - name: Build package
+        run: |
+          useradd -m builder
+          chown -R builder:builder "$GITHUB_WORKSPACE"
+          runuser -u builder -- bash -c '
+            set -euo pipefail
+            cd "$GITHUB_WORKSPACE/packaging/arch"
+            makepkg --noconfirm --force
+          '
+
+      - name: Install and smoke test
+        run: |
+          package="$(find packaging/arch -maxdepth 1 -name 'nutsync-[0-9]*.pkg.tar.zst' | head -n1)"
+          test -n "$package"
+          pacman -U --noconfirm "$package"
+          QT_QPA_PLATFORM=offscreen nutsync --version
+          test -f /usr/share/applications/io.github.gomodb.NutSync.desktop
+          test -f /usr/share/metainfo/io.github.gomodb.NutSync.metainfo.xml
+
+      - name: Upload package
+        uses: actions/upload-artifact@v7
+        with:
+          name: nutsync-archlinuxarm
+          path: packaging/arch/nutsync-*.pkg.tar.zst
+          if-no-files-found: error
