@@ -157,46 +157,6 @@ jobs:
           path: build/Testing/Temporary/LastTest.log
           if-no-files-found: ignore
 
-  arch-arm-package:
-    name: Arch Linux ARM / native package
-    runs-on: ubuntu-24.04-arm
-    container: menci/archlinuxarm:base-devel
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v7
-
-      - name: Install packaging dependencies
-        run: |
-          set -x
-          pacman-key --init
-          pacman-key --populate archlinuxarm
-          pacman -Syy --noconfirm
-          pacman -S --noconfirm --needed base-devel shadow util-linux cmake ninja git python qt6-base qt6-svg qt6-translations qt6-tools qtkeychain-qt6 kstatusnotifieritem knotifications
-
-      - name: Build package
-        run: |
-          useradd -m builder
-          chown -R builder:builder "$GITHUB_WORKSPACE"
-          runuser -u builder -- bash -lc '
-            set -euo pipefail
-            cd "$GITHUB_WORKSPACE/packaging/arch"
-            makepkg --noconfirm --force
-          '
-
-      - name: Install and smoke test
-        run: |
-          pacman -U --noconfirm packaging/arch/nutsync-*.pkg.tar.zst
-          QT_QPA_PLATFORM=offscreen nutsync --version
-          test -f /usr/share/applications/io.github.gomodb.NutSync.desktop
-          test -f /usr/share/metainfo/io.github.gomodb.NutSync.metainfo.xml
-
-      - name: Upload package
-        uses: actions/upload-artifact@v7
-        with:
-          name: nutsync-archlinuxarm
-          path: packaging/arch/nutsync-*.pkg.tar.zst
-          if-no-files-found: error
-
   clang-build:
     name: Clang / Ubuntu 24.04
     runs-on: ubuntu-24.04
