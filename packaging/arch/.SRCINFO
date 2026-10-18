@@ -16,6 +16,6 @@ pkgbase = nutsync
 	depends = kstatusnotifieritem
 	depends = knotifications
 	source = nutsync-0.3.0.tar.gz::https://github.com/gomodb/nutsync/archive/refs/tags/v0.3.0.tar.gz
-	sha256sums = 6ccad0a67e13d85fefbac8f177d8e32adfff1f61ded40baca69628a716200072
+	sha256sums = 1d682a20332fe51d6b6a619cab5423022937247da7550029177be7fc8cd55aaf
 
 pkgname = nutsync
