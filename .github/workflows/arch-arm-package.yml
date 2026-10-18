@@ -49,10 +49,10 @@ jobs:
         run: |
           set +e
           useradd -m builder
-          workspace="$(pwd)"
-          chown -R builder:builder "$workspace"
-          echo "::notice::workspace=$workspace"
-          runuser -u builder -- bash -c "cd '$workspace/packaging/arch' && exec makepkg --noconfirm --force" > /tmp/build.log 2>&1
+          rm -rf /tmp/nutsync-build
+          cp -a "$PWD" /tmp/nutsync-build
+          chown -R builder:builder /tmp/nutsync-build
+          runuser -u builder -- bash -c "cd /tmp/nutsync-build/packaging/arch && exec makepkg --noconfirm --force" > /tmp/build.log 2>&1
           status=$?
           if [ "$status" -ne 0 ]; then
             tail -n 40 /tmp/build.log | while IFS= read -r line; do
@@ -63,7 +63,7 @@ jobs:
 
       - name: Install and smoke test
         run: |
-          package="$(find packaging/arch -maxdepth 1 -name 'nutsync-[0-9]*.pkg.tar.zst' | head -n1)"
+          package="$(find /tmp/nutsync-build/packaging/arch -maxdepth 1 -name 'nutsync-[0-9]*.pkg.tar.zst' | head -n1)"
           test -n "$package"
           pacman -U --noconfirm "$package"
           QT_QPA_PLATFORM=offscreen nutsync --version
@@ -74,5 +74,5 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: nutsync-archlinuxarm
-          path: packaging/arch/nutsync-*.pkg.tar.zst
+          path: /tmp/nutsync-build/packaging/arch/nutsync-*.pkg.tar.zst
           if-no-files-found: error
