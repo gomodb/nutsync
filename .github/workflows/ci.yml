@@ -210,6 +210,13 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v7
 
+      - name: Install build dependencies
+        run: |
+          pacman -Syu --noconfirm --needed \
+            cmake ninja git python fakeroot namcap sudo curl qt6-tools \
+            qt6-base qt6-svg qtkeychain-qt6 \
+            kstatusnotifieritem knotifications
+
       - name: Ensure AUR metadata
         run: |
           if [ ! -f packaging/arch/PKGBUILD ]; then
@@ -218,13 +225,6 @@ jobs:
             mkdir -p packaging
             cp -a /tmp/nutsync-source/packaging/arch packaging/arch
           fi
-
-      - name: Install build dependencies
-        run: |
-          pacman -Syu --noconfirm --needed \
-            cmake ninja git python fakeroot namcap sudo curl qt6-tools \
-            qt6-base qt6-svg qtkeychain-qt6 \
-            kstatusnotifieritem knotifications
 
       - name: Verify tag matches PKGBUILD version
         if: startsWith(github.ref, 'refs/tags/')
