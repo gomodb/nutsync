@@ -46,6 +46,7 @@ void writeLine(const QString &line)
         QFile::rename(AppPaths::logFile(), old);
     }
     if (file.open(QIODevice::WriteOnly | QIODevice::Append | QIODevice::Text)) {
+        file.setPermissions(QFileDevice::ReadOwner | QFileDevice::WriteOwner);
         QTextStream stream(&file);
         stream << line << '\n';
     }

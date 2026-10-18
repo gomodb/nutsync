@@ -31,6 +31,7 @@ public:
 
 private:
     bool ensureSchema(QString *error);
+    bool backupDatabase(const QString &suffix, QString *error);
     static QString escapeLike(const QString &value);
 
     QString m_databasePath;

@@ -44,6 +44,13 @@
     <name>NutSync contributors</name>
   </developer>
   <releases>
+    <release version="0.4.4" date="2026-10-18">
+      <description>
+        <p>Adds configuration and state-database backups, schema-version
+        checks, safer file permissions, and keeps remote response bodies out
+        of user-facing error messages.</p>
+      </description>
+    </release>
     <release version="0.4.3" date="2026-10-18">
       <description>
         <p>Refactors retries around structured errors, removes duplicate

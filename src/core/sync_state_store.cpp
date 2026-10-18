@@ -2,7 +2,9 @@
 
 #include "core/app_paths.h"
 
+#include <QDateTime>
 #include <QDir>
+#include <QFile>
 #include <QFileInfo>
 #include <QObject>
 #include <QSqlError>
@@ -60,6 +62,16 @@ bool SyncStateStore::open(QString *error)
     pragma.exec(QStringLiteral("PRAGMA busy_timeout=5000"));
     pragma.exec(QStringLiteral("PRAGMA foreign_keys=ON"));
 
+    QSqlQuery check(m_database);
+    if (check.exec(QStringLiteral("PRAGMA quick_check")) && check.next()
+        && check.value(0).toString() != QLatin1String("ok")) {
+        if (error)
+            *error = QObject::tr("同步状态数据库损坏：%1").arg(check.value(0).toString());
+        close();
+        return false;
+    }
+
+    QFile::setPermissions(m_databasePath, QFileDevice::ReadOwner | QFileDevice::WriteOwner);
     if (!ensureSchema(error)) {
         close();
         return false;
@@ -81,6 +93,23 @@ void SyncStateStore::close()
 
 bool SyncStateStore::ensureSchema(QString *error)
 {
+    constexpr int currentVersion = 1;
+    QSqlQuery versionQuery(m_database);
+    int version = 0;
+    if (versionQuery.exec(QStringLiteral("PRAGMA user_version")) && versionQuery.next())
+        version = versionQuery.value(0).toInt();
+    if (version > currentVersion) {
+        if (error)
+            *error = QObject::tr("同步状态数据库版本 %1 高于当前支持版本 %2")
+                         .arg(version)
+                         .arg(currentVersion);
+        return false;
+    }
+    if (version > 0 && version < currentVersion) {
+        if (!backupDatabase(QStringLiteral("pre-migration-v%1").arg(version), error))
+            return false;
+    }
+
     QSqlQuery query(m_database);
     const QString sql = QStringLiteral("CREATE TABLE IF NOT EXISTS sync_state ("
                                        "  pair_id TEXT NOT NULL,"
@@ -99,11 +128,27 @@ bool SyncStateStore::ensureSchema(QString *error)
             *error = QObject::tr("创建同步状态表失败：%1").arg(queryError(query));
         return false;
     }
-    if (!query.exec(QStringLiteral("PRAGMA user_version=1"))) {
+    if (version == 0 && !query.exec(QStringLiteral("PRAGMA user_version=1"))) {
         if (error)
             *error = QObject::tr("设置状态数据库版本失败：%1").arg(queryError(query));
         return false;
     }
+    return true;
+}
+
+bool SyncStateStore::backupDatabase(const QString &suffix, QString *error)
+{
+    const QString backup = m_databasePath + QStringLiteral(".bak-") + suffix + QStringLiteral("-")
+        + QDateTime::currentDateTime().toString(QStringLiteral("yyyyMMdd-HHmmss"));
+    QSqlQuery query(m_database);
+    QString escaped = backup;
+    escaped.replace(QLatin1Char('\''), QLatin1String("''"));
+    if (!query.exec(QStringLiteral("VACUUM INTO '%1'").arg(escaped))) {
+        if (error)
+            *error = QObject::tr("备份状态数据库失败：%1").arg(queryError(query));
+        return false;
+    }
+    QFile::setPermissions(backup, QFileDevice::ReadOwner | QFileDevice::WriteOwner);
     return true;
 }
 

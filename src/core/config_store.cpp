@@ -195,6 +195,12 @@ bool ConfigStore::load(AppConfig *config, QString *error) const
     }
 
     const QJsonObject root = doc.object();
+    const int version = root.value(QStringLiteral("version")).toInt(1);
+    if (version > 1) {
+        if (error)
+            *error = QObject::tr("配置文件版本 %1 高于当前支持版本 1").arg(version);
+        return false;
+    }
     config->settings = settingsFromJson(root.value(QStringLiteral("settings")).toObject());
     const QJsonArray pairs = root.value(QStringLiteral("pairs")).toArray();
     QSet<QString> seenIds;
@@ -227,6 +233,14 @@ bool ConfigStore::save(const AppConfig &config, QString *error) const
         if (error)
             *error = QObject::tr("无法创建配置目录 %1").arg(dir);
         return false;
+    }
+
+    QFile current(m_filePath);
+    if (current.exists()) {
+        const QString backup = m_filePath + QStringLiteral(".bak");
+        QFile::remove(backup);
+        QFile::copy(m_filePath, backup);
+        QFile::setPermissions(backup, QFileDevice::ReadOwner | QFileDevice::WriteOwner);
     }
 
     QSaveFile file(m_filePath);

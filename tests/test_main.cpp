@@ -7,6 +7,7 @@
 #include "test_path_utils.h"
 #include "test_rate_limiter.h"
 #include "test_retry_policy.h"
+#include "test_state_store.h"
 #include "test_sync_controller.h"
 #include "test_sync_engine.h"
 #include "test_sync_planner.h"
@@ -72,6 +73,10 @@ int main(int argc, char *argv[])
     }
     {
         NutSync::Test::TestSyncController test;
+        status |= QTest::qExec(&test, argc, argv);
+    }
+    {
+        NutSync::Test::TestStateStore test;
         status |= QTest::qExec(&test, argc, argv);
     }
     return status;

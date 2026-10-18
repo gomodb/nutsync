@@ -134,7 +134,7 @@ AUR 元数据位于 [packaging/arch/PKGBUILD](packaging/arch/PKGBUILD)。由于 
 包源码直接取自 GitHub tag：
 
 ```text
-https://github.com/gomodb/nutsync/archive/refs/tags/v0.4.3.tar.gz
+https://github.com/gomodb/nutsync/archive/refs/tags/v0.4.4.tar.gz
 ```
 
 从项目内构建：
@@ -152,7 +152,7 @@ makepkg -f
 
 AUR 仓库单独保存 PKGBUILD、`.SRCINFO` 和 0BSD 打包许可证。应用源码继续使用 GPL-3.0-or-later，AUR 打包文件使用 0BSD。
 
-AUR 本版本发布为 `0.4.3-1`。本地 AUR 仓库准备在 `~/Projects/nutsync-aur`，首次推送前需要在 AUR 账户中注册 SSH 公钥。
+AUR 本版本发布为 `0.4.4-1`。本地 AUR 仓库准备在 `~/Projects/nutsync-aur`，首次推送前需要在 AUR 账户中注册 SSH 公钥。
 
 自动发布需要配置仓库 secret `AUR_SSH_PRIVATE_KEY`，创建 `aur` environment，然后手动运行 **Publish to AUR** workflow 并选择 release tag。该 workflow 也支持首次创建 AUR 仓库。
 
@@ -199,10 +199,12 @@ AArch64 已支持：代码中没有 x86 专用逻辑，CI 在 Ubuntu 24.04 ARM64
 | 日志 | `~/.local/share/nutsync/nutsync.log` |
 | 请求频率记录 | `~/.local/share/nutsync/rate_limits.json` |
 | 开机自启条目 | `~/.config/autostart/io.github.gomodb.NutSync.desktop` |
-| 临时冲突下载 | `~/.cache/nutsync/` |
+| 下载断点 / 冲突临时文件 | `~/.cache/nutsync/` |
 | 密码 | KWallet / Secret Service（service id `io.github.gomodb.NutSync`） |
+| 配置备份 | `~/.config/nutsync/config.json.bak` |
+| 状态库迁移备份 | `~/.local/share/nutsync/state.db.bak-*` |
 
-状态数据库使用 SQLite，按同步对 ID 隔离。同步对位置改变时，程序会要求清空该同步对的基线（不会删除任何文件）。也可以从右键菜单或“编辑”菜单选择“清空同步基线…”来重置单个同步对。
+状态数据库使用 SQLite，按同步对 ID 隔离。打开时会检查 schema 版本；高于当前 NutSync 支持版本的数据库会被拒绝，旧版本数据库会在迁移前备份。保存配置时会保留上一份文件为 `config.json.bak`。同步对位置改变时，程序会要求清空该同步对的基线（不会删除任何文件）。也可以从右键菜单或“编辑”菜单选择“清空同步基线…”来重置单个同步对。
 
 ## 设计
 

@@ -3,6 +3,7 @@
 #include "core/config_store.h"
 
 #include <QFile>
+#include <QFileInfo>
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
@@ -60,6 +61,16 @@ void TestConfigStore::stripsCredentialsEmbeddedInUrls()
     const QJsonObject root = QJsonDocument::fromJson(saved, &parseError).object();
     QCOMPARE(parseError.error, QJsonParseError::NoError);
     QCOMPARE(root.value(QStringLiteral("pairs")).toArray().size(), 1);
+
+    QVERIFY2(store.save(config, &error), qPrintable(error));
+    QVERIFY(QFileInfo::exists(path + QStringLiteral(".bak")));
+
+    QFile invalid(path);
+    QVERIFY(invalid.open(QIODevice::WriteOnly | QIODevice::Truncate));
+    invalid.write(R"({"version": 99})");
+    invalid.close();
+    AppConfig future;
+    QVERIFY(!store.load(&future, &error));
 }
 
 void TestConfigStore::roundTripsPairSettings()

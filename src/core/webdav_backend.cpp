@@ -7,6 +7,7 @@
 #include "core/sync_types.h"
 
 #include <QCryptographicHash>
+#include <QDebug>
 #include <QDateTime>
 #include <QDir>
 #include <QElapsedTimer>
@@ -348,9 +349,9 @@ QString WebDavBackend::httpError(int status, const QByteArray &body, const QStri
         reason = QObject::tr("远程服务器错误（%1）").arg(fallback);
     }
 
-    QString snippet = QString::fromUtf8(body.left(300)).simplified();
-    if (!snippet.isEmpty() && !snippet.startsWith(QLatin1String("<")))
-        reason += QStringLiteral("：") + snippet;
+    const QString snippet = QString::fromUtf8(body.left(500)).simplified();
+    if (!snippet.isEmpty())
+        qDebug().noquote() << "[webdav]" << statusText(status) << snippet;
     return reason;
 }
 

@@ -22,6 +22,8 @@ add_executable(nutsync_tests
     test_path_utils.h
     test_sync_planner.cpp
     test_sync_planner.h
+    test_state_store.cpp
+    test_state_store.h
     test_sync_engine.cpp
     test_sync_engine.h
     test_webdav_backend.cpp
