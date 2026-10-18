@@ -133,7 +133,7 @@ AUR 元数据位于 [packaging/arch/PKGBUILD](packaging/arch/PKGBUILD)。由于 
 包源码直接取自 GitHub tag：
 
 ```text
-https://github.com/gomodb/nutsync/archive/refs/tags/v0.4.0.tar.gz
+https://github.com/gomodb/nutsync/archive/refs/tags/v0.4.1.tar.gz
 ```
 
 从项目内构建：
@@ -151,7 +151,7 @@ makepkg -f
 
 AUR 仓库单独保存 PKGBUILD、`.SRCINFO` 和 0BSD 打包许可证。应用源码继续使用 GPL-3.0-or-later，AUR 打包文件使用 0BSD。
 
-AUR 本版本发布为 `0.4.0-1`。发布新版本时更新 `pkgver`、`source` 和 `sha256sums`，再执行：
+AUR 本版本发布为 `0.4.1-1`。发布新版本时更新 `pkgver`、`source` 和 `sha256sums`，再执行：
 
 ```bash
 makepkg --printsrcinfo > .SRCINFO
@@ -231,12 +231,17 @@ find src tests -type f \( -name '*.cpp' -o -name '*.h' \) -print0 \
 “首选项 → 网络”提供：
 
 - **代理模式**：系统代理、不使用代理、手动 HTTP 代理（主机、端口、用户名、密码）。
+- **凭据传输**：非 loopback 地址拒绝 HTTP 凭据；不跟随跨 origin 重定向。
 - **代理密码**：保存在系统钥匙串，不写入 `config.json`。
 - **CA 证书文件**：附加到系统 CA 的 PEM 证书包；始终校验证书。
-- **失败重试次数 / 重试基础间隔**：自动同步失败后按 30 秒、60 秒、120 秒……最多 10 分钟退避重试；手动同步不会自动重试。
+- **失败重试次数 / 重试基础间隔**：自动同步失败后按 30 秒、60 秒、120 秒……最多 10 分钟退避重试；401、403、409、412 等永久错误不重试；手动同步不会自动重试。
 - **日志级别**：调试、信息、警告、错误。
 
 代理与 CA 设置重启后生效，日志级别立即生效。
+
+## 安全
+
+安全模型和漏洞报告流程见 [SECURITY.md](SECURITY.md)。HTTP 凭据仅允许 loopback 地址，始终校验 TLS，且不跟随跨 origin 重定向。
 
 ## 语言
 

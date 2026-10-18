@@ -1,5 +1,6 @@
 #include "ui/pair_dialog.h"
 
+#include "core/network_utils.h"
 #include "core/path_utils.h"
 #include "core/webdav_backend.h"
 
@@ -390,9 +391,14 @@ bool PairDialog::validateInputs(bool forTestOnly)
         m_remoteUrl->setFocus();
         return false;
     }
-    if (url.userName().isEmpty() && m_username->text().trimmed().isEmpty()
-        && m_password->text().isEmpty() && !forTestOnly) {
-        // Anonymous access is valid, so no warning here.
+    const bool hasCredentials = !url.userName().isEmpty()
+        || !m_username->text().trimmed().isEmpty() || !m_password->text().isEmpty();
+    if (hasCredentials && !NetworkUtils::allowsCleartextCredentials(url)) {
+        QMessageBox::warning(
+            this, tr("不安全的连接"),
+            tr("HTTP 连接不会加密密码。请改用 HTTPS，或仅在 localhost 上使用 HTTP。"));
+        m_remoteUrl->setFocus();
+        return false;
     }
     return true;
 }

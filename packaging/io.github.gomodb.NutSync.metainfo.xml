@@ -44,6 +44,13 @@
     <name>NutSync contributors</name>
   </developer>
   <releases>
+    <release version="0.4.1" date="2026-10-18">
+      <description>
+        <p>Security release: prevents credentials from being forwarded to a
+        cross-origin redirect, rejects cleartext HTTP credentials outside
+        loopback, and limits automatic retries to transient failures.</p>
+      </description>
+    </release>
     <release version="0.4.0" date="2026-10-18">
       <description>
         <p>Adds the gomodb application ID, migration of existing keychain and

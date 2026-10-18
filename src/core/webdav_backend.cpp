@@ -1,6 +1,7 @@
 #include "core/webdav_backend.h"
 
 #include "core/path_utils.h"
+#include "core/network_utils.h"
 #include "core/sync_types.h"
 
 #include <QEventLoop>
@@ -47,6 +48,7 @@ QString statusText(int status)
 
 WebDavBackend::WebDavBackend(WebDavOptions options)
     : m_options(std::move(options))
+    , m_network(m_options.baseUrl)
 {
     m_baseUrl = m_options.baseUrl;
     if (m_baseUrl.isValid()) {
@@ -60,6 +62,10 @@ WebDavBackend::WebDavBackend(WebDavOptions options)
         m_baseUrl.setPath(path);
         m_baseUrl.setFragment({});
         m_baseUrl.setUserInfo({});
+        if (!m_options.username.isEmpty()
+            && !NetworkUtils::allowsCleartextCredentials(m_baseUrl)) {
+            qWarning() << "NutSync: refusing to send WebDAV credentials over cleartext HTTP";
+        }
     }
 }
 
@@ -80,8 +86,9 @@ QNetworkRequest WebDavBackend::requestFor(const QString &path) const
     request.setRawHeader("Accept", "*/*");
     request.setTransferTimeout(m_options.timeoutMs);
     request.setAttribute(QNetworkRequest::RedirectPolicyAttribute,
-                         QNetworkRequest::NoLessSafeRedirectPolicy);
-    if (!m_options.username.isEmpty()) {
+                         QNetworkRequest::SameOriginRedirectPolicy);
+    if (!m_options.username.isEmpty()
+        && NetworkUtils::allowsCleartextCredentials(m_baseUrl)) {
         request.setRawHeader("Authorization",
                              basicAuthValue(m_options.username, m_options.password));
     }
@@ -161,6 +168,8 @@ QString WebDavBackend::httpError(int status, const QByteArray &body,
         reason = QObject::tr("远程资源被锁定（HTTP 423）");
     } else if (status == 507) {
         reason = QObject::tr("远程存储空间不足（HTTP 507）");
+    } else if (status >= 300 && status < 400) {
+        reason = QObject::tr("服务器要求重定向到其他地址，请直接填写最终 URL");
     } else if (status == 400) {
         reason = QObject::tr("请求被远程服务器拒绝（HTTP 400）");
     } else if (status == 405) {

@@ -556,6 +556,14 @@ Only NutSync's configuration and synchronization baseline are deleted, not local
       <translation>Leave blank to keep the saved password</translation>
     </message>
     <message>
+      <source>清除</source>
+      <translation>Clear</translation>
+    </message>
+    <message>
+      <source>删除系统钥匙串中保存的代理密码</source>
+      <translation>Delete the proxy password stored in the system keychain</translation>
+    </message>
+    <message>
       <source>浏览…</source>
       <translation>Browse…</translation>
     </message>
@@ -600,6 +608,14 @@ Only NutSync's configuration and synchronization baseline are deleted, not local
       <translation>Retry base delay</translation>
     </message>
     <message>
+      <source>无法清除代理密码</source>
+      <translation>Could not clear proxy password</translation>
+    </message>
+    <message>
+      <source>已清除</source>
+      <translation>Cleared</translation>
+    </message>
+    <message>
       <source>选择 CA 证书文件</source>
       <translation>Choose CA certificate file</translation>
     </message>
@@ -634,6 +650,22 @@ Only effective for the current user; unchecking will delete the entry.</translat
     <message>
       <source>取消</source>
       <translation>Cancel</translation>
+    </message>
+    <message>
+      <source>代理配置不完整</source>
+      <translation>Incomplete proxy configuration</translation>
+    </message>
+    <message>
+      <source>手动代理模式需要填写代理主机。</source>
+      <translation>Manual proxy mode requires a proxy host.</translation>
+    </message>
+    <message>
+      <source>CA 证书无效</source>
+      <translation>Invalid CA certificate</translation>
+    </message>
+    <message>
+      <source>无法读取 CA 证书文件“%1”，请选择 PEM 证书。</source>
+      <translation>Could not read CA certificate file "%1"; choose a PEM certificate.</translation>
     </message>
     <message>
       <source>无法设置开机自启</source>
@@ -905,6 +937,14 @@ cache/</translation>
     <message>
       <source>请填写有效的 http:// 或 https:// WebDAV 目录地址。</source>
       <translation>Enter a valid http:// or https:// WebDAV directory URL.</translation>
+    </message>
+    <message>
+      <source>不安全的连接</source>
+      <translation>Insecure connection</translation>
+    </message>
+    <message>
+      <source>HTTP 连接不会加密密码。请改用 HTTPS，或仅在 localhost 上使用 HTTP。</source>
+      <translation>HTTP does not encrypt passwords. Use HTTPS, or HTTP only on localhost.</translation>
     </message>
     <message>
       <source>正在连接 WebDAV 服务器…</source>
@@ -1459,6 +1499,10 @@ cache/</translation>
       <translation>Insufficient remote storage space (HTTP 507)</translation>
     </message>
     <message>
+      <source>服务器要求重定向到其他地址，请直接填写最终 URL</source>
+      <translation>The server redirects to another address; enter the final URL directly.</translation>
+    </message>
+    <message>
       <source>请求被远程服务器拒绝（HTTP 400）</source>
       <translation>The request was rejected by the remote server (HTTP 400)</translation>
     </message>
@@ -1627,6 +1671,10 @@ Please use the icon in the system tray to open the main window.</translation>
     <message>
       <source>错误 %1</source>
       <translation>Errors %1</translation>
+    </message>
+    <message>
+      <source>手动代理模式需要填写代理主机</source>
+      <translation>Manual proxy mode requires a proxy host.</translation>
     </message>
     <message>
       <source>无法读取 CA 证书文件“%1”</source>

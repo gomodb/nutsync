@@ -6,6 +6,8 @@ add_executable(nutsync_tests
     test_config_store.h
     test_language.cpp
     test_language.h
+    test_network_security.cpp
+    test_network_security.h
     test_local_change_monitor.cpp
     test_local_change_monitor.h
     test_rate_limiter.cpp

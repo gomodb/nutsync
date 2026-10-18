@@ -133,7 +133,7 @@ AUR metadata lives in [packaging/arch/PKGBUILD](packaging/arch/PKGBUILD). The pa
 The package source is the GitHub tag archive:
 
 ```text
-https://github.com/gomodb/nutsync/archive/refs/tags/v0.4.0.tar.gz
+https://github.com/gomodb/nutsync/archive/refs/tags/v0.4.1.tar.gz
 ```
 
 Build from the project directory:
@@ -151,7 +151,7 @@ makepkg -f
 
 The AUR repository separately contains the `PKGBUILD`, `.SRCINFO`, and the 0BSD packaging license. Application source remains GPL-3.0-or-later; AUR packaging files are 0BSD.
 
-The first AUR release for this version is `0.4.0-1`. For a new release, update `pkgver`, `source`, and `sha256sums`, then run:
+The first AUR release for this version is `0.4.1-1`. For a new release, update `pkgver`, `source`, and `sha256sums`, then run:
 
 ```bash
 makepkg --printsrcinfo > .SRCINFO
@@ -232,12 +232,17 @@ References:
 Network options are available in **Preferences → Network**:
 
 - **Proxy mode**: system proxy, no proxy, or a manual HTTP proxy with host, port, username, and password.
+- **Credential transport**: HTTP credentials are rejected outside loopback; cross-origin redirects are not followed.
 - **Proxy password**: stored in the system keychain, never in `config.json`.
 - **CA certificate file**: an additional PEM bundle appended to the system CA certificates. Certificate verification is always enforced.
-- **Retry attempts / base delay**: failed automatic syncs retry with exponential backoff (30 s, 60 s, 120 s, ... up to 10 minutes). Manual syncs are never retried automatically.
+- **Retry attempts / base delay**: failed automatic syncs retry with exponential backoff (30 s, 60 s, 120 s, ... up to 10 minutes). Permanent HTTP errors such as 401, 403, 409, and 412 are not retried, and manual syncs are never retried automatically.
 - **Log level**: Debug, Info, Warning, or Error.
 
 Proxy and CA changes take effect after restart. The log level is applied immediately.
+
+## Security
+
+See [SECURITY.md](SECURITY.md) for the security model and vulnerability reporting process. In particular, HTTP credentials are accepted only for loopback hosts, TLS verification is always enforced, and cross-origin redirects are not followed.
 
 ## Language
 

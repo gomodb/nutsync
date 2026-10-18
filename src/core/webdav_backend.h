@@ -1,6 +1,7 @@
 #pragma once
 
 #include "core/remote_backend.h"
+#include "core/secured_network_access_manager.h"
 
 #include <QNetworkAccessManager>
 #include <QUrl>
@@ -56,7 +57,7 @@ private:
                                         bool *ok);
 
     WebDavOptions m_options;
-    QNetworkAccessManager m_network;
+    SecuredNetworkAccessManager m_network;
     QUrl m_baseUrl;
 };
 

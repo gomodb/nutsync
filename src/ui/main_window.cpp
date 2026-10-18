@@ -45,6 +45,7 @@
 #include <QPointer>
 #include <QProgressBar>
 #include <QScrollArea>
+#include <QSslCertificate>
 #include <QScrollBar>
 #include <QPushButton>
 #include <QSignalBlocker>
@@ -69,6 +70,22 @@
 namespace NutSync {
 
 namespace {
+
+bool hasPermanentHttpError(const SyncSummary &summary)
+{
+    // Network errors and 408/429/5xx are worth retrying. These statuses are
+    // deterministic failures that will simply repeat with the same inputs.
+    static const QList<int> permanentStatuses = {301, 302, 303, 307, 308,
+                                                 400, 401, 403, 404, 405,
+                                                 409, 412, 423, 507};
+    for (const QString &detail : summary.errorDetails) {
+        for (int status : permanentStatuses) {
+            if (detail.contains(QStringLiteral("HTTP %1").arg(status)))
+                return true;
+        }
+    }
+    return false;
+}
 
 QString statusText(const SyncPair &pair, bool current, bool queued)
 {
@@ -911,6 +928,20 @@ void MainWindow::resetPairState()
     appendSystemStatus(tr("已清空同步基线：%1").arg(pair->name));
 }
 
+void MainWindow::cancelRetryTimer(const QString &id)
+{
+    if (QTimer *timer = m_retryTimers.take(id)) {
+        timer->stop();
+        timer->deleteLater();
+    }
+}
+
+void MainWindow::cancelRetry(const QString &id)
+{
+    cancelRetryTimer(id);
+    m_autoRetryAttempts.remove(id);
+}
+
 void MainWindow::removePair()
 {
     const QString id = selectedPairId();
@@ -938,6 +969,7 @@ void MainWindow::removePairById(const QString &id)
     if (answer != QMessageBox::Yes)
         return;
 
+    cancelRetry(id);
     clearPairState(id);
     QString error;
     m_credentials.deletePassword(id, &error);
@@ -1077,7 +1109,7 @@ void MainWindow::requestSync(const QString &id, bool manual)
     }
 
     if (manual) {
-        m_autoRetryAttempts.remove(id);
+        cancelRetry(id);
         m_notifyOnSuccess.insert(id);
     }
     m_controller->enqueue(*pair);
@@ -1258,10 +1290,10 @@ void MainWindow::onPairFinished(const SyncSummary &summary)
         }
     }
     const bool manualSync = m_notifyOnSuccess.contains(summary.pairId);
-    if (summary.success) {
-        m_autoRetryAttempts.remove(summary.pairId);
-    } else if (!summary.cancelled && !manualSync && pair->enabled
-               && m_config.settings.retryCount > 0) {
+    if (summary.success || summary.cancelled || manualSync
+        || hasPermanentHttpError(summary)) {
+        cancelRetry(summary.pairId);
+    } else if (pair->enabled && m_config.settings.retryCount > 0) {
         const int attempt = m_autoRetryAttempts.value(summary.pairId) + 1;
         if (attempt <= m_config.settings.retryCount) {
             m_autoRetryAttempts.insert(summary.pairId, attempt);
@@ -1272,14 +1304,26 @@ void MainWindow::onPairFinished(const SyncSummary &summary)
                           .arg(delay)
                           .arg(attempt)
                           .arg(m_config.settings.retryCount));
-            QTimer::singleShot(delay * 1000, this, [this, pairId = summary.pairId]() {
+            cancelRetryTimer(summary.pairId);
+            auto *timer = new QTimer(this);
+            timer->setSingleShot(true);
+            connect(timer, &QTimer::timeout, this, [this, pairId = summary.pairId]() {
+                m_retryTimers.remove(pairId);
                 const SyncPair *current = findPair(pairId);
-                if (current && current->enabled && !m_controller->contains(pairId))
+                if (current && current->enabled && m_config.settings.retryCount > 0
+                    && m_autoRetryAttempts.value(pairId)
+                        <= m_config.settings.retryCount
+                    && !m_controller->contains(pairId)) {
                     requestSync(pairId, false);
+                }
             });
+            m_retryTimers.insert(summary.pairId, timer);
+            timer->start(delay * 1000);
         } else {
-            m_autoRetryAttempts.remove(summary.pairId);
+            cancelRetry(summary.pairId);
         }
+    } else {
+        cancelRetry(summary.pairId);
     }
     m_notifyOnSuccess.remove(summary.pairId);
     updateActions();
@@ -1490,6 +1534,13 @@ void MainWindow::openSettings()
     auto *proxyPassword = new QLineEdit(networkGroup);
     proxyPassword->setEchoMode(QLineEdit::Password);
     proxyPassword->setPlaceholderText(tr("留空则保留已保存的密码"));
+    auto *clearProxyPassword = new QPushButton(tr("清除"), networkGroup);
+    clearProxyPassword->setToolTip(tr("删除系统钥匙串中保存的代理密码"));
+    auto *proxyPasswordRow = new QWidget(networkGroup);
+    auto *proxyPasswordLayout = new QHBoxLayout(proxyPasswordRow);
+    proxyPasswordLayout->setContentsMargins(0, 0, 0, 0);
+    proxyPasswordLayout->addWidget(proxyPassword, 1);
+    proxyPasswordLayout->addWidget(clearProxyPassword);
     auto *caPath = new QLineEdit(m_config.settings.caBundlePath, networkGroup);
     auto *browseCa = new QPushButton(tr("浏览…"), networkGroup);
     auto *caRow = new QWidget(networkGroup);
@@ -1502,7 +1553,7 @@ void MainWindow::openSettings()
     networkForm->addRow(tr("主机"), proxyHost);
     networkForm->addRow(tr("端口"), proxyPort);
     networkForm->addRow(tr("代理用户名"), proxyUser);
-    networkForm->addRow(tr("代理密码"), proxyPassword);
+    networkForm->addRow(tr("代理密码"), proxyPasswordRow);
     networkForm->addRow(tr("CA 证书文件"), caRow);
     auto *retryCount = new QSpinBox(networkGroup);
     retryCount->setRange(0, 5);
@@ -1526,6 +1577,15 @@ void MainWindow::openSettings()
     connect(proxyMode, &QComboBox::currentIndexChanged, &dialog,
             [updateProxyFields](int) { updateProxyFields(); });
     updateProxyFields();
+    connect(clearProxyPassword, &QPushButton::clicked, &dialog, [&]() {
+        QString error;
+        if (!m_credentials.deletePassword(QStringLiteral("proxy-password"), &error)) {
+            QMessageBox::warning(&dialog, tr("无法清除代理密码"), error);
+            return;
+        }
+        proxyPassword->clear();
+        proxyPassword->setPlaceholderText(tr("已清除"));
+    });
     connect(browseCa, &QPushButton::clicked, &dialog, [&]() {
         const QString file = QFileDialog::getOpenFileName(
             &dialog, tr("选择 CA 证书文件"), caPath->text(),
@@ -1571,6 +1631,23 @@ void MainWindow::openSettings()
     buttons->button(QDialogButtonBox::Cancel)->setText(tr("取消"));
     outerLayout->addWidget(buttons);
     connect(buttons, &QDialogButtonBox::accepted, &dialog, [&]() {
+        if (proxyMode->currentData().toString() == QLatin1String("manual")
+            && proxyHost->text().trimmed().isEmpty()) {
+            QMessageBox::warning(&dialog, tr("代理配置不完整"),
+                                 tr("手动代理模式需要填写代理主机。"));
+            proxyHost->setFocus();
+            return;
+        }
+        const QString caFile = caPath->text().trimmed();
+        if (!caFile.isEmpty()
+            && (!QFileInfo(caFile).isFile()
+                || QSslCertificate::fromPath(caFile, QSsl::Pem).isEmpty())) {
+            QMessageBox::warning(&dialog, tr("CA 证书无效"),
+                                 tr("无法读取 CA 证书文件“%1”，请选择 PEM 证书。")
+                                     .arg(caFile));
+            caPath->setFocus();
+            return;
+        }
         if (autostart->isChecked() != autostartManager.isEnabled()) {
             QString error;
             if (!autostartManager.setEnabled(autostart->isChecked(), &error)) {
@@ -1610,6 +1687,11 @@ void MainWindow::openSettings()
         }
     }
     Logger::setLevel(m_config.settings.logLevel);
+    if (m_config.settings.retryCount == 0) {
+        const auto ids = m_retryTimers.keys();
+        for (const QString &id : ids)
+            cancelRetry(id);
+    }
     saveConfig(true);
     appendSystemStatus(tr("首选项已保存"));
     if (m_config.settings.language != previousLanguage) {

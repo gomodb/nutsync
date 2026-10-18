@@ -1,6 +1,7 @@
 #include "test_autostart.h"
 #include "test_config_store.h"
 #include "test_language.h"
+#include "test_network_security.h"
 #include "test_local_change_monitor.h"
 #include "test_path_utils.h"
 #include "test_rate_limiter.h"
@@ -29,6 +30,10 @@ int main(int argc, char *argv[])
     }
     {
         NutSync::Test::TestLanguage test;
+        status |= QTest::qExec(&test, argc, argv);
+    }
+    {
+        NutSync::Test::TestNetworkSecurity test;
         status |= QTest::qExec(&test, argc, argv);
     }
     {
