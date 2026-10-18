@@ -1,4 +1,6 @@
 #include "core/app_paths.h"
+#include "core/config_store.h"
+#include "core/language.h"
 #include "core/logger.h"
 #include "ui/main_window.h"
 
@@ -7,6 +9,7 @@
 #include <QCommandLineParser>
 #include <QIcon>
 #include <QLockFile>
+#include <QTranslator>
 #include <QMessageBox>
 
 int main(int argc, char *argv[])
@@ -19,6 +22,17 @@ int main(int argc, char *argv[])
     QApplication::setApplicationVersion(QStringLiteral(NUTSYNC_VERSION));
     QApplication::setDesktopFileName(QStringLiteral("io.github.nutsync.NutSync"));
     QApplication::setWindowIcon(QIcon(QStringLiteral(":/resources/icons/nutsync.svg")));
+
+    NutSync::AppConfig startupConfig;
+    NutSync::ConfigStore startupStore;
+    startupStore.load(&startupConfig);
+    QTranslator translator;
+    QTranslator qtTranslator;
+    if (!NutSync::Language::installTranslator(
+            application, NutSync::Language::resolve(startupConfig.settings.language),
+            &translator, &qtTranslator)) {
+        qWarning("NutSync: failed to load English translation");
+    }
 
     QCommandLineParser parser;
     parser.setApplicationDescription(

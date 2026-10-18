@@ -93,6 +93,7 @@ struct SyncPair
 
 struct AppSettings
 {
+    QString language = QStringLiteral("system");
     bool notifications = true;
     bool closeToTray = true;
     bool autoSyncOnStartup = true;

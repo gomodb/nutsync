@@ -29,8 +29,8 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends \
             cmake ninja-build g++ python3 \
-            qt6-base-dev libqt6sql6-sqlite \
-            appstream desktop-file-utils
+            qt6-base-dev qt6-tools-dev qt6-tools-dev-tools \
+            libqt6sql6-sqlite appstream desktop-file-utils
 
       - name: Configure
         run: >
@@ -83,7 +83,7 @@ jobs:
       - name: Install dependencies
         run: |
           pacman -Syu --noconfirm --needed \
-            cmake ninja git python \
+            cmake ninja git python qt6-tools \
             qt6-base qt6-svg qtkeychain-qt6 \
             kstatusnotifieritem knotifications
 
@@ -131,7 +131,8 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends \
             build-essential clang cmake ninja-build python3 \
-            qt6-base-dev libqt6sql6-sqlite
+            qt6-base-dev qt6-tools-dev qt6-tools-dev-tools \
+            libqt6sql6-sqlite
 
       - name: Configure
         run: |
@@ -158,7 +159,8 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends \
             build-essential cmake ninja-build python3 \
-            qt6-base-dev libqt6sql6-sqlite
+            qt6-base-dev qt6-tools-dev qt6-tools-dev-tools \
+            libqt6sql6-sqlite
 
       - name: Configure
         run: |
@@ -220,7 +222,7 @@ jobs:
       - name: Install build dependencies
         run: |
           pacman -Syu --noconfirm --needed \
-            cmake ninja git python fakeroot namcap sudo curl \
+            cmake ninja git python fakeroot namcap sudo curl qt6-tools \
             qt6-base qt6-svg qtkeychain-qt6 \
             kstatusnotifieritem knotifications
 

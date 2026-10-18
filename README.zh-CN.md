@@ -35,6 +35,7 @@ NutSync 的目标不是做一次性的“上传/下载”，而是维护一条�
   - 同步过程中本地文件再次变化时，该项操作会被跳过并在下次重试。
 - **排除规则**：支持 `.git`、`node_modules`、`*.tmp`、`缓存/` 等模式。被排除的远程内容会阻止对其父目录的递归删除，也不会被 inotify 监视。
 - **KDE 集成**：KStatusNotifierItem 托盘、KNotification 桌面通知、KWallet / Secret Service 密码存储、可选的用户级开机自启。
+- **多语言**：界面支持英文和简体中文；默认跟随系统语言，中文系统使用简体中文，其他或无法匹配的语言回退英文。可在首选项中覆盖，重启后生效。
 - **单色面板图标**：系统托盘使用单色 NutSync 图标，并按 KDE 深色/浅色配色方案自动切换，支持运行中切换主题。
 - **自动同步**：按同步对设置定时同步间隔、程序启动时同步，并通过 Linux inotify 递归监视本地目录；本地文件发生变化后经防抖自动触发同步。
 - **请求频率限制**：可按同步对配置“每 x 分钟/小时内最多启动 y 次同步”，默认不限制。定时同步、inotify 触发和启动同步受限制；手动同步始终允许，但会占用额度。限制记录持久化，重启不会重置额度。
@@ -46,23 +47,24 @@ NutSync 的目标不是做一次性的“上传/下载”，而是维护一条�
 依赖：
 
 - CMake ≥ 3.21、Ninja、C++20 编译器
-- Qt 6.4+：Core、Gui、Widgets、Network、Sql（SQLite 驱动）、Concurrent、Test，以及 SVG 图标插件（`qt6-svg` / `libqt6svg6`）
+- Qt 6.4+：Core、Gui、Widgets、Network、Sql（SQLite 驱动）、Concurrent、Test、LinguistTools，以及 SVG 图标插件（`qt6-svg` / `libqt6svg6`）
 - 可选：QtKeychain（密码保存）
 - 可选：KStatusNotifierItem、KNotifications（KDE 原生托盘与通知）
 
 Arch Linux：
 
 ```bash
-sudo pacman -S --needed base-devel cmake ninja qt6-base qtkeychain-qt6 \
-    kstatusnotifieritem knotifications qt6-svg
+sudo pacman -S --needed base-devel cmake ninja qt6-base qt6-tools qtkeychain-qt6 \
+    kstatusnotifieritem knotifications qt6-svg qt6-translations
 ```
 
 Debian / Ubuntu（包名可能因发行版版本略有差异）：
 
 ```bash
 sudo apt install build-essential cmake ninja-build qt6-base-dev \
-    qt6-tools-dev libqt6sql6-sqlite qtkeychain-qt6-dev \
-    libkf6statusnotifieritem-dev libkf6notifications-dev libqt6svg6
+    qt6-tools-dev qt6-tools-dev-tools libqt6sql6-sqlite qtkeychain-qt6-dev \
+    libkf6statusnotifieritem-dev libkf6notifications-dev libqt6svg6 \
+    qt6-translations-l10n
 ```
 
 测试套件会启动一个本地 Python 3 WebDAV 测试服务器，请确保系统中可用 `python3`。
@@ -129,7 +131,7 @@ AUR 元数据位于 [packaging/arch/PKGBUILD](packaging/arch/PKGBUILD)。由于 
 包源码直接取自 GitHub tag：
 
 ```text
-https://github.com/gomodb/nutsync/archive/refs/tags/v0.2.1.tar.gz
+https://github.com/gomodb/nutsync/archive/refs/tags/v0.3.0.tar.gz
 ```
 
 从项目内构建：
@@ -147,7 +149,7 @@ makepkg -f
 
 AUR 仓库单独保存 PKGBUILD、`.SRCINFO` 和 0BSD 打包许可证。应用源码继续使用 GPL-3.0-or-later，AUR 打包文件使用 0BSD。
 
-AUR 首次发布版本为 `0.2.1-1`。发布新版本时更新 `pkgver`、`source` 和 `sha256sums`，再执行：
+AUR 本版本发布为 `0.3.0-1`。发布新版本时更新 `pkgver`、`source` 和 `sha256sums`，再执行：
 
 ```bash
 makepkg --printsrcinfo > .SRCINFO
@@ -221,6 +223,15 @@ find src tests -type f \( -name '*.cpp' -o -name '*.h' \) -print0 \
 - [Clang-Format Style Options](https://clang.llvm.org/docs/ClangFormatStyleOptions.html)
 - [Qt Coding Style](https://wiki.qt.io/Qt_Coding_Style)
 - [KDE Frameworks Coding Style](https://community.kde.org/Policies/Frameworks_Coding_Style)
+
+## 语言
+
+界面语言默认跟随系统设置：
+
+- 中文系统使用简体中文；
+- 其他或无法匹配的语言使用英文。
+
+可在“首选项 → 界面语言”中选择“跟随系统”“English”或“简体中文”。更改后需要重启 NutSync 才能生效。
 
 ## 首选项
 

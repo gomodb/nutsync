@@ -35,6 +35,7 @@ Every sync compares both sides against that baseline before deciding whether to 
   - If a local file changes again during a sync, that operation is skipped and retried on the next sync.
 - **Exclusion rules**: supports patterns such as `.git`, `node_modules`, `*.tmp`, and `cache/`. Excluded remote content blocks recursive deletion of its parent directory and is not watched by inotify.
 - **KDE integration**: KStatusNotifierItem tray, KNotification desktop notifications, KWallet / Secret Service password storage, and optional per-user start at login.
+- **Languages**: English and Simplified Chinese interface. The initial language follows the system locale; Chinese systems use Simplified Chinese and all other/unknown locales fall back to English. The choice can be overridden in Preferences and takes effect after restart.
 - **Monochrome panel icons**: the system tray uses a monochrome NutSync icon that follows the active KDE dark or light color scheme, including live theme changes.
 - **Automatic synchronization**: per-pair intervals, sync on application startup, and recursive Linux inotify monitoring with debounce.
 - **Request rate limiting**: each pair can allow at most a configurable number of sync starts per time window. The limit is disabled by default. Scheduled, inotify, and startup syncs consume the quota; manual syncs are always allowed but still consume it. Quota history is persisted across restarts.
@@ -46,23 +47,24 @@ Every sync compares both sides against that baseline before deciding whether to 
 Requirements:
 
 - CMake ≥ 3.21, Ninja, and a C++20 compiler
-- Qt 6.4+: Core, Gui, Widgets, Network, Sql (SQLite driver), Concurrent, Test, and the SVG icon plugin (`qt6-svg` / `libqt6svg6`)
+- Qt 6.4+: Core, Gui, Widgets, Network, Sql (SQLite driver), Concurrent, Test, LinguistTools, and the SVG icon plugin (`qt6-svg` / `libqt6svg6`)
 - Optional: QtKeychain for password storage
 - Optional: KStatusNotifierItem and KNotifications for native KDE tray and notifications
 
 Arch Linux:
 
 ```bash
-sudo pacman -S --needed base-devel cmake ninja qt6-base qtkeychain-qt6 \
-    kstatusnotifieritem knotifications qt6-svg
+sudo pacman -S --needed base-devel cmake ninja qt6-base qt6-tools qtkeychain-qt6 \
+    kstatusnotifieritem knotifications qt6-svg qt6-translations
 ```
 
 Debian / Ubuntu (package names may vary by release):
 
 ```bash
 sudo apt install build-essential cmake ninja-build qt6-base-dev \
-    qt6-tools-dev libqt6sql6-sqlite qtkeychain-qt6-dev \
-    libkf6statusnotifieritem-dev libkf6notifications-dev libqt6svg6
+    qt6-tools-dev qt6-tools-dev-tools libqt6sql6-sqlite qtkeychain-qt6-dev \
+    libkf6statusnotifieritem-dev libkf6notifications-dev libqt6svg6 \
+    qt6-translations-l10n
 ```
 
 The test suite starts a local Python 3 WebDAV server, so `python3` must be available.
@@ -129,7 +131,7 @@ AUR metadata lives in [packaging/arch/PKGBUILD](packaging/arch/PKGBUILD). The pa
 The package source is the GitHub tag archive:
 
 ```text
-https://github.com/gomodb/nutsync/archive/refs/tags/v0.2.1.tar.gz
+https://github.com/gomodb/nutsync/archive/refs/tags/v0.3.0.tar.gz
 ```
 
 Build from the project directory:
@@ -147,7 +149,7 @@ makepkg -f
 
 The AUR repository separately contains the `PKGBUILD`, `.SRCINFO`, and the 0BSD packaging license. Application source remains GPL-3.0-or-later; AUR packaging files are 0BSD.
 
-The first AUR release is `0.2.1-1`. For a new release, update `pkgver`, `source`, and `sha256sums`, then run:
+The first AUR release for this version is `0.3.0-1`. For a new release, update `pkgver`, `source`, and `sha256sums`, then run:
 
 ```bash
 makepkg --printsrcinfo > .SRCINFO
@@ -222,6 +224,15 @@ References:
 - [Clang-Format Style Options](https://clang.llvm.org/docs/ClangFormatStyleOptions.html)
 - [Qt Coding Style](https://wiki.qt.io/Qt_Coding_Style)
 - [KDE Frameworks Coding Style](https://community.kde.org/Policies/Frameworks_Coding_Style)
+
+## Language
+
+The interface language follows the system locale:
+
+- Chinese locales use Simplified Chinese;
+- all other or unsupported locales use English.
+
+The language can be overridden in **Preferences → Language** with **System default**, **English**, or **简体中文**. A restart is required for the change to take effect.
 
 ## Preferences
 

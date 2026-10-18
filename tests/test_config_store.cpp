@@ -45,6 +45,7 @@ void TestConfigStore::stripsCredentialsEmbeddedInUrls()
     QCOMPARE(config.pairs.at(0).rateLimitMaxRequests, 10);
     QCOMPARE(config.pairs.at(0).watchLocalChanges, true);
     QCOMPARE(config.pairs.at(0).syncDeletions, false);
+    QCOMPARE(config.settings.language, QStringLiteral("system"));
 
     QVERIFY2(store.save(config, &error), qPrintable(error));
     QVERIFY(file.open(QIODevice::ReadOnly));
@@ -68,6 +69,7 @@ void TestConfigStore::roundTripsPairSettings()
     config.settings.closeToTray = false;
     config.settings.autoSyncOnStartup = false;
     config.settings.startMinimized = true;
+    config.settings.language = QStringLiteral("en");
 
     SyncPair pair;
     pair.id = QStringLiteral("pair-1");
@@ -99,6 +101,7 @@ void TestConfigStore::roundTripsPairSettings()
     QCOMPARE(loaded.settings.closeToTray, false);
     QCOMPARE(loaded.settings.autoSyncOnStartup, false);
     QCOMPARE(loaded.settings.startMinimized, true);
+    QCOMPARE(loaded.settings.language, QStringLiteral("en"));
     QCOMPARE(loaded.pairs.size(), 1);
     const SyncPair &result = loaded.pairs.constFirst();
     QCOMPARE(result.id, pair.id);

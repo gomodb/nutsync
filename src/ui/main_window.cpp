@@ -15,6 +15,7 @@
 #include <QBrush>
 #include <QApplication>
 #include <QCheckBox>
+#include <QComboBox>
 #include <QCloseEvent>
 #include <QDateTime>
 #include <QDir>
@@ -1376,6 +1377,23 @@ void MainWindow::openSettings()
     heading->setFont(headingFont);
     layout->addWidget(heading);
 
+    auto *languageRow = new QHBoxLayout();
+    auto *languageLabel = new QLabel(tr("界面语言"), &dialog);
+    auto *language = new QComboBox(&dialog);
+    language->addItem(tr("跟随系统"), QStringLiteral("system"));
+    language->addItem(QStringLiteral("English"), QStringLiteral("en"));
+    language->addItem(QStringLiteral("简体中文"), QStringLiteral("zh_CN"));
+    const int languageIndex = language->findData(m_config.settings.language);
+    if (languageIndex >= 0)
+        language->setCurrentIndex(languageIndex);
+    languageRow->addWidget(languageLabel);
+    languageRow->addWidget(language, 1);
+    layout->addLayout(languageRow);
+    auto *languageNote = new QLabel(tr("更改语言后需要重启 NutSync 才会生效。"), &dialog);
+    languageNote->setWordWrap(true);
+    makeMuted(languageNote, true);
+    layout->addWidget(languageNote);
+
     auto *notifications = new QCheckBox(tr("显示桌面通知"), &dialog);
     notifications->setChecked(m_config.settings.notifications);
     auto *closeToTray = new QCheckBox(tr("关闭窗口时最小化到托盘"), &dialog);
@@ -1452,6 +1470,8 @@ void MainWindow::openSettings()
     if (dialog.exec() != QDialog::Accepted)
         return;
 
+    const QString previousLanguage = m_config.settings.language;
+    m_config.settings.language = language->currentData().toString();
     m_config.settings.notifications = notifications->isChecked();
     m_config.settings.closeToTray = closeToTray->isChecked();
     m_config.settings.autoSyncOnStartup = autoStartup->isChecked();
@@ -1460,6 +1480,10 @@ void MainWindow::openSettings()
         m_tray->setNotificationsEnabled(m_config.settings.notifications);
     saveConfig(true);
     appendSystemStatus(tr("首选项已保存"));
+    if (m_config.settings.language != previousLanguage) {
+        QMessageBox::information(this, tr("语言已更改"),
+                                 tr("界面语言将在下次启动 NutSync 时生效。"));
+    }
 }
 
 void MainWindow::showAbout()

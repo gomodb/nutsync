@@ -107,6 +107,7 @@ SyncPair pairFromJson(const QJsonObject &obj)
 QJsonObject settingsToJson(const AppSettings &settings)
 {
     QJsonObject obj;
+    obj.insert(QStringLiteral("language"), settings.language);
     obj.insert(QStringLiteral("notifications"), settings.notifications);
     obj.insert(QStringLiteral("closeToTray"), settings.closeToTray);
     obj.insert(QStringLiteral("autoSyncOnStartup"), settings.autoSyncOnStartup);
@@ -117,6 +118,11 @@ QJsonObject settingsToJson(const AppSettings &settings)
 AppSettings settingsFromJson(const QJsonObject &obj)
 {
     AppSettings settings;
+    const QString language = obj.value(QStringLiteral("language")).toString();
+    settings.language = (language == QLatin1String("en")
+                         || language == QLatin1String("zh_CN"))
+        ? language
+        : QStringLiteral("system");
     settings.notifications = obj.value(QStringLiteral("notifications")).toBool(true);
     settings.closeToTray = obj.value(QStringLiteral("closeToTray")).toBool(true);
     settings.autoSyncOnStartup = obj.value(QStringLiteral("autoSyncOnStartup")).toBool(true);

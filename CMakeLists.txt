@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.21)
 
 project(NutSync
-    VERSION 0.2.1
+    VERSION 0.3.0
     DESCRIPTION "Two-way WebDAV synchronization for the KDE desktop"
     HOMEPAGE_URL "https://github.com/gomodb/nutsync"
     LANGUAGES CXX
@@ -28,6 +28,7 @@ find_package(Qt6 6.4 REQUIRED COMPONENTS
     Network
     Sql
     Concurrent
+    LinguistTools
 )
 
 if(BUILD_TESTING)
@@ -51,6 +52,8 @@ add_library(nutsync_core STATIC
     src/core/credential_store.h
     src/core/local_change_monitor.cpp
     src/core/local_change_monitor.h
+    src/core/language.cpp
+    src/core/language.h
     src/core/logger.cpp
     src/core/logger.h
     src/core/path_utils.cpp
@@ -121,6 +124,11 @@ if(KF6Notifications_FOUND)
     target_compile_definitions(nutsync PRIVATE NUTSYNC_HAVE_KNOTIFICATIONS=1)
     message(STATUS "NutSync: using KNotification")
 endif()
+
+qt_add_translations(nutsync
+    TS_FILES translations/nutsync_en.ts
+    RESOURCE_PREFIX "/i18n"
+)
 
 qt_add_resources(nutsync "nutsync_resources"
     PREFIX "/"
