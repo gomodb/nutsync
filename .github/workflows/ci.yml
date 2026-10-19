@@ -313,7 +313,8 @@ jobs:
         if: startsWith(github.ref, 'refs/tags/')
         run: |
           tag="${GITHUB_REF_NAME#v}"
-          pkgver="$(bash -c 'source packaging/arch/PKGBUILD; printf %s "$pkgver"')"
+          pkgver="$(sed -n 's/^pkgver=//p' packaging/arch/PKGBUILD)"
+          echo "tag=[$tag] pkgver=[$pkgver] ref=[$GITHUB_REF_NAME]"
           if [ "$tag" != "$pkgver" ]; then
             echo "Tag $tag does not match PKGBUILD pkgver $pkgver"
             exit 1
