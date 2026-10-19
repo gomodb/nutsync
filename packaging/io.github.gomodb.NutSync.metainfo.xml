@@ -49,6 +49,13 @@
     <name>NutSync contributors</name>
   </developer>
   <releases>
+    <release version="0.6.1" date="2026-10-19">
+      <description>
+        <p>Maintenance release: AUR publishing has been removed. The project
+        now publishes only GitHub Release artifacts for x86_64 and aarch64
+        Arch Linux, built and smoke-tested in CI.</p>
+      </description>
+    </release>
     <release version="0.6.0" date="2026-10-19">
       <description>
         <p>NutSync 0.6.0 adds per-pair pause/resume, persistent sync history,

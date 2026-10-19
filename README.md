@@ -136,7 +136,7 @@ The local Arch package recipe lives in [packaging/arch/PKGBUILD](packaging/arch/
 The package source is the GitHub tag archive:
 
 ```text
-https://github.com/gomodb/nutsync/archive/refs/tags/v0.6.0.tar.gz
+https://github.com/gomodb/nutsync/archive/refs/tags/v0.6.1.tar.gz
 ```
 
 Build from the project directory:
