@@ -495,6 +495,8 @@ void SyncEngine::run()
         summary.conflictRecords.clear();
         for (const QString &path : std::as_const(plan.conflicts))
             summary.conflictRecords.append({path, {}});
+        if (m_pair.syncMode != SyncMode::RemoteToLocal)
+            detectLocalMoves(&plan, state);
         filterActionsForMode(&plan);
         emitLog(tr("同步计划：上传 %1，下载 %2，删除 %3，冲突 %4")
                     .arg(plan.uploads)
@@ -948,6 +950,92 @@ bool SyncEngine::doDownload(const SyncAction &action, const QString &remotePath,
     return true;
 }
 
+void SyncEngine::detectLocalMoves(SyncPlan *plan, const QHash<QString, StateEntry> &state) const
+{
+    QHash<QString, SyncAction> deletes;
+    QHash<QString, SyncAction> uploads;
+    for (const SyncAction &action : std::as_const(plan->actions)) {
+        if (action.kind == ActionKind::DeleteRemote && action.remote.type == EntryType::File
+            && !action.local.isValid()) {
+            deletes.insert(action.path, action);
+        } else if (action.kind == ActionKind::Upload && action.local.type == EntryType::File
+                   && !action.remote.isValid()) {
+            uploads.insert(action.path, action);
+        }
+    }
+    QSet<QString> consumedDeletes;
+    QSet<QString> consumedUploads;
+    QList<SyncAction> moves;
+    for (auto deleteIt = deletes.constBegin(); deleteIt != deletes.constEnd(); ++deleteIt) {
+        const StateEntry previous = state.value(deleteIt.key());
+        if (previous.type != EntryType::File || previous.localSize <= 0)
+            continue;
+        for (auto uploadIt = uploads.constBegin(); uploadIt != uploads.constEnd(); ++uploadIt) {
+            if (consumedUploads.contains(uploadIt.key()))
+                continue;
+            const LocalEntry &candidate = uploadIt.value().local;
+            if (candidate.size != previous.localSize || candidate.mtimeMs != previous.localMtimeMs)
+                continue;
+            SyncAction move;
+            move.kind = ActionKind::MoveRemote;
+            move.path = uploadIt.key();
+            move.fromPath = deleteIt.key();
+            move.local = candidate;
+            move.remote = deleteIt.value().remote;
+            move.state = previous;
+            move.stateExists = true;
+            moves.append(move);
+            consumedDeletes.insert(deleteIt.key());
+            consumedUploads.insert(uploadIt.key());
+            break;
+        }
+    }
+    if (moves.isEmpty())
+        return;
+
+    QList<SyncAction> ordered;
+    int movePosition = -1;
+    for (const SyncAction &action : std::as_const(plan->actions)) {
+        if (consumedDeletes.contains(action.path) && action.kind == ActionKind::DeleteRemote)
+            continue;
+        if (consumedUploads.contains(action.path) && action.kind == ActionKind::Upload)
+            continue;
+        if (movePosition < 0
+            && (action.kind == ActionKind::DeleteLocal
+                || action.kind == ActionKind::DeleteRemote)) {
+            movePosition = ordered.size();
+        }
+        ordered.append(action);
+    }
+    if (movePosition < 0)
+        movePosition = ordered.size();
+    for (int index = 0; index < moves.size(); ++index)
+        ordered.insert(movePosition + index, moves.at(index));
+    plan->actions = ordered;
+}
+
+bool SyncEngine::moveRemote(const SyncAction &action, QString *error)
+{
+    SyncAction previous;
+    previous.path = action.fromPath;
+    previous.remote = action.remote;
+    previous.local = {};
+    QString verifyError;
+    if (!verifyRemoteUnchanged(previous, &verifyError)) {
+        if (error)
+            *error = verifyError;
+        return false;
+    }
+    if (!m_backend->move(action.fromPath, action.path, true, error, [this]() {
+            return m_cancelled.loadRelaxed() != 0;
+        })) {
+        return false;
+    }
+    if (m_stateStore && !m_stateStore->removePath(m_pair.id, action.fromPath, error))
+        return false;
+    return recordSynced(action.path, error);
+}
+
 void SyncEngine::filterActionsForMode(SyncPlan *plan) const
 {
     if (m_pair.syncMode == SyncMode::Bidirectional)
@@ -970,6 +1058,10 @@ void SyncEngine::filterActionsForMode(SyncPlan *plan) const
             break;
         case ActionKind::ResolveConflict:
             filtered.append(action);
+            break;
+        case ActionKind::MoveRemote:
+            if (localToRemote)
+                filtered.append(action);
             break;
         }
     }
@@ -1614,6 +1706,14 @@ bool SyncEngine::executeAction(const SyncAction &action, SyncSummary *summary)
         if (!deleteLocal(action, &error))
             return failed(error);
         ++summary->deletedLocal;
+        return true;
+    }
+    case ActionKind::MoveRemote: {
+        QString error;
+        emitLog(tr("移动远程文件"), action.fromPath + QStringLiteral(" → ") + action.path);
+        if (!moveRemote(action, &error))
+            return failed(error);
+        ++summary->moved;
         return true;
     }
     case ActionKind::ResolveConflict:

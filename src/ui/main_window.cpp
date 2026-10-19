@@ -172,6 +172,8 @@ QString summaryCounts(const SyncSummary &summary)
         parts.append(QObject::tr("本地删除 %1").arg(summary.deletedLocal));
     if (summary.directoriesCreated > 0)
         parts.append(QObject::tr("新建目录 %1").arg(summary.directoriesCreated));
+    if (summary.moved > 0)
+        parts.append(QObject::tr("移动 %1").arg(summary.moved));
     if (summary.conflicts > 0)
         parts.append(QObject::tr("冲突 %1").arg(summary.conflicts));
     if (summary.skipped > 0)
@@ -1860,10 +1862,11 @@ void MainWindow::showHistory()
                                  .toString(QStringLiteral("yyyy-MM-dd HH:mm:ss"));
         const QString result =
             entry.cancelled ? tr("已取消") : (entry.success ? tr("成功") : tr("失败"));
-        const QString counts = tr("上传 %1 · 下载 %2 · 删除 %3 · 冲突 %4 · 错误 %5")
+        const QString counts = tr("上传 %1 · 下载 %2 · 删除 %3 · 移动 %4 · 冲突 %5 · 错误 %6")
                                    .arg(entry.uploaded)
                                    .arg(entry.downloaded)
                                    .arg(entry.deletedLocal + entry.deletedRemote)
+                                   .arg(entry.moved)
                                    .arg(entry.conflicts)
                                    .arg(entry.errors);
         const QString text =

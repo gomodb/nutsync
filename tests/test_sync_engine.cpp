@@ -263,6 +263,24 @@ void TestSyncEngine::oneWayModes()
     QVERIFY(remoteToLocal.existsLocal(QStringLiteral("local.txt")));
 }
 
+void TestSyncEngine::detectsLocalRename()
+{
+    Harness harness;
+    QVERIFY(harness.writeLocal(QStringLiteral("old.txt"), "rename me"));
+    const SyncSummary first = harness.sync(ConflictPolicy::KeepBoth, {}, true);
+    QVERIFY2(first.success, qPrintable(harness.diagnostics(first)));
+
+    QVERIFY(QFile::rename(harness.localPath(QStringLiteral("old.txt")),
+                          harness.localPath(QStringLiteral("new.txt"))));
+    const SyncSummary second = harness.sync(ConflictPolicy::KeepBoth, {}, true);
+    QVERIFY2(second.success, qPrintable(harness.diagnostics(second)));
+    QCOMPARE(second.moved, 1);
+    QCOMPARE(second.uploaded, 0);
+    QCOMPARE(second.deletedRemote, 0);
+    QVERIFY(!harness.existsRemote(QStringLiteral("old.txt")));
+    QCOMPARE(harness.readRemote(QStringLiteral("new.txt")), QByteArray("rename me"));
+}
+
 void TestSyncEngine::parallelTransfers()
 {
     Harness harness;

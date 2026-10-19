@@ -167,6 +167,7 @@ enum class ActionKind {
     DeleteRemote,
     DeleteLocal,
     ResolveConflict,
+    MoveRemote,
 };
 
 QString actionKindToString(ActionKind kind);
@@ -175,6 +176,7 @@ struct SyncAction
 {
     ActionKind kind = ActionKind::Upload;
     QString path;
+    QString fromPath;
     LocalEntry local;
     RemoteEntry remote;
     StateEntry state;
@@ -203,6 +205,7 @@ struct SyncHistoryEntry
     int deletedRemote = 0;
     int directoriesCreated = 0;
     int conflicts = 0;
+    int moved = 0;
     int skipped = 0;
     int errors = 0;
     qint64 elapsedMs = 0;
@@ -221,6 +224,7 @@ struct SyncSummary
     int deletedRemote = 0;
     int directoriesCreated = 0;
     int conflicts = 0;
+    int moved = 0;
     int skipped = 0;
     int errors = 0;
     QString message;

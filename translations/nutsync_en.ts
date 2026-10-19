@@ -693,7 +693,7 @@ Only NutSync's configuration and synchronization baseline are deleted, not local
     </message>
     <message>
       <source>上传 %1 · 下载 %2 · 删除 %3 · 冲突 %4 · 错误 %5</source>
-      <translation>Uploaded %1 · downloaded %2 · deleted %3 · conflicts %4 · errors %5</translation>
+      <translation type="vanished">Uploaded %1 · downloaded %2 · deleted %3 · conflicts %4 · errors %5</translation>
     </message>
     <message>
       <source>清空历史</source>
@@ -1030,6 +1030,10 @@ Only effective for the current user; unchecking will delete the entry.</translat
     <message>
       <source>：%1</source>
       <translation>: %1</translation>
+    </message>
+    <message>
+      <source>上传 %1 · 下载 %2 · 删除 %3 · 移动 %4 · 冲突 %5 · 错误 %6</source>
+      <translation>Uploaded %1 · downloaded %2 · deleted %3 · moved %4 · conflicts %5 · errors %6</translation>
     </message>
     <message>
       <source>导出诊断信息</source>
@@ -1761,6 +1765,10 @@ Projects/notes.md</translation>
       <translation>Delete local</translation>
     </message>
     <message>
+      <source>移动远程文件</source>
+      <translation>Move remote file</translation>
+    </message>
+    <message>
       <source>未知操作类型</source>
       <translation>Unknown operation type</translation>
     </message>
@@ -1905,6 +1913,10 @@ Projects/notes.md</translation>
     <message>
       <source>创建同步历史索引失败：%1</source>
       <translation>Failed to create sync history index: %1</translation>
+    </message>
+    <message>
+      <source>升级同步历史表失败：%1</source>
+      <translation>Failed to upgrade sync history table: %1</translation>
     </message>
     <message>
       <source>设置状态数据库版本失败：%1</source>
@@ -2171,6 +2183,10 @@ Projects/notes.md</translation>
       <translation>Upload failed: %1</translation>
     </message>
     <message>
+      <source>移动远程文件失败：%1</source>
+      <translation>Failed to move remote file: %1</translation>
+    </message>
+    <message>
       <source>创建远程目录失败：%1</source>
       <translation>Failed to create remote directory: %1</translation>
     </message>
@@ -2283,6 +2299,10 @@ Please use the icon in the system tray to open the main window.</translation>
     <message>
       <source>新建目录 %1</source>
       <translation>Directories created %1</translation>
+    </message>
+    <message>
+      <source>移动 %1</source>
+      <translation>Moved %1</translation>
     </message>
     <message>
       <source>冲突 %1</source>

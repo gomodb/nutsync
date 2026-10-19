@@ -42,6 +42,8 @@ public:
     bool upload(const QString &localFile, const QString &path, const QString &expectedEtag,
                 QString *error, const CancelledCallback &cancelled) override;
     bool makeDirectory(const QString &path, QString *error) override;
+    bool move(const QString &fromPath, const QString &toPath, bool overwrite, QString *error,
+              const CancelledCallback &cancelled) override;
     bool remove(const QString &path, bool recursive, const QString &expectedEtag, QString *error,
                 const CancelledCallback &cancelled) override;
 

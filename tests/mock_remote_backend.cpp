@@ -267,6 +267,52 @@ bool MockRemoteBackend::upload(const QString &localFile, const QString &path,
     return true;
 }
 
+bool MockRemoteBackend::move(const QString &fromPath, const QString &toPath, bool overwrite,
+                             QString *error, const CancelledCallback &cancelled)
+{
+    if (cancelled && cancelled())
+        return false;
+    RemoteEntry source;
+    bool exists = false;
+    if (!entryFor(fromPath, &source, &exists, error))
+        return false;
+    if (!exists)
+        return true;
+    RemoteEntry destination;
+    bool destinationExists = false;
+    if (!entryFor(toPath, &destination, &destinationExists, error))
+        return false;
+    if (destinationExists && !overwrite) {
+        if (error)
+            *error = QStringLiteral("destination exists");
+        return false;
+    }
+    if (destinationExists) {
+        const QString target = absolutePath(toPath);
+        if (!QFileInfo::exists(target)
+            || (source.type == EntryType::Directory ? !QDir(target).removeRecursively()
+                                                    : !QFile::remove(target))) {
+            if (error)
+                *error = QStringLiteral("cannot remove destination");
+            return false;
+        }
+    }
+    const QString sourcePath = absolutePath(fromPath);
+    const QString targetPath = absolutePath(toPath);
+    if (!QDir().mkpath(QFileInfo(targetPath).absolutePath())) {
+        if (error)
+            *error = QStringLiteral("cannot create destination parent");
+        return false;
+    }
+    const bool moved = source.type == EntryType::Directory ? QDir().rename(sourcePath, targetPath)
+                                                           : QFile::rename(sourcePath, targetPath);
+    if (!moved) {
+        if (error)
+            *error = QStringLiteral("cannot move path");
+        return false;
+    }
+    return true;
+}
 bool MockRemoteBackend::makeDirectory(const QString &path, QString *error)
 {
     const QString target = absolutePath(path);

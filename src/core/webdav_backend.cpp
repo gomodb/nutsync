@@ -1092,6 +1092,57 @@ bool WebDavBackend::upload(const QString &localFile, const QString &path,
     }
 }
 
+bool WebDavBackend::move(const QString &fromPath, const QString &toPath, bool overwrite,
+                         QString *error, const CancelledCallback &cancelled)
+{
+    m_lastErrorClass = RemoteErrorClass::None;
+    for (int attempt = 0;; ++attempt) {
+        if (cancelled && cancelled()) {
+            m_lastErrorClass = RemoteErrorClass::Cancelled;
+            if (error)
+                *error = QObject::tr("同步已取消");
+            return false;
+        }
+        QNetworkRequest request = requestFor(fromPath);
+        request.setRawHeader("Destination", PathUtils::remoteUrl(m_baseUrl, toPath).toEncoded());
+        request.setRawHeader("Overwrite", overwrite ? "T" : "F");
+        QNetworkReply *reply = m_network.sendCustomRequest(request, "MOVE");
+        QEventLoop loop;
+        QTimer cancelTimer;
+        cancelTimer.setInterval(200);
+        QObject::connect(reply, &QNetworkReply::finished, &loop, &QEventLoop::quit);
+        QObject::connect(&cancelTimer, &QTimer::timeout, &loop, [&]() {
+            if (cancelled && cancelled())
+                reply->abort();
+        });
+        cancelTimer.start();
+        loop.exec();
+        cancelTimer.stop();
+
+        const int status = statusCode(reply);
+        const QByteArray body = reply->readAll();
+        const int retryAfter = retryAfterDelayMs(reply);
+        const auto networkError = reply->error();
+        const QString networkErrorString = reply->errorString();
+        reply->deleteLater();
+
+        if (status == 201 || status == 204 || isSuccessStatus(status))
+            return true;
+        if (retryableFailure(status, networkError) && attempt < m_options.retryCount
+            && waitBeforeRetry(attempt, retryAfter, m_options.retryBaseDelayMs,
+                               m_options.retryMaxDelayMs, cancelled)) {
+            continue;
+        }
+        m_lastErrorClass = classifyReply(status, networkError);
+        if (error) {
+            *error = status == 0 ? QObject::tr("移动远程文件失败：%1").arg(networkErrorString)
+                                 : QObject::tr("移动远程文件失败：%1")
+                                       .arg(httpError(status, body, statusText(status)));
+        }
+        return false;
+    }
+}
+
 bool WebDavBackend::makeDirectory(const QString &path, QString *error)
 {
     m_lastErrorClass = RemoteErrorClass::None;

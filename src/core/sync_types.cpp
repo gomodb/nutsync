@@ -113,6 +113,8 @@ QString actionKindToString(ActionKind kind)
         return QStringLiteral("delete-local");
     case ActionKind::ResolveConflict:
         return QStringLiteral("resolve-conflict");
+    case ActionKind::MoveRemote:
+        return QStringLiteral("move-remote");
     }
     return QStringLiteral("unknown");
 }

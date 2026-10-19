@@ -96,7 +96,7 @@ void SyncStateStore::close()
 
 bool SyncStateStore::ensureSchema(QString *error)
 {
-    constexpr int currentVersion = 3;
+    constexpr int currentVersion = 4;
     QSqlQuery versionQuery(m_database);
     int version = 0;
     if (versionQuery.exec(QStringLiteral("PRAGMA user_version")) && versionQuery.next())
@@ -156,6 +156,7 @@ bool SyncStateStore::ensureSchema(QString *error)
                                               "  deleted_remote INTEGER NOT NULL,"
                                               "  directories_created INTEGER NOT NULL,"
                                               "  conflicts INTEGER NOT NULL,"
+                                              "  moved INTEGER NOT NULL DEFAULT 0,"
                                               "  skipped INTEGER NOT NULL,"
                                               "  errors INTEGER NOT NULL,"
                                               "  elapsed_ms INTEGER NOT NULL,"
@@ -172,7 +173,14 @@ bool SyncStateStore::ensureSchema(QString *error)
             *error = QObject::tr("创建同步历史索引失败：%1").arg(queryError(query));
         return false;
     }
-    if (version < currentVersion && !query.exec(QStringLiteral("PRAGMA user_version=3"))) {
+    if (version == 3
+        && !query.exec(QStringLiteral(
+            "ALTER TABLE sync_history ADD COLUMN moved INTEGER NOT NULL DEFAULT 0"))) {
+        if (error)
+            *error = QObject::tr("升级同步历史表失败：%1").arg(queryError(query));
+        return false;
+    }
+    if (version < currentVersion && !query.exec(QStringLiteral("PRAGMA user_version=4"))) {
         if (error)
             *error = QObject::tr("设置状态数据库版本失败：%1").arg(queryError(query));
         return false;
@@ -445,8 +453,9 @@ bool SyncStateStore::appendHistory(const QString &pairId, const SyncHistoryEntry
     query.prepare(QStringLiteral(
         "INSERT INTO sync_history"
         " (pair_id, finished_at, success, cancelled, uploaded, downloaded, deleted_local,"
-        "  deleted_remote, directories_created, conflicts, skipped, errors, elapsed_ms, message)"
-        " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"));
+        "  deleted_remote, directories_created, conflicts, moved, skipped, errors, elapsed_ms, "
+        "message)"
+        " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"));
     query.addBindValue(pairId);
     query.addBindValue(entry.finishedAtMs > 0 ? entry.finishedAtMs
                                               : QDateTime::currentMSecsSinceEpoch());
@@ -458,6 +467,7 @@ bool SyncStateStore::appendHistory(const QString &pairId, const SyncHistoryEntry
     query.addBindValue(entry.deletedRemote);
     query.addBindValue(entry.directoriesCreated);
     query.addBindValue(entry.conflicts);
+    query.addBindValue(entry.moved);
     query.addBindValue(entry.skipped);
     query.addBindValue(entry.errors);
     query.addBindValue(entry.elapsedMs);
@@ -488,7 +498,8 @@ bool SyncStateStore::loadHistory(const QString &pairId, int limit, QList<SyncHis
     QSqlQuery query(m_database);
     query.prepare(QStringLiteral(
         "SELECT finished_at, success, cancelled, uploaded, downloaded, deleted_local,"
-        " deleted_remote, directories_created, conflicts, skipped, errors, elapsed_ms, message"
+        " deleted_remote, directories_created, conflicts, moved, skipped, errors, elapsed_ms, "
+        "message"
         " FROM sync_history WHERE pair_id = ? ORDER BY id DESC LIMIT ?"));
     query.addBindValue(pairId);
     query.addBindValue(qMax(1, limit));
@@ -508,10 +519,11 @@ bool SyncStateStore::loadHistory(const QString &pairId, int limit, QList<SyncHis
         entry.deletedRemote = query.value(6).toInt();
         entry.directoriesCreated = query.value(7).toInt();
         entry.conflicts = query.value(8).toInt();
-        entry.skipped = query.value(9).toInt();
-        entry.errors = query.value(10).toInt();
-        entry.elapsedMs = query.value(11).toLongLong();
-        entry.message = query.value(12).toString();
+        entry.moved = query.value(9).toInt();
+        entry.skipped = query.value(10).toInt();
+        entry.errors = query.value(11).toInt();
+        entry.elapsedMs = query.value(12).toLongLong();
+        entry.message = query.value(13).toString();
         entries->append(entry);
     }
     return true;

@@ -105,6 +105,7 @@ void TestStateStore::writesAndLoadsHistory()
     first.uploaded = 2;
     first.downloaded = 1;
     first.conflicts = 1;
+    first.moved = 3;
     first.elapsedMs = 1234;
     first.message = QStringLiteral("first");
     QVERIFY2(store.appendHistory(QStringLiteral("pair"), first, &error), qPrintable(error));
@@ -121,6 +122,7 @@ void TestStateStore::writesAndLoadsHistory()
     QCOMPARE(history.size(), 2);
     QCOMPARE(history.at(0).message, QStringLiteral("second"));
     QCOMPARE(history.at(1).uploaded, 2);
+    QCOMPARE(history.at(1).moved, 3);
     QCOMPARE(history.at(1).elapsedMs, 1234);
 
     QVERIFY2(store.clearHistory(QStringLiteral("pair"), &error), qPrintable(error));

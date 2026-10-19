@@ -12,6 +12,7 @@ private slots:
     void deletedFilesAreBackedUp();
     void selectiveSync();
     void parallelTransfers();
+    void detectsLocalRename();
     void oneWayModes();
     void detectsSubsequentChanges();
     void sameContentMtimeChangeDoesNotUpload();

@@ -179,6 +179,7 @@ void SyncController::onWorkerFinished()
         history.deletedRemote = summary.deletedRemote;
         history.directoriesCreated = summary.directoriesCreated;
         history.conflicts = summary.conflicts;
+        history.moved = summary.moved;
         history.skipped = summary.skipped;
         history.errors = summary.errors;
         history.elapsedMs = summary.elapsedMs;
