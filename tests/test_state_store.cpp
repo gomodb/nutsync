@@ -130,4 +130,48 @@ void TestStateStore::writesAndLoadsHistory()
     QVERIFY(history.isEmpty());
 }
 
+void TestStateStore::migratesHistoryFromVersionThree()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    const QString path = directory.filePath(QStringLiteral("state.db"));
+    const QString connection = QStringLiteral("v3-history-migration");
+    {
+        QSqlDatabase database = QSqlDatabase::addDatabase(QStringLiteral("QSQLITE"), connection);
+        database.setDatabaseName(path);
+        QVERIFY(database.open());
+        QSqlQuery query(database);
+        QVERIFY(query.exec(QStringLiteral(
+            "CREATE TABLE sync_history (id INTEGER PRIMARY KEY AUTOINCREMENT,"
+            " pair_id TEXT NOT NULL, finished_at INTEGER NOT NULL, success INTEGER NOT NULL,"
+            " cancelled INTEGER NOT NULL, uploaded INTEGER NOT NULL, downloaded INTEGER NOT NULL,"
+            " deleted_local INTEGER NOT NULL, deleted_remote INTEGER NOT NULL,"
+            " directories_created INTEGER NOT NULL, conflicts INTEGER NOT NULL,"
+            " skipped INTEGER NOT NULL, errors INTEGER NOT NULL, elapsed_ms INTEGER NOT NULL,"
+            " message TEXT NOT NULL DEFAULT '')")));
+        QVERIFY(query.exec(QStringLiteral("PRAGMA user_version=3")));
+        database.close();
+    }
+    QSqlDatabase::removeDatabase(connection);
+
+    SyncStateStore store(path);
+    QString error;
+    QVERIFY2(store.open(&error), qPrintable(error));
+    SyncHistoryEntry entry;
+    entry.success = true;
+    entry.moved = 2;
+    entry.message = QStringLiteral("migrated");
+    QVERIFY2(store.appendHistory(QStringLiteral("pair"), entry, &error), qPrintable(error));
+    QList<SyncHistoryEntry> history;
+    QVERIFY2(store.loadHistory(QStringLiteral("pair"), 10, &history, &error), qPrintable(error));
+    QCOMPARE(history.size(), 1);
+    QCOMPARE(history.at(0).moved, 2);
+    QCOMPARE(history.at(0).message, QStringLiteral("migrated"));
+
+    const QStringList backups =
+        QDir(directory.path())
+            .entryList({QStringLiteral("state.db.bak-pre-migration-v3-*")}, QDir::Files);
+    QCOMPARE(backups.size(), 1);
+}
+
 } // namespace NutSync::Test

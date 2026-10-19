@@ -12,5 +12,6 @@ private slots:
     void migratesVersionOne();
     void rejectsFutureSchemaVersion();
     void writesAndLoadsHistory();
+    void migratesHistoryFromVersionThree();
 };
 } // namespace NutSync::Test
