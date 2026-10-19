@@ -128,9 +128,9 @@ node_modules
 - 两侧都存在且内容不同的同名文件会产生冲突副本；
 - 内容相同的文件只建立同步基线。
 
-## Arch Linux / AUR
+## Arch Linux 包
 
-AUR 元数据位于 [packaging/arch/PKGBUILD](packaging/arch/PKGBUILD)。由于 `makepkg` 会占用工作目录下的 `src/` 和 `pkg/`，这些文件放在独立子目录中。
+本地 Arch 包配置位于 [packaging/arch/PKGBUILD](packaging/arch/PKGBUILD)。由于 `makepkg` 会占用工作目录下的 `src/` 和 `pkg/`，这些文件放在独立子目录中。
 
 包源码直接取自 GitHub tag：
 
@@ -151,11 +151,7 @@ makepkg -si
 makepkg -f
 ```
 
-AUR 仓库单独保存 PKGBUILD、`.SRCINFO` 和 0BSD 打包许可证。应用源码继续使用 GPL-3.0-or-later，AUR 打包文件使用 0BSD。
-
-AUR 本版本发布为 `0.6.0-1`。本地 AUR 仓库准备在 `~/Projects/nutsync-aur`，首次推送前需要在 AUR 账户中注册 SSH 公钥。
-
-自动发布需要配置仓库 secret `AUR_SSH_PRIVATE_KEY`，创建 `aur` environment，然后手动运行 **Publish to AUR** workflow 并选择 release tag。该 workflow 也支持首次创建 AUR 仓库。
+应用源码使用 GPL-3.0-or-later；打包配方及其许可证文件使用 0BSD。
 
 ### 发布自动化
 
@@ -170,26 +166,21 @@ git add -A && git commit -m 'Prepare 0.4.3'
 git tag -a v0.4.3 -m 'NutSync 0.4.3'
 git push origin main v0.4.3
 
-# 3. 下载 tag 归档，更新 AUR 校验和并重新生成 .SRCINFO
-scripts/update-aur-checksum.sh
+# 3. 下载 tag 归档并更新 PKGBUILD 校验和
+scripts/update-arch-checksum.sh
 
 # 4. 提交校验和并检查发布元数据
-git add packaging/arch/PKGBUILD packaging/arch/.SRCINFO
-git commit -m 'Set AUR checksum for 0.4.3'
+git add packaging/arch/PKGBUILD
+git commit -m 'Set Arch package checksum for 0.4.3'
 scripts/check-release.sh v0.4.3
 ```
 
-有权限的维护者可用 `scripts/clean-chroot-build.sh` 在 `devtools` 干净 chroot 中构建 AUR 包。该脚本需要 `sudo` 和 `devtools`，普通 CI 不运行它。
+有权限的维护者可用 `scripts/clean-chroot-build.sh` 在 `devtools` 干净 chroot 中构建包。该脚本需要 `sudo` 和 `devtools`，普通 CI 不运行它。
 
-发布新版本时更新 `pkgver`、`source` 和 `sha256sums`，再执行：
-
-```bash
-makepkg --printsrcinfo > .SRCINFO
-```
+AArch64 已支持：代码中没有 x86 专用逻辑，CI 在 Ubuntu 24.04 ARM64 上原生构建并运行测试，Release 流程也会构建 Arch Linux ARM 包并附加到 GitHub Release。
 
 ## 配置与数据位置
 
-AArch64 已支持：代码中没有 x86 专用逻辑，CI 在 Ubuntu 24.04 ARM64 上原生构建并运行测试，AUR 包声明了 `aarch64`。正式依赖 Arch Linux ARM 前，仍建议在 ALARM 系统上验证原生打包。
 
 遵循 XDG 目录规范：
 
@@ -281,7 +272,7 @@ find src tests -type f \( -name '*.cpp' -o -name '*.h' \) -print0 \
 
 ## 打包状态
 
-当前构建产物和 AUR/Arch Linux ARM 阻塞条件见 [docs/packaging-status.md](docs/packaging-status.md)。
+当前构建产物和打包状态见 [docs/packaging-status.md](docs/packaging-status.md)。
 
 ## 诊断信息
 

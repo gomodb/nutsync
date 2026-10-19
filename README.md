@@ -129,9 +129,9 @@ During the first sync:
 - files that exist on both sides with different contents create conflict copies;
 - identical files only update the baseline.
 
-## Arch Linux / AUR
+## Arch Linux package
 
-AUR metadata lives in [packaging/arch/PKGBUILD](packaging/arch/PKGBUILD). The packaging files are kept in a subdirectory because `makepkg` creates `src/` and `pkg/` in its working directory.
+The local Arch package recipe lives in [packaging/arch/PKGBUILD](packaging/arch/PKGBUILD). Packaging files are kept in a subdirectory because `makepkg` creates `src/` and `pkg/` in its working directory.
 
 The package source is the GitHub tag archive:
 
@@ -152,11 +152,7 @@ Build without installing:
 makepkg -f
 ```
 
-The AUR repository separately contains the `PKGBUILD`, `.SRCINFO`, and the 0BSD packaging license. Application source remains GPL-3.0-or-later; AUR packaging files are 0BSD.
-
-The first AUR release for this version is `0.6.0-1`. The repository is prepared under `~/Projects/nutsync-aur` and expects the AUR SSH key to be registered before the first push.
-
-For automated publishing, configure the repository secret `AUR_SSH_PRIVATE_KEY`, create an `aur` environment, and manually run the **Publish to AUR** workflow with the release tag. The workflow also supports creating the AUR repository on its first push.
+Application source is GPL-3.0-or-later; the packaging recipe and its license file are 0BSD.
 
 ### Release automation
 
@@ -171,26 +167,21 @@ git add -A && git commit -m 'Prepare 0.4.3'
 git tag -a v0.4.3 -m 'NutSync 0.4.3'
 git push origin main v0.4.3
 
-# 3. Download the tag archive, update the AUR checksum and regenerate .SRCINFO
-scripts/update-aur-checksum.sh
+# 3. Download the tag archive and update the PKGBUILD checksum
+scripts/update-arch-checksum.sh
 
-# 4. Commit the checksum and validate all release metadata
-git add packaging/arch/PKGBUILD packaging/arch/.SRCINFO
-git commit -m 'Set AUR checksum for 0.4.3'
+# 4. Commit the checksum and validate release metadata
+git add packaging/arch/PKGBUILD
+git commit -m 'Set Arch package checksum for 0.4.3'
 scripts/check-release.sh v0.4.3
 ```
 
-For a privileged maintainer check, `scripts/clean-chroot-build.sh` builds the AUR package in a `devtools` clean chroot. It requires `sudo` and `devtools`; normal CI intentionally does not run it.
+For a privileged maintainer check, `scripts/clean-chroot-build.sh` builds the package in a `devtools` clean chroot. It requires `sudo` and `devtools`; normal CI intentionally does not run it.
 
-For a new release, update `pkgver`, `source`, and `sha256sums`, then run:
-
-```bash
-makepkg --printsrcinfo > .SRCINFO
-```
+AArch64 is supported: the code contains no x86-specific logic, CI builds and tests it natively on Ubuntu 24.04 ARM64, and the release job builds an Arch Linux ARM package that is attached to GitHub Releases.
 
 ## Configuration and data locations
 
-AArch64 is supported: the code contains no x86-specific logic, CI builds and tests it natively on Ubuntu 24.04 ARM64, and the AUR package declares `aarch64`. Native Arch Linux ARM packaging should still be validated on an ALARM system before relying on it in production.
 
 NutSync follows the XDG directory specification:
 
@@ -283,7 +274,7 @@ Proxy and CA changes take effect after restart. The log level is applied immedia
 
 ## Packaging status
 
-See [docs/packaging-status.md](docs/packaging-status.md) for current artifacts and the AUR/Arch Linux ARM blockers.
+See [docs/packaging-status.md](docs/packaging-status.md) for current artifacts and packaging status.
 
 ## Diagnostics
 
@@ -341,10 +332,10 @@ ctest --test-dir build --output-on-failure
 - inotify is Linux-only and is limited by `max_user_watches`. Very large trees may only be partially watched; the UI reports monitoring errors and scheduled sync remains available.
 - Local monitoring is suppressed during a sync and for about two seconds afterward so NutSync's own downloads and deletions are not treated as user changes. Changes made during that window are handled by the next scheduled or manual sync.
 - With synchronized deletion disabled, a local deletion is restored by the next sync. If inotify is enabled, this can happen quickly. Enable synchronized deletion to delete both local and remote copies permanently.
-- Uploads and downloads execute sequentially; the first sync of a large tree or a high-latency server may be slow.
-- OAuth2 and Digest challenge authentication are not supported. Nextcloud app passwords with Basic authentication work.
+- Uploads and downloads can run sequentially or with 1–4 parallel transfers; very large trees or high-latency servers may still be slow.
+- Digest, Basic, Bearer-token/OAuth2 access token, and client-certificate authentication are supported. Interactive OAuth2 browser authorization is not implemented.
 - Rate limiting counts sync starts, not individual HTTP requests within a sync.
 
 ## License
 
-NutSync is licensed under **GPL-3.0-or-later**. AUR packaging files are licensed under **0BSD**.
+NutSync is licensed under **GPL-3.0-or-later**. Arch packaging files are licensed under **0BSD**.

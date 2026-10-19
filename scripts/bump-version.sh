@@ -69,6 +69,5 @@ text = text.replace("  <releases>\n", entry, 1)
 metainfo.write_text(text)
 PY
 
-(cd "$root/packaging/arch" && makepkg --printsrcinfo > .SRCINFO)
 echo "Prepared $old -> $version"
-echo "Next: review, commit, tag, then run scripts/update-aur-checksum.sh"
+echo "Next: review, commit, tag, then run scripts/update-arch-checksum.sh"

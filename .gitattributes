@@ -14,10 +14,9 @@
 *.sh text eol=lf
 *.py text eol=lf
 PKGBUILD text eol=lf
-.SRCINFO text eol=lf
 .clang-format text eol=lf
 .gitignore text eol=lf
 .gitattributes text eol=lf
 
-# AUR packaging is not part of the upstream source archive.
+# Arch packaging is not part of the upstream source archive.
 packaging/arch export-ignore

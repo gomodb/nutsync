@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Refresh sha256sums and .SRCINFO for the current PKGBUILD version.
+# Refresh sha256sums for the current local Arch package version.
 set -euo pipefail
 
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -32,6 +32,5 @@ if count != 1:
 path.write_text(text)
 PY
 
-(cd "$root/packaging/arch" && makepkg --printsrcinfo > .SRCINFO)
 echo "Updated nutsync ${pkgver}-${pkgrel}"
 echo "sha256sums=('$checksum')"

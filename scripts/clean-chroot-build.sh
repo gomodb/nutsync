@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Build the current AUR package in a clean archbuild chroot.
+# Build the current Arch package in a clean archbuild chroot.
 # Requires devtools and sudo/root; this is intentionally not run by normal CI.
 set -euo pipefail
 
