@@ -17,6 +17,8 @@ struct WebDavOptions
     QString authMode = QStringLiteral("basic");
     QString clientCertificatePath;
     QString clientKeyPath;
+    bool chunkedUpload = false;
+    int chunkSizeMb = 10;
     int timeoutMs = 120000;
     int retryCount = 3;
     int retryBaseDelayMs = 500;
@@ -49,6 +51,9 @@ public:
 
 private:
     QNetworkRequest requestFor(const QString &path) const;
+    QNetworkRequest requestForAbsolute(const QUrl &url) const;
+    bool uploadChunked(const QString &localFile, const QString &path, QString *error,
+                       const CancelledCallback &cancelled);
     QByteArray propfindBody() const;
     bool listDirectory(const QString &path, QList<RemoteEntry> *entries, QString *error,
                        const CancelledCallback &cancelled = {});

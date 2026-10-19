@@ -104,6 +104,8 @@ struct SyncPair
     QString authMode = QStringLiteral("basic");
     QString clientCertificatePath;
     QString clientKeyPath;
+    bool chunkedUpload = false;
+    int chunkSizeMb = 10;
     bool rememberPassword = true;
     QStringList excludePatterns;
     QStringList includePaths;

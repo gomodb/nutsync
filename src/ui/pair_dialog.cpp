@@ -56,6 +56,8 @@ PairDialog::PairDialog(const SyncPair &pair, bool credentialsAvailable, QWidget 
     m_username->setText(pair.username);
     m_clientCert->setText(pair.clientCertificatePath);
     m_clientKey->setText(pair.clientKeyPath);
+    m_chunkedUpload->setChecked(pair.chunkedUpload);
+    m_chunkSize->setValue(pair.chunkSizeMb);
     m_password->setText(pair.password);
     m_rememberPassword->setChecked(pair.rememberPassword && credentialsAvailable);
     m_excludes->setPlainText(pair.excludePatterns.join(QLatin1Char('\n')));
@@ -198,6 +200,16 @@ void PairDialog::buildUi(bool credentialsAvailable)
     keyLayout->addWidget(m_clientKey, 1);
     keyLayout->addWidget(browseKey);
     form->addRow(tr("客户端私钥"), keyRow);
+
+    m_chunkedUpload = new QCheckBox(tr("使用 Nextcloud 分块上传（大文件）"), this);
+    m_chunkedUpload->setToolTip(tr("仅适用于 Nextcloud/ownCloud 的 /remote.php/dav/files/ "
+                                   "地址；其他服务器会自动回退普通 PUT。"));
+    m_chunkSize = new QSpinBox(this);
+    m_chunkSize->setRange(1, 100);
+    m_chunkSize->setSuffix(tr(" MB"));
+    m_chunkSize->setValue(10);
+    form->addRow(QString(), m_chunkedUpload);
+    form->addRow(tr("分块大小"), m_chunkSize);
 
     connect(browseCert, &QPushButton::clicked, this, [this]() {
         const QString path = QFileDialog::getOpenFileName(
@@ -565,6 +577,8 @@ SyncPair PairDialog::syncPair() const
     pair.authMode = m_authMode->currentData().toString();
     pair.clientCertificatePath = m_clientCert->text().trimmed();
     pair.clientKeyPath = m_clientKey->text().trimmed();
+    pair.chunkedUpload = m_chunkedUpload->isChecked();
+    pair.chunkSizeMb = m_chunkSize->value();
     pair.username = m_username->text().trimmed();
     pair.password = m_password->text();
     if (ok && (!url.userName().isEmpty() || !url.password().isEmpty())) {

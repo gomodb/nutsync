@@ -34,6 +34,8 @@ QJsonObject pairToJson(const SyncPair &pair)
     obj.insert(QStringLiteral("authMode"), pair.authMode);
     obj.insert(QStringLiteral("clientCertificatePath"), pair.clientCertificatePath);
     obj.insert(QStringLiteral("clientKeyPath"), pair.clientKeyPath);
+    obj.insert(QStringLiteral("chunkedUpload"), pair.chunkedUpload);
+    obj.insert(QStringLiteral("chunkSizeMb"), pair.chunkSizeMb);
     obj.insert(QStringLiteral("rememberPassword"), pair.rememberPassword);
     obj.insert(QStringLiteral("excludePatterns"), QJsonArray::fromStringList(pair.excludePatterns));
     obj.insert(QStringLiteral("includePaths"), QJsonArray::fromStringList(pair.includePaths));
@@ -77,6 +79,8 @@ SyncPair pairFromJson(const QJsonObject &obj)
         pair.authMode = QStringLiteral("basic");
     pair.clientCertificatePath = obj.value(QStringLiteral("clientCertificatePath")).toString();
     pair.clientKeyPath = obj.value(QStringLiteral("clientKeyPath")).toString();
+    pair.chunkedUpload = obj.value(QStringLiteral("chunkedUpload")).toBool(false);
+    pair.chunkSizeMb = qBound(1, obj.value(QStringLiteral("chunkSizeMb")).toInt(10), 100);
     QUrl remoteUrl(pair.remoteUrl);
     if (!remoteUrl.userName().isEmpty() || !remoteUrl.password().isEmpty()) {
         if (pair.username.isEmpty())

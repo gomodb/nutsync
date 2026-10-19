@@ -17,6 +17,7 @@
 #include <QFileInfo>
 #include <QNetworkReply>
 #include <QAuthenticator>
+#include <QBuffer>
 #include <QSslCertificate>
 #include <QSslConfiguration>
 #include <QSslKey>
@@ -371,7 +372,12 @@ RemoteErrorClass WebDavBackend::lastErrorClass() const
 
 QNetworkRequest WebDavBackend::requestFor(const QString &path) const
 {
-    QNetworkRequest request(PathUtils::remoteUrl(m_baseUrl, path));
+    return requestForAbsolute(PathUtils::remoteUrl(m_baseUrl, path));
+}
+
+QNetworkRequest WebDavBackend::requestForAbsolute(const QUrl &url) const
+{
+    QNetworkRequest request(url);
     request.setHeader(QNetworkRequest::UserAgentHeader, QString::fromLatin1(kUserAgent));
     request.setRawHeader("Accept", "*/*");
     request.setTransferTimeout(m_options.timeoutMs);
@@ -1004,6 +1010,151 @@ bool WebDavBackend::download(const QString &path, const QString &localFile, Down
         result->mtimeMs = lastModified.isValid() ? lastModified.toMSecsSinceEpoch() : 0;
         result->etag = etag;
     }
+    return true;
+}
+
+bool WebDavBackend::uploadChunked(const QString &localFile, const QString &path, QString *error,
+                                  const CancelledCallback &cancelled)
+{
+    QFile file(localFile);
+    if (!file.open(QIODevice::ReadOnly)) {
+        m_lastErrorClass = RemoteErrorClass::LocalIo;
+        if (error)
+            *error = QObject::tr("无法读取本地文件“%1”：%2").arg(localFile, file.errorString());
+        return false;
+    }
+    if (file.size() == 0)
+        return false;
+
+    const QString basePath = m_baseUrl.path();
+    const int filesPosition = basePath.indexOf(QLatin1String("/files/"));
+    const QString user = basePath.mid(filesPosition + 7).section(QLatin1Char('/'), 0, 0);
+    if (filesPosition < 0 || user.isEmpty()) {
+        if (error)
+            *error = QObject::tr("无法从 WebDAV 地址推导 Nextcloud 上传目录");
+        return false;
+    }
+    const QString uploadId = QUuid::createUuid().toString(QUuid::WithoutBraces);
+    const QString uploadsPath = basePath.left(filesPosition) + QStringLiteral("/uploads/") + user
+        + QLatin1Char('/') + uploadId + QLatin1Char('/');
+    QUrl uploadsUrl = m_baseUrl;
+    uploadsUrl.setPath(uploadsPath);
+
+    auto failure = [&](const QString &message) {
+        if (error)
+            *error = message;
+        QNetworkRequest cleanup = requestForAbsolute(uploadsUrl);
+        QNetworkReply *reply = m_network.deleteResource(cleanup);
+        QEventLoop cleanupLoop;
+        QObject::connect(reply, &QNetworkReply::finished, &cleanupLoop, &QEventLoop::quit);
+        cleanupLoop.exec();
+        reply->deleteLater();
+        return false;
+    };
+
+    QNetworkRequest collectionRequest = requestForAbsolute(uploadsUrl);
+    collectionRequest.setRawHeader("OC-Total-Length", QByteArray::number(file.size()));
+    QNetworkReply *collectionReply = m_network.sendCustomRequest(collectionRequest, "MKCOL");
+    QEventLoop collectionLoop;
+    QObject::connect(collectionReply, &QNetworkReply::finished, &collectionLoop, &QEventLoop::quit);
+    collectionLoop.exec();
+    const int collectionStatus = statusCode(collectionReply);
+    const QString collectionError = collectionReply->errorString();
+    collectionReply->deleteLater();
+    if (!isSuccessStatus(collectionStatus) && collectionStatus != 405) {
+        m_lastErrorClass = classifyReply(collectionStatus, QNetworkReply::NoError);
+        if (error)
+            *error = QObject::tr("创建 Nextcloud 上传目录失败：%1").arg(collectionError);
+        return false;
+    }
+
+    file.seek(0);
+    const qint64 chunkSize = qBound(1, m_options.chunkSizeMb, 100) * 1024LL * 1024LL;
+    int chunkIndex = 0;
+    qint64 sent = 0;
+    while (!file.atEnd()) {
+        if (cancelled && cancelled()) {
+            m_lastErrorClass = RemoteErrorClass::Cancelled;
+            if (error)
+                *error = QObject::tr("同步已取消");
+            return false;
+        }
+        const QByteArray data = file.read(chunkSize);
+        if (data.isEmpty())
+            break;
+        QUrl chunkUrl = uploadsUrl;
+        chunkUrl.setPath(uploadsPath
+                         + QStringLiteral("%1").arg(chunkIndex, 8, 10, QLatin1Char('0')));
+        bool uploaded = false;
+        QString chunkError;
+        for (int attempt = 0;; ++attempt) {
+            QNetworkRequest request = requestForAbsolute(chunkUrl);
+            request.setHeader(QNetworkRequest::ContentLengthHeader, data.size());
+            request.setHeader(QNetworkRequest::ContentTypeHeader,
+                              QStringLiteral("application/octet-stream"));
+            QBuffer buffer;
+            buffer.setData(data);
+            buffer.open(QIODevice::ReadOnly);
+            QNetworkReply *reply = m_network.put(request, &buffer);
+            QEventLoop loop;
+            QTimer cancelTimer;
+            cancelTimer.setInterval(200);
+            QObject::connect(reply, &QNetworkReply::finished, &loop, &QEventLoop::quit);
+            QObject::connect(&cancelTimer, &QTimer::timeout, &loop, [&]() {
+                if (cancelled && cancelled())
+                    reply->abort();
+            });
+            cancelTimer.start();
+            loop.exec();
+            cancelTimer.stop();
+            const int status = statusCode(reply);
+            const QByteArray body = reply->readAll();
+            const auto networkError = reply->error();
+            const int retryAfter = retryAfterDelayMs(reply);
+            chunkError = reply->errorString();
+            reply->deleteLater();
+            if (isSuccessStatus(status) && networkError == QNetworkReply::NoError) {
+                uploaded = true;
+                break;
+            }
+            if (retryableFailure(status, networkError) && attempt < m_options.retryCount
+                && waitBeforeRetry(attempt, retryAfter, m_options.retryBaseDelayMs,
+                                   m_options.retryMaxDelayMs, cancelled)) {
+                continue;
+            }
+            m_lastErrorClass = classifyReply(status, networkError);
+            chunkError = status == 0 ? chunkError : httpError(status, body, statusText(status));
+            break;
+        }
+        if (!uploaded)
+            return failure(QObject::tr("上传分块失败：%1").arg(chunkError));
+        sent += data.size();
+        reportTransferProgress(sent, file.size());
+        ++chunkIndex;
+    }
+
+    QUrl moveSource = uploadsUrl;
+    moveSource.setPath(uploadsPath + QStringLiteral(".file"));
+    QNetworkRequest moveRequest = requestForAbsolute(moveSource);
+    moveRequest.setRawHeader("Destination", PathUtils::remoteUrl(m_baseUrl, path).toEncoded());
+    moveRequest.setRawHeader("Overwrite", "T");
+    moveRequest.setRawHeader("OC-Total-Length", QByteArray::number(file.size()));
+    QNetworkReply *moveReply = m_network.sendCustomRequest(moveRequest, "MOVE");
+    QEventLoop moveLoop;
+    QObject::connect(moveReply, &QNetworkReply::finished, &moveLoop, &QEventLoop::quit);
+    moveLoop.exec();
+    const int moveStatus = statusCode(moveReply);
+    const QByteArray moveBody = moveReply->readAll();
+    const QString moveError = moveReply->errorString();
+    moveReply->deleteLater();
+    if (!isSuccessStatus(moveStatus)) {
+        m_lastErrorClass = classifyReply(moveStatus, QNetworkReply::NoError);
+        return failure(QObject::tr("完成分块上传失败：%1")
+                           .arg(moveStatus == 0
+                                    ? moveError
+                                    : httpError(moveStatus, moveBody, statusText(moveStatus))));
+    }
+    reportTransferProgress(file.size(), file.size());
     return true;
 }
 

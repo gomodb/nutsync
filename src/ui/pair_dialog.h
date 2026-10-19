@@ -62,6 +62,8 @@ private:
     QComboBox *m_syncMode = nullptr;
     QCheckBox *m_enabled = nullptr;
     QCheckBox *m_paused = nullptr;
+    QCheckBox *m_chunkedUpload = nullptr;
+    QSpinBox *m_chunkSize = nullptr;
     QCheckBox *m_syncOnStartup = nullptr;
     QCheckBox *m_watchLocalChanges = nullptr;
     QCheckBox *m_syncDeletions = nullptr;

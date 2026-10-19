@@ -1167,6 +1167,22 @@ Only effective for the current user; unchecking will delete the entry.</translat
       <translation>Client private key</translation>
     </message>
     <message>
+      <source>使用 Nextcloud 分块上传（大文件）</source>
+      <translation>Use Nextcloud chunked upload for large files</translation>
+    </message>
+    <message>
+      <source>仅适用于 Nextcloud/ownCloud 的 /remote.php/dav/files/ 地址；其他服务器会自动回退普通 PUT。</source>
+      <translation>Only for Nextcloud/ownCloud URLs containing /remote.php/dav/files/; other servers fall back to a regular PUT.</translation>
+    </message>
+    <message>
+      <source> MB</source>
+      <translation> MB</translation>
+    </message>
+    <message>
+      <source>分块大小</source>
+      <translation>Chunk size</translation>
+    </message>
+    <message>
       <source>选择客户端证书</source>
       <translation>Select client certificate</translation>
     </message>
@@ -2177,6 +2193,22 @@ Projects/notes.md</translation>
     <message>
       <source>无法读取本地文件“%1”：%2</source>
       <translation>Unable to read local file '%1': %2</translation>
+    </message>
+    <message>
+      <source>无法从 WebDAV 地址推导 Nextcloud 上传目录</source>
+      <translation>Could not derive the Nextcloud upload directory from the WebDAV URL</translation>
+    </message>
+    <message>
+      <source>创建 Nextcloud 上传目录失败：%1</source>
+      <translation>Failed to create Nextcloud upload directory: %1</translation>
+    </message>
+    <message>
+      <source>上传分块失败：%1</source>
+      <translation>Failed to upload chunk: %1</translation>
+    </message>
+    <message>
+      <source>完成分块上传失败：%1</source>
+      <translation>Failed to finish chunked upload: %1</translation>
     </message>
     <message>
       <source>上传失败：%1</source>
