@@ -8,6 +8,10 @@
 #include "core/webdav_backend.h"
 
 #include <QCryptographicHash>
+#include <QEventLoop>
+#include <QFutureWatcher>
+#include <QTimer>
+#include <atomic>
 #include <QtConcurrent>
 #include <QDir>
 #include <QDirIterator>
@@ -238,8 +242,10 @@ void SyncEngine::executeTransferBatch(const QList<TransferJob> &jobs, SyncSummar
 {
     QThreadPool pool;
     pool.setMaxThreadCount(qMin(m_parallelTransfers, jobs.size()));
+    std::atomic<qint64> transferred{0};
+    std::atomic<int> finished{0};
     QFuture<TransferOutcome> future =
-        QtConcurrent::mapped(&pool, jobs, [this](const TransferJob &job) {
+        QtConcurrent::mapped(&pool, jobs, [this, &transferred, &finished](const TransferJob &job) {
             TransferOutcome outcome;
             outcome.index = job.index;
             QString error;
@@ -248,6 +254,9 @@ void SyncEngine::executeTransferBatch(const QList<TransferJob> &jobs, SyncSummar
                 outcome.error = error;
                 return outcome;
             }
+            backend->setTransferProgress([&transferred](qint64 received, qint64) {
+                transferred.fetch_add(received, std::memory_order_relaxed);
+            });
             const CancelledCallback cancelled = [this]() {
                 return m_cancelled.loadRelaxed() != 0;
             };
@@ -260,9 +269,25 @@ void SyncEngine::executeTransferBatch(const QList<TransferJob> &jobs, SyncSummar
                     backend->download(job.action.path, job.localFile, &result, &error, cancelled);
             }
             outcome.error = error;
+            finished.fetch_add(1, std::memory_order_relaxed);
             return outcome;
         });
-    future.waitForFinished();
+    QFutureWatcher<TransferOutcome> watcher;
+    QTimer progressTimer;
+    QEventLoop loop;
+    QObject::connect(&watcher, &QFutureWatcher<TransferOutcome>::finished, &loop,
+                     &QEventLoop::quit);
+    QObject::connect(&progressTimer, &QTimer::timeout, &loop, [&]() {
+        const qint64 bytes =
+            qMin(m_bytesDone + transferred.load(std::memory_order_relaxed), m_bytesTotal);
+        emit progress(m_completedActions + finished.load(std::memory_order_relaxed), m_totalActions,
+                      bytes, m_bytesTotal, {});
+    });
+    watcher.setFuture(future);
+    progressTimer.start(250);
+    if (!future.isFinished())
+        loop.exec();
+    progressTimer.stop();
     const QList<TransferOutcome> outcomes = future.results();
     for (const TransferOutcome &outcome : outcomes) {
         if (outcome.index < 0 || outcome.index >= jobs.size())

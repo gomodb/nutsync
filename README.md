@@ -276,7 +276,7 @@ Network options are available in **Preferences → Network**:
 - **Log level / rotation**: Debug, Info, Warning, or Error; maximum log size and the number of retained rotated files are configurable.
 - **Network recovery**: optionally start a sync of all enabled pairs when the network becomes online again.
 - **Transfer speed limit**: optional per-transfer byte limit for downloads and uploads; `0` means unlimited.
-- **Parallel transfers**: 1–4 concurrent file uploads/downloads, while state writes remain serialized.
+- **Parallel transfers**: 1–4 concurrent file uploads/downloads with live aggregate byte progress, while state writes remain serialized.
 
 Proxy and CA changes take effect after restart. The log level is applied immediately.
 
