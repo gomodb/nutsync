@@ -5,10 +5,10 @@ Reviewed for the first `nutsync` AUR push.
 ## Metadata
 
 - Package: `nutsync`
-- Version: `0.5.3-1`
-- Source: `https://github.com/gomodb/nutsync/archive/refs/tags/v0.5.3.tar.gz`
+- Version: `0.6.0-1`
+- Source: `https://github.com/gomodb/nutsync/archive/refs/tags/v0.6.0.tar.gz`
 - Source SHA-256:
-  `9bd970019f4e234b13b27640fecda43401eb37f2e4ac365b7aaa37b3cf872b32`
+  `53f6171bfed358af4b0e677cf07108dbfa24f3964f27a7e0d8cca6c739d7cbf9`
 - License: `GPL-3.0-or-later`
 - AUR packaging license: `0BSD`
 - Architectures: `x86_64`, `aarch64`
@@ -17,13 +17,13 @@ Reviewed for the first `nutsync` AUR push.
 
 - [x] `makepkg --verifysource -f` passed
 - [x] `makepkg -f` built a local x86_64 package successfully
-- [x] Local package extracts to a test root and reports `nutsync 0.5.3`
+- [x] Local package extracts to a test root and reports `nutsync 0.6.0`
 - [x] PKGBUILD and generated `.SRCINFO` match
 - [x] `bash -n packaging/arch/PKGBUILD` passed
 - [x] Source tag exists and checksum matches
 - [x] AUR package name `nutsync` is available (RPC result count 0)
 - [x] GitHub release has both x86_64 and aarch64 packages
-- [x] x86_64 package installs and reports `nutsync 0.5.3`
+- [x] x86_64 package installs and reports `nutsync 0.6.0`
 - [x] CI `AUR package (tag/manual)` passed, including `namcap`
 - [x] Desktop file validation passed
 - [x] AppStream validation passed
@@ -33,7 +33,7 @@ Reviewed for the first `nutsync` AUR push.
 
 ```text
 ~/Projects/nutsync-aur
-b30a2d3 nutsync 0.5.3-1
+8e4a518 nutsync 0.6.0-1
 origin ssh://aur@aur.archlinux.org/nutsync.git
 ```
 
