@@ -314,7 +314,8 @@ jobs:
         run: |
           tag="${GITHUB_REF_NAME#v}"
           pkgver="$(sed -n 's/^pkgver=//p' packaging/arch/PKGBUILD)"
-          echo "tag=[$tag] pkgver=[$pkgver] ref=[$GITHUB_REF_NAME]"
+          echo "::warning::tag=[$tag] pkgver=[$pkgver] ref=[$GITHUB_REF_NAME]"
+          grep -n '^pkgver=' packaging/arch/PKGBUILD || true
           if [ "$tag" != "$pkgver" ]; then
             echo "Tag $tag does not match PKGBUILD pkgver $pkgver"
             exit 1
