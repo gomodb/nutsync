@@ -34,6 +34,11 @@ public:
                        QString *error = nullptr) const;
     bool removeConflict(const QString &pairId, const QString &path, const QString &copyPath,
                         QString *error = nullptr);
+    bool appendHistory(const QString &pairId, const SyncHistoryEntry &entry,
+                       QString *error = nullptr);
+    bool loadHistory(const QString &pairId, int limit, QList<SyncHistoryEntry> *entries,
+                     QString *error = nullptr) const;
+    bool clearHistory(const QString &pairId, QString *error = nullptr);
 
 private:
     bool ensureSchema(QString *error);

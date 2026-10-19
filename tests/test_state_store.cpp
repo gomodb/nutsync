@@ -91,4 +91,41 @@ void TestStateStore::rejectsFutureSchemaVersion()
     QVERIFY2(error.contains(QStringLiteral("99")), qPrintable(error));
 }
 
+void TestStateStore::writesAndLoadsHistory()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    SyncStateStore store(directory.filePath(QStringLiteral("state.db")));
+    QString error;
+    QVERIFY2(store.open(&error), qPrintable(error));
+
+    SyncHistoryEntry first;
+    first.finishedAtMs = 1000;
+    first.success = true;
+    first.uploaded = 2;
+    first.downloaded = 1;
+    first.conflicts = 1;
+    first.elapsedMs = 1234;
+    first.message = QStringLiteral("first");
+    QVERIFY2(store.appendHistory(QStringLiteral("pair"), first, &error), qPrintable(error));
+
+    SyncHistoryEntry second;
+    second.finishedAtMs = 2000;
+    second.success = false;
+    second.errors = 1;
+    second.message = QStringLiteral("second");
+    QVERIFY2(store.appendHistory(QStringLiteral("pair"), second, &error), qPrintable(error));
+
+    QList<SyncHistoryEntry> history;
+    QVERIFY2(store.loadHistory(QStringLiteral("pair"), 10, &history, &error), qPrintable(error));
+    QCOMPARE(history.size(), 2);
+    QCOMPARE(history.at(0).message, QStringLiteral("second"));
+    QCOMPARE(history.at(1).uploaded, 2);
+    QCOMPARE(history.at(1).elapsedMs, 1234);
+
+    QVERIFY2(store.clearHistory(QStringLiteral("pair"), &error), qPrintable(error));
+    QVERIFY2(store.loadHistory(QStringLiteral("pair"), 10, &history, &error), qPrintable(error));
+    QVERIFY(history.isEmpty());
+}
+
 } // namespace NutSync::Test

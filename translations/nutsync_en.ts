@@ -660,6 +660,54 @@ Only NutSync's configuration and synchronization baseline are deleted, not local
       <translation>Resolved: %1</translation>
     </message>
     <message>
+      <source>无法读取历史</source>
+      <translation>Could not read history</translation>
+    </message>
+    <message>
+      <source>同步历史</source>
+      <translation>Sync history</translation>
+    </message>
+    <message>
+      <source>此同步对还没有同步记录。</source>
+      <translation>This sync pair has no history yet.</translation>
+    </message>
+    <message>
+      <source>同步历史：%1</source>
+      <translation>Sync history: %1</translation>
+    </message>
+    <message>
+      <source>已取消</source>
+      <translation>Cancelled</translation>
+    </message>
+    <message>
+      <source>成功</source>
+      <translation>Success</translation>
+    </message>
+    <message>
+      <source>失败</source>
+      <translation>Failed</translation>
+    </message>
+    <message>
+      <source>上传 %1 · 下载 %2 · 删除 %3 · 冲突 %4 · 错误 %5</source>
+      <translation>Uploaded %1 · downloaded %2 · deleted %3 · conflicts %4 · errors %5</translation>
+    </message>
+    <message>
+      <source>清空历史</source>
+      <translation>Clear history</translation>
+    </message>
+    <message>
+      <source>清空同步历史</source>
+      <translation>Clear sync history</translation>
+    </message>
+    <message>
+      <source>确定清空此同步对的历史记录吗？</source>
+      <translation>Clear the history for this sync pair?</translation>
+    </message>
+    <message>
+      <source>清空失败</source>
+      <translation>Clear failed</translation>
+    </message>
+    <message>
       <source>此同步对还没有可恢复的删除备份。</source>
       <translation>This sync pair has no deletion backups to restore.</translation>
     </message>
@@ -1791,6 +1839,14 @@ Projects/notes.md</translation>
       <translation>Failed to create the conflict record table: %1</translation>
     </message>
     <message>
+      <source>创建同步历史表失败：%1</source>
+      <translation>Failed to create sync history table: %1</translation>
+    </message>
+    <message>
+      <source>创建同步历史索引失败：%1</source>
+      <translation>Failed to create sync history index: %1</translation>
+    </message>
+    <message>
       <source>设置状态数据库版本失败：%1</source>
       <translation>Failed to set state database version: %1</translation>
     </message>
@@ -1849,6 +1905,18 @@ Projects/notes.md</translation>
     <message>
       <source>移除冲突记录失败：%1</source>
       <translation>Failed to remove conflict record: %1</translation>
+    </message>
+    <message>
+      <source>写入同步历史失败：%1</source>
+      <translation>Failed to write sync history: %1</translation>
+    </message>
+    <message>
+      <source>读取同步历史失败：%1</source>
+      <translation>Failed to read sync history: %1</translation>
+    </message>
+    <message>
+      <source>清空同步历史失败：%1</source>
+      <translation>Failed to clear sync history: %1</translation>
     </message>
     <message>
       <source>仅本地到远程</source>

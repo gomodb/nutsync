@@ -96,7 +96,7 @@ void SyncStateStore::close()
 
 bool SyncStateStore::ensureSchema(QString *error)
 {
-    constexpr int currentVersion = 2;
+    constexpr int currentVersion = 3;
     QSqlQuery versionQuery(m_database);
     int version = 0;
     if (versionQuery.exec(QStringLiteral("PRAGMA user_version")) && versionQuery.next())
@@ -144,7 +144,35 @@ bool SyncStateStore::ensureSchema(QString *error)
             *error = QObject::tr("创建冲突记录表失败：%1").arg(queryError(query));
         return false;
     }
-    if (version < currentVersion && !query.exec(QStringLiteral("PRAGMA user_version=2"))) {
+    const QString historySql = QStringLiteral("CREATE TABLE IF NOT EXISTS sync_history ("
+                                              "  id INTEGER PRIMARY KEY AUTOINCREMENT,"
+                                              "  pair_id TEXT NOT NULL,"
+                                              "  finished_at INTEGER NOT NULL,"
+                                              "  success INTEGER NOT NULL,"
+                                              "  cancelled INTEGER NOT NULL,"
+                                              "  uploaded INTEGER NOT NULL,"
+                                              "  downloaded INTEGER NOT NULL,"
+                                              "  deleted_local INTEGER NOT NULL,"
+                                              "  deleted_remote INTEGER NOT NULL,"
+                                              "  directories_created INTEGER NOT NULL,"
+                                              "  conflicts INTEGER NOT NULL,"
+                                              "  skipped INTEGER NOT NULL,"
+                                              "  errors INTEGER NOT NULL,"
+                                              "  elapsed_ms INTEGER NOT NULL,"
+                                              "  message TEXT NOT NULL DEFAULT ''"
+                                              ")");
+    if (!query.exec(historySql)) {
+        if (error)
+            *error = QObject::tr("创建同步历史表失败：%1").arg(queryError(query));
+        return false;
+    }
+    if (!query.exec(QStringLiteral("CREATE INDEX IF NOT EXISTS sync_history_pair"
+                                   " ON sync_history(pair_id, id)"))) {
+        if (error)
+            *error = QObject::tr("创建同步历史索引失败：%1").arg(queryError(query));
+        return false;
+    }
+    if (version < currentVersion && !query.exec(QStringLiteral("PRAGMA user_version=3"))) {
         if (error)
             *error = QObject::tr("设置状态数据库版本失败：%1").arg(queryError(query));
         return false;
@@ -403,6 +431,102 @@ bool SyncStateStore::removeConflict(const QString &pairId, const QString &path,
     if (!query.exec()) {
         if (error)
             *error = QObject::tr("移除冲突记录失败：%1").arg(queryError(query));
+        return false;
+    }
+    return true;
+}
+
+bool SyncStateStore::appendHistory(const QString &pairId, const SyncHistoryEntry &entry,
+                                   QString *error)
+{
+    if (!m_open)
+        return false;
+    QSqlQuery query(m_database);
+    query.prepare(QStringLiteral(
+        "INSERT INTO sync_history"
+        " (pair_id, finished_at, success, cancelled, uploaded, downloaded, deleted_local,"
+        "  deleted_remote, directories_created, conflicts, skipped, errors, elapsed_ms, message)"
+        " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"));
+    query.addBindValue(pairId);
+    query.addBindValue(entry.finishedAtMs > 0 ? entry.finishedAtMs
+                                              : QDateTime::currentMSecsSinceEpoch());
+    query.addBindValue(entry.success ? 1 : 0);
+    query.addBindValue(entry.cancelled ? 1 : 0);
+    query.addBindValue(entry.uploaded);
+    query.addBindValue(entry.downloaded);
+    query.addBindValue(entry.deletedLocal);
+    query.addBindValue(entry.deletedRemote);
+    query.addBindValue(entry.directoriesCreated);
+    query.addBindValue(entry.conflicts);
+    query.addBindValue(entry.skipped);
+    query.addBindValue(entry.errors);
+    query.addBindValue(entry.elapsedMs);
+    query.addBindValue(entry.message);
+    if (!query.exec()) {
+        if (error)
+            *error = QObject::tr("写入同步历史失败：%1").arg(queryError(query));
+        return false;
+    }
+    QSqlQuery trim(m_database);
+    trim.prepare(QStringLiteral(
+        "DELETE FROM sync_history WHERE pair_id = ? AND id NOT IN"
+        " (SELECT id FROM sync_history WHERE pair_id = ? ORDER BY id DESC LIMIT 200)"));
+    trim.addBindValue(pairId);
+    trim.addBindValue(pairId);
+    trim.exec();
+    return true;
+}
+
+bool SyncStateStore::loadHistory(const QString &pairId, int limit, QList<SyncHistoryEntry> *entries,
+                                 QString *error) const
+{
+    if (!entries)
+        return false;
+    entries->clear();
+    if (!m_open)
+        return true;
+    QSqlQuery query(m_database);
+    query.prepare(QStringLiteral(
+        "SELECT finished_at, success, cancelled, uploaded, downloaded, deleted_local,"
+        " deleted_remote, directories_created, conflicts, skipped, errors, elapsed_ms, message"
+        " FROM sync_history WHERE pair_id = ? ORDER BY id DESC LIMIT ?"));
+    query.addBindValue(pairId);
+    query.addBindValue(qMax(1, limit));
+    if (!query.exec()) {
+        if (error)
+            *error = QObject::tr("读取同步历史失败：%1").arg(queryError(query));
+        return false;
+    }
+    while (query.next()) {
+        SyncHistoryEntry entry;
+        entry.finishedAtMs = query.value(0).toLongLong();
+        entry.success = query.value(1).toInt() != 0;
+        entry.cancelled = query.value(2).toInt() != 0;
+        entry.uploaded = query.value(3).toInt();
+        entry.downloaded = query.value(4).toInt();
+        entry.deletedLocal = query.value(5).toInt();
+        entry.deletedRemote = query.value(6).toInt();
+        entry.directoriesCreated = query.value(7).toInt();
+        entry.conflicts = query.value(8).toInt();
+        entry.skipped = query.value(9).toInt();
+        entry.errors = query.value(10).toInt();
+        entry.elapsedMs = query.value(11).toLongLong();
+        entry.message = query.value(12).toString();
+        entries->append(entry);
+    }
+    return true;
+}
+
+bool SyncStateStore::clearHistory(const QString &pairId, QString *error)
+{
+    if (!m_open)
+        return true;
+    QSqlQuery query(m_database);
+    query.prepare(QStringLiteral("DELETE FROM sync_history WHERE pair_id = ?"));
+    query.addBindValue(pairId);
+    if (!query.exec()) {
+        if (error)
+            *error = QObject::tr("清空同步历史失败：%1").arg(queryError(query));
         return false;
     }
     return true;

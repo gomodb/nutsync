@@ -94,6 +94,7 @@ private:
     void showRateLimitNotice(const SyncPair &pair, const QDateTime &nextAllowed);
     void showConflicts();
     void showTrash();
+    void showHistory();
     void rebuildConflictMaps(const QString &pairId);
     void openSettings();
     void showAbout();
@@ -136,6 +137,7 @@ private:
     QPushButton *m_trashButton = nullptr;
     QPushButton *m_retryFailedButton = nullptr;
     QPushButton *m_pausePairButton = nullptr;
+    QPushButton *m_historyButton = nullptr;
     QProgressBar *m_progress = nullptr;
     QPlainTextEdit *m_activity = nullptr;
     QLabel *m_globalStatus = nullptr;

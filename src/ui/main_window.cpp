@@ -549,12 +549,16 @@ void MainWindow::buildUi()
     m_pausePairButton = new QPushButton(QIcon::fromTheme(QStringLiteral("media-playback-pause")),
                                         tr("暂停自动同步"), details);
     connect(m_pausePairButton, &QPushButton::clicked, this, &MainWindow::togglePairPause);
+    m_historyButton = new QPushButton(QIcon::fromTheme(QStringLiteral("document-open-recent")),
+                                      tr("历史"), details);
+    connect(m_historyButton, &QPushButton::clicked, this, &MainWindow::showHistory);
     detailButtons->addWidget(syncButton);
     detailButtons->addWidget(editButton);
     detailButtons->addWidget(m_conflictButton);
     detailButtons->addWidget(m_retryFailedButton);
     detailButtons->addWidget(m_trashButton);
     detailButtons->addWidget(m_pausePairButton);
+    detailButtons->addWidget(m_historyButton);
     detailButtons->addStretch(1);
     detailsLayout->addLayout(detailButtons);
 
@@ -1820,6 +1824,72 @@ void MainWindow::importConfig()
         QMessageBox::information(this, tr("语言已更改"),
                                  tr("界面语言将在下次启动 NutSync 时生效。"));
     }
+}
+
+void MainWindow::showHistory()
+{
+    const SyncPair *pair = findPair(selectedPairId());
+    if (!pair)
+        return;
+    SyncStateStore store(AppPaths::stateDatabase());
+    QString error;
+    if (!store.open(&error)) {
+        QMessageBox::warning(this, tr("无法读取历史"), error);
+        return;
+    }
+    QList<SyncHistoryEntry> history;
+    if (!store.loadHistory(pair->id, 100, &history, &error)) {
+        QMessageBox::warning(this, tr("无法读取历史"), error);
+        return;
+    }
+    if (history.isEmpty()) {
+        QMessageBox::information(this, tr("同步历史"), tr("此同步对还没有同步记录。"));
+        return;
+    }
+
+    QDialog dialog(this);
+    dialog.setWindowTitle(tr("同步历史：%1").arg(pair->name));
+    auto *layout = new QVBoxLayout(&dialog);
+    auto *list = new QListWidget(&dialog);
+    for (const SyncHistoryEntry &entry : history) {
+        const QString time = QDateTime::fromMSecsSinceEpoch(entry.finishedAtMs)
+                                 .toLocalTime()
+                                 .toString(QStringLiteral("yyyy-MM-dd HH:mm:ss"));
+        const QString result =
+            entry.cancelled ? tr("已取消") : (entry.success ? tr("成功") : tr("失败"));
+        const QString counts = tr("上传 %1 · 下载 %2 · 删除 %3 · 冲突 %4 · 错误 %5")
+                                   .arg(entry.uploaded)
+                                   .arg(entry.downloaded)
+                                   .arg(entry.deletedLocal + entry.deletedRemote)
+                                   .arg(entry.conflicts)
+                                   .arg(entry.errors);
+        const QString text =
+            QStringLiteral("%1  %2  %3\n%4").arg(time, result, counts).arg(entry.message);
+        auto *item = new QListWidgetItem(text, list);
+        item->setToolTip(entry.message);
+    }
+    layout->addWidget(list, 1);
+    auto *buttons = new QDialogButtonBox(QDialogButtonBox::Close, &dialog);
+    auto *clear = new QPushButton(tr("清空历史"), &dialog);
+    buttons->addButton(clear, QDialogButtonBox::DestructiveRole);
+    layout->addWidget(buttons);
+    connect(clear, &QPushButton::clicked, &dialog, [&]() {
+        const auto answer =
+            QMessageBox::question(&dialog, tr("清空同步历史"), tr("确定清空此同步对的历史记录吗？"),
+                                  QMessageBox::Yes | QMessageBox::No, QMessageBox::No);
+        if (answer != QMessageBox::Yes)
+            return;
+        QString clearError;
+        if (!store.clearHistory(pair->id, &clearError)) {
+            QMessageBox::warning(&dialog, tr("清空失败"), clearError);
+            return;
+        }
+        list->clear();
+        clear->setEnabled(false);
+    });
+    connect(buttons, &QDialogButtonBox::rejected, &dialog, &QDialog::reject);
+    dialog.resize(760, 480);
+    dialog.exec();
 }
 
 void MainWindow::showTrash()

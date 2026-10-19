@@ -189,6 +189,23 @@ struct SyncPlan
     int deletes = 0;
 };
 
+struct SyncHistoryEntry
+{
+    qint64 finishedAtMs = 0;
+    bool success = false;
+    bool cancelled = false;
+    int uploaded = 0;
+    int downloaded = 0;
+    int deletedLocal = 0;
+    int deletedRemote = 0;
+    int directoriesCreated = 0;
+    int conflicts = 0;
+    int skipped = 0;
+    int errors = 0;
+    qint64 elapsedMs = 0;
+    QString message;
+};
+
 struct SyncSummary
 {
     QString pairId;

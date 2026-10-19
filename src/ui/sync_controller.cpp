@@ -1,6 +1,7 @@
 #include "ui/sync_controller.h"
 
 #include "core/sync_engine.h"
+#include "core/sync_state_store.h"
 
 #include <QFutureWatcher>
 #include <QTimer>
@@ -167,6 +168,28 @@ void SyncController::onWorkerFinished()
     m_hasPendingSummary = false;
     m_pendingSummary = {};
 
+    if (!summary.pairId.isEmpty()) {
+        SyncHistoryEntry history;
+        history.finishedAtMs = QDateTime::currentMSecsSinceEpoch();
+        history.success = summary.success;
+        history.cancelled = summary.cancelled;
+        history.uploaded = summary.uploaded;
+        history.downloaded = summary.downloaded;
+        history.deletedLocal = summary.deletedLocal;
+        history.deletedRemote = summary.deletedRemote;
+        history.directoriesCreated = summary.directoriesCreated;
+        history.conflicts = summary.conflicts;
+        history.skipped = summary.skipped;
+        history.errors = summary.errors;
+        history.elapsedMs = summary.elapsedMs;
+        history.message = summary.message;
+        SyncStateStore store(m_stateDatabasePath);
+        QString historyError;
+        if (store.open(&historyError))
+            store.appendHistory(summary.pairId, history, &historyError);
+        if (!historyError.isEmpty())
+            qWarning().noquote() << "[sync-history]" << historyError;
+    }
     emit pairFinished(summary);
     emit busyChanged(false);
     emit queueChanged(m_queue.size());
