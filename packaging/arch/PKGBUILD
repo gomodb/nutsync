@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: 0BSD
 
 pkgname=nutsync
-pkgver=0.5.2
+pkgver=0.5.3
 pkgrel=1
 pkgdesc='Two-way WebDAV synchronization client for the KDE desktop'
 arch=('x86_64' 'aarch64')
@@ -20,7 +20,7 @@ makedepends=('cmake' 'ninja' 'qt6-tools')
 checkdepends=('python')
 options=('!debug')
 source=("$pkgname-$pkgver.tar.gz::https://github.com/gomodb/nutsync/archive/refs/tags/v$pkgver.tar.gz")
-sha256sums=('fed7030255d3d3289dfa085aef4903d37f08305da39c39395f57f19620beb31b')
+sha256sums=('SKIP')
 
 build() {
     cmake -S "$srcdir/$pkgname-$pkgver" -B "$srcdir/$pkgname-$pkgver/build" \

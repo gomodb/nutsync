@@ -532,6 +532,14 @@ void MainWindow::buildUi()
                                        tr("查看冲突"), details);
     m_conflictButton->setVisible(false);
     connect(m_conflictButton, &QPushButton::clicked, this, &MainWindow::showConflicts);
+    m_retryFailedButton = new QPushButton(QIcon::fromTheme(QStringLiteral("view-refresh")),
+                                          tr("重试失败项"), details);
+    m_retryFailedButton->setVisible(false);
+    connect(m_retryFailedButton, &QPushButton::clicked, this, &MainWindow::retryFailed);
+    m_trashButton =
+        new QPushButton(QIcon::fromTheme(QStringLiteral("user-trash")), tr("回收站"), details);
+    m_trashButton->setVisible(false);
+    connect(m_trashButton, &QPushButton::clicked, this, &MainWindow::showTrash);
     detailButtons->addWidget(syncButton);
     detailButtons->addWidget(editButton);
     detailButtons->addWidget(m_conflictButton);

@@ -48,6 +48,13 @@
     <name>NutSync contributors</name>
   </developer>
   <releases>
+    <release version="0.5.3" date="2026-10-19">
+      <description>
+        <p>Fixes missing retry/trash buttons that produced QLayout warnings at
+        startup and could cause a null-pointer access when selecting a sync
+        pair.</p>
+      </description>
+    </release>
     <release version="0.5.2" date="2026-10-18">
       <description>
         <p>NutSync 0.5.2.</p>
