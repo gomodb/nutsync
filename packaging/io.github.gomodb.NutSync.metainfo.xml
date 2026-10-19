@@ -49,6 +49,14 @@
     <name>NutSync contributors</name>
   </developer>
   <releases>
+    <release version="0.6.0" date="2026-10-19">
+      <description>
+        <p>NutSync 0.6.0 adds per-pair pause/resume, persistent sync history,
+        live parallel transfer progress, Digest and Bearer-token
+        authentication, client certificates, local rename detection using
+        WebDAV MOVE, and optional Nextcloud chunked uploads.</p>
+      </description>
+    </release>
     <release version="0.5.3" date="2026-10-19">
       <description>
         <p>Fixes missing retry/trash buttons that produced QLayout warnings at
