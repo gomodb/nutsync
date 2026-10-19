@@ -110,6 +110,8 @@ QString statusText(const SyncPair &pair, bool current, bool queued)
         return QObject::tr("排队中");
     if (!pair.enabled)
         return QObject::tr("已停用");
+    if (pair.paused)
+        return QObject::tr("自动同步已暂停");
     if (pair.lastStatus == QLatin1String("success"))
         return QObject::tr("已同步");
     if (pair.lastStatus == QLatin1String("error"))
@@ -127,6 +129,8 @@ QColor statusColor(const SyncPair &pair, bool current, bool queued)
         return QColor(0x1e, 0x88, 0xe5);
     if (!pair.enabled)
         return QColor(0x75, 0x75, 0x75);
+    if (pair.paused)
+        return QColor(0xef, 0x6c, 0x00);
     if (pair.lastStatus == QLatin1String("error"))
         return QColor(0xc6, 0x28, 0x28);
     if (pair.lastStatus == QLatin1String("success"))
@@ -144,6 +148,8 @@ QString statusIcon(const SyncPair &pair, bool current, bool queued)
         return QStringLiteral("chronometer");
     if (!pair.enabled)
         return QStringLiteral("process-stop");
+    if (pair.paused)
+        return QStringLiteral("media-playback-pause");
     if (pair.lastStatus == QLatin1String("error"))
         return QStringLiteral("dialog-error");
     if (pair.lastStatus == QLatin1String("success"))
@@ -540,11 +546,15 @@ void MainWindow::buildUi()
         new QPushButton(QIcon::fromTheme(QStringLiteral("user-trash")), tr("回收站"), details);
     m_trashButton->setVisible(false);
     connect(m_trashButton, &QPushButton::clicked, this, &MainWindow::showTrash);
+    m_pausePairButton = new QPushButton(QIcon::fromTheme(QStringLiteral("media-playback-pause")),
+                                        tr("暂停自动同步"), details);
+    connect(m_pausePairButton, &QPushButton::clicked, this, &MainWindow::togglePairPause);
     detailButtons->addWidget(syncButton);
     detailButtons->addWidget(editButton);
     detailButtons->addWidget(m_conflictButton);
     detailButtons->addWidget(m_retryFailedButton);
     detailButtons->addWidget(m_trashButton);
+    detailButtons->addWidget(m_pausePairButton);
     detailButtons->addStretch(1);
     detailsLayout->addLayout(detailButtons);
 
@@ -800,6 +810,10 @@ void MainWindow::updateDetails()
     if (conflictCount > 0)
         m_conflictButton->setText(tr("查看冲突（%1）").arg(conflictCount));
     m_trashButton->setVisible(pair->trashDeletedFiles);
+    m_pausePairButton->setText(pair->paused ? tr("恢复自动同步") : tr("暂停自动同步"));
+    m_pausePairButton->setIcon(QIcon::fromTheme(pair->paused
+                                                    ? QStringLiteral("media-playback-start")
+                                                    : QStringLiteral("media-playback-pause")));
     const int failedCount = m_failedPaths.value(pair->id).size();
     m_retryFailedButton->setVisible(failedCount > 0);
     if (failedCount > 0)
@@ -1185,6 +1199,8 @@ void MainWindow::requestSync(const QString &id, bool manual)
             appendSystemStatus(tr("同步对“%1”已停用").arg(pair->name));
         return;
     }
+    if (pair->paused && !manual)
+        return;
     if (m_controller->contains(id)) {
         if (manual)
             appendSystemStatus(tr("同步对“%1”已在队列中").arg(pair->name));
@@ -1241,6 +1257,21 @@ void MainWindow::showRateLimitNotice(const SyncPair &pair, const QDateTime &next
                  retry);
     appendLog(pair.id, message);
     appendSystemStatus(message);
+}
+
+void MainWindow::togglePairPause()
+{
+    SyncPair *pair = findPair(selectedPairId());
+    if (!pair)
+        return;
+    pair->paused = !pair->paused;
+    saveConfig(true);
+    updatePairRow(*pair);
+    updateDetails();
+    appendSystemStatus(pair->paused ? tr("已暂停“%1”的自动同步").arg(pair->name)
+                                    : tr("已恢复“%1”的自动同步").arg(pair->name));
+    if (!pair->paused)
+        requestSync(pair->id, false);
 }
 
 void MainWindow::retryFailed()
@@ -1484,8 +1515,10 @@ void MainWindow::scheduleTick()
         return;
     const QDateTime now = QDateTime::currentDateTime();
     for (const SyncPair &pair : std::as_const(m_config.pairs)) {
-        if (!pair.enabled || pair.intervalMinutes <= 0 || m_controller->contains(pair.id))
+        if (!pair.enabled || pair.paused || pair.intervalMinutes <= 0
+            || m_controller->contains(pair.id)) {
             continue;
+        }
         const bool due = !pair.lastSync.isValid()
             || pair.lastSync.secsTo(now) >= qint64(pair.intervalMinutes) * 60;
         if (due)
@@ -1495,7 +1528,7 @@ void MainWindow::scheduleTick()
     const QSet<QString> deferred = m_deferredAutoSyncs;
     for (const QString &id : deferred) {
         const SyncPair *pair = findPair(id);
-        if (pair && pair->enabled && !m_controller->contains(id))
+        if (pair && pair->enabled && !pair->paused && !m_controller->contains(id))
             requestSync(id, false);
     }
 }
@@ -1505,8 +1538,10 @@ void MainWindow::syncStartupPairs()
     if (m_autoSyncPaused || !m_config.settings.autoSyncOnStartup)
         return;
     for (const SyncPair &pair : std::as_const(m_config.pairs)) {
-        if (pair.enabled && pair.syncOnStartup && !m_controller->contains(pair.id))
+        if (pair.enabled && !pair.paused && pair.syncOnStartup
+            && !m_controller->contains(pair.id)) {
             requestSync(pair.id, false);
+        }
     }
 }
 

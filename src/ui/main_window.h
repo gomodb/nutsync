@@ -73,6 +73,7 @@ private:
     void requestSync(const QString &id, bool manual = true);
     void requestSyncSelected();
     void retryFailed();
+    void togglePairPause();
     void requestSyncAll();
     void cancelSync();
     bool clearPairState(const QString &id, bool showError = true);
@@ -134,6 +135,7 @@ private:
     QPushButton *m_conflictButton = nullptr;
     QPushButton *m_trashButton = nullptr;
     QPushButton *m_retryFailedButton = nullptr;
+    QPushButton *m_pausePairButton = nullptr;
     QProgressBar *m_progress = nullptr;
     QPlainTextEdit *m_activity = nullptr;
     QLabel *m_globalStatus = nullptr;

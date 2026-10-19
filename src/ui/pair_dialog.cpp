@@ -76,6 +76,7 @@ PairDialog::PairDialog(const SyncPair &pair, bool credentialsAvailable, QWidget 
     if (modeIndex >= 0)
         m_syncMode->setCurrentIndex(modeIndex);
     m_enabled->setChecked(pair.enabled);
+    m_paused->setChecked(pair.paused);
     m_syncOnStartup->setChecked(pair.syncOnStartup);
     m_watchLocalChanges->setChecked(pair.watchLocalChanges);
     m_syncDeletions->setChecked(pair.syncDeletions);
@@ -198,6 +199,7 @@ void PairDialog::buildUi(bool credentialsAvailable)
     form->addRow(tr("同步模式"), m_syncMode);
 
     m_enabled = new QCheckBox(tr("启用此同步对"), this);
+    m_paused = new QCheckBox(tr("暂停自动同步（仍可手动同步）"), this);
     m_enabled->setChecked(true);
     m_syncOnStartup = new QCheckBox(tr("程序启动后自动同步"), this);
     m_syncOnStartup->setChecked(true);
@@ -217,6 +219,7 @@ void PairDialog::buildUi(bool credentialsAvailable)
     m_trashRetention->setSuffix(tr(" 天"));
     m_trashRetention->setValue(30);
     form->addRow(QString(), m_enabled);
+    form->addRow(QString(), m_paused);
     form->addRow(QString(), m_syncOnStartup);
     form->addRow(QString(), m_watchLocalChanges);
     form->addRow(QString(), m_syncDeletions);
@@ -528,6 +531,7 @@ SyncPair PairDialog::syncPair() const
         pair.rateLimitMaxRequests = 10;
     pair.syncMode = static_cast<SyncMode>(m_syncMode->currentData().toInt());
     pair.enabled = m_enabled->isChecked();
+    pair.paused = m_paused->isChecked();
     pair.syncOnStartup = m_syncOnStartup->isChecked();
     pair.watchLocalChanges = m_watchLocalChanges->isChecked();
     pair.syncDeletions = m_syncDeletions->isChecked();

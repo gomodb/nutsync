@@ -45,6 +45,7 @@ QJsonObject pairToJson(const SyncPair &pair)
     obj.insert(QStringLiteral("trashDeletedFiles"), pair.trashDeletedFiles);
     obj.insert(QStringLiteral("trashRetentionDays"), pair.trashRetentionDays);
     obj.insert(QStringLiteral("enabled"), pair.enabled);
+    obj.insert(QStringLiteral("paused"), pair.paused);
     obj.insert(QStringLiteral("syncOnStartup"), pair.syncOnStartup);
     obj.insert(QStringLiteral("lastStatus"), pair.lastStatus);
     obj.insert(QStringLiteral("lastMessage"), pair.lastMessage);
@@ -110,6 +111,7 @@ SyncPair pairFromJson(const QJsonObject &obj)
     pair.trashRetentionDays =
         qBound(0, obj.value(QStringLiteral("trashRetentionDays")).toInt(30), 3650);
     pair.enabled = obj.value(QStringLiteral("enabled")).toBool(true);
+    pair.paused = obj.value(QStringLiteral("paused")).toBool(false);
     pair.syncOnStartup = obj.value(QStringLiteral("syncOnStartup")).toBool(true);
     pair.lastStatus = obj.value(QStringLiteral("lastStatus")).toString();
     pair.lastMessage = obj.value(QStringLiteral("lastMessage")).toString();

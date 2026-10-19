@@ -83,7 +83,7 @@
     </message>
     <message>
       <source>暂停自动同步</source>
-      <translation>Pause Automatic Sync</translation>
+      <translation>Pause automatic sync</translation>
     </message>
     <message>
       <source>首选项</source>
@@ -194,6 +194,10 @@ NutSync uses three-way status records for two-way synchronization: when only one
       <translation>View conflicts</translation>
     </message>
     <message>
+      <source>重试失败项</source>
+      <translation>Retry failed items</translation>
+    </message>
+    <message>
       <source>活动</source>
       <translation>Activity</translation>
     </message>
@@ -282,6 +286,10 @@ NutSync will start with empty configuration.</translation>
     <message>
       <source>查看冲突（%1）</source>
       <translation>View conflicts (%1)</translation>
+    </message>
+    <message>
+      <source>恢复自动同步</source>
+      <translation>Resume automatic sync</translation>
     </message>
     <message>
       <source>重试失败项（%1）</source>
@@ -444,6 +452,14 @@ Only NutSync's configuration and synchronization baseline are deleted, not local
       <translation>'%1' has reached the request frequency limit (%2), automatic synchronization is postponed until after %3</translation>
     </message>
     <message>
+      <source>已暂停“%1”的自动同步</source>
+      <translation>Paused automatic sync for "%1"</translation>
+    </message>
+    <message>
+      <source>已恢复“%1”的自动同步</source>
+      <translation>Resumed automatic sync for "%1"</translation>
+    </message>
+    <message>
       <source>没有可同步的条目</source>
       <translation>No items to sync</translation>
     </message>
@@ -577,7 +593,7 @@ Only NutSync's configuration and synchronization baseline are deleted, not local
     </message>
     <message>
       <source>自动同步已暂停</source>
-      <translation>Auto-sync is paused</translation>
+      <translation>Automatic sync paused</translation>
     </message>
     <message>
       <source>%1 个同步对</source>
@@ -1089,6 +1105,10 @@ Only effective for the current user; unchecking will delete the entry.</translat
     <message>
       <source>启用此同步对</source>
       <translation>Enable this sync pair</translation>
+    </message>
+    <message>
+      <source>暂停自动同步（仍可手动同步）</source>
+      <translation>Pause automatic sync (manual sync still available)</translation>
     </message>
     <message>
       <source>程序启动后自动同步</source>
@@ -1649,7 +1669,7 @@ Projects/notes.md</translation>
     </message>
     <message>
       <source>暂停自动同步</source>
-      <translation>Pause Automatic Sync</translation>
+      <translation>Pause automatic sync</translation>
     </message>
     <message>
       <source>退出</source>
@@ -2091,6 +2111,10 @@ Please use the icon in the system tray to open the main window.</translation>
     <message>
       <source>已停用</source>
       <translation>Disabled</translation>
+    </message>
+    <message>
+      <source>自动同步已暂停</source>
+      <translation>Automatic sync paused</translation>
     </message>
     <message>
       <source>已同步</source>

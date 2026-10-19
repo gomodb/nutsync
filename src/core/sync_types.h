@@ -115,6 +115,7 @@ struct SyncPair
     bool trashDeletedFiles = true;
     int trashRetentionDays = 30;
     bool enabled = true;
+    bool paused = false;
     bool syncOnStartup = true;
     QString lastStatus;
     QString lastMessage;
