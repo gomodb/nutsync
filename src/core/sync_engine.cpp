@@ -171,6 +171,9 @@ std::unique_ptr<RemoteBackend> SyncEngine::createBackend(QString *error) const
     options.baseUrl = url;
     options.username = m_pair.username;
     options.password = m_pair.password;
+    options.authMode = m_pair.authMode;
+    options.clientCertificatePath = m_pair.clientCertificatePath;
+    options.clientKeyPath = m_pair.clientKeyPath;
     options.retryCount = m_retryCount;
     options.retryBaseDelayMs = m_retryBaseDelayMs;
     options.retryMaxDelayMs = m_retryMaxDelayMs;

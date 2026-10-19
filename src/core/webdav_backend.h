@@ -4,6 +4,7 @@
 #include "core/secured_network_access_manager.h"
 
 #include <QNetworkAccessManager>
+#include <QSslConfiguration>
 #include <QUrl>
 
 namespace NutSync {
@@ -13,6 +14,9 @@ struct WebDavOptions
     QUrl baseUrl;
     QString username;
     QString password;
+    QString authMode = QStringLiteral("basic");
+    QString clientCertificatePath;
+    QString clientKeyPath;
     int timeoutMs = 120000;
     int retryCount = 3;
     int retryBaseDelayMs = 500;
@@ -58,6 +62,8 @@ private:
     WebDavOptions m_options;
     SecuredNetworkAccessManager m_network;
     QUrl m_baseUrl;
+    QSslConfiguration m_sslConfiguration;
+    bool m_hasClientCertificate = false;
     RemoteErrorClass m_lastErrorClass = RemoteErrorClass::None;
 };
 

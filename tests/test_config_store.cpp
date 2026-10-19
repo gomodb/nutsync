@@ -47,6 +47,7 @@ void TestConfigStore::stripsCredentialsEmbeddedInUrls()
     QCOMPARE(config.pairs.at(0).watchLocalChanges, true);
     QCOMPARE(config.pairs.at(0).syncDeletions, false);
     QCOMPARE(config.pairs.at(0).paused, false);
+    QCOMPARE(config.pairs.at(0).authMode, QStringLiteral("basic"));
     QCOMPARE(config.pairs.at(0).syncMode, SyncMode::Bidirectional);
     QVERIFY(config.pairs.at(0).includePaths.isEmpty());
     QCOMPARE(config.pairs.at(0).trashDeletedFiles, true);
@@ -126,6 +127,9 @@ void TestConfigStore::roundTripsPairSettings()
     pair.watchLocalChanges = false;
     pair.syncDeletions = true;
     pair.paused = true;
+    pair.authMode = QStringLiteral("digest");
+    pair.clientCertificatePath = QStringLiteral("/tmp/client.pem");
+    pair.clientKeyPath = QStringLiteral("/tmp/client.key");
     pair.trashDeletedFiles = false;
     pair.trashRetentionDays = 90;
     pair.enabled = false;
@@ -173,6 +177,9 @@ void TestConfigStore::roundTripsPairSettings()
     QCOMPARE(result.watchLocalChanges, false);
     QCOMPARE(result.syncDeletions, true);
     QCOMPARE(result.paused, true);
+    QCOMPARE(result.authMode, QStringLiteral("digest"));
+    QCOMPARE(result.clientCertificatePath, QStringLiteral("/tmp/client.pem"));
+    QCOMPARE(result.clientKeyPath, QStringLiteral("/tmp/client.key"));
     QCOMPARE(result.trashDeletedFiles, false);
     QCOMPARE(result.trashRetentionDays, 90);
     QCOMPARE(result.enabled, false);

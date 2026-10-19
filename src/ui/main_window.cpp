@@ -1689,6 +1689,9 @@ void MainWindow::showConflicts()
         QUrl url(pair->remoteUrl);
         WebDavOptions options;
         options.baseUrl = url;
+        options.authMode = pair->authMode;
+        options.clientCertificatePath = pair->clientCertificatePath;
+        options.clientKeyPath = pair->clientKeyPath;
         options.username = pair->username;
         options.password = password;
         if (options.username.isEmpty() && !url.userName().isEmpty()) {

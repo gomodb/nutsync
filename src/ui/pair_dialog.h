@@ -43,6 +43,9 @@ private:
     QLineEdit *m_name = nullptr;
     QLineEdit *m_localPath = nullptr;
     QLineEdit *m_remoteUrl = nullptr;
+    QComboBox *m_authMode = nullptr;
+    QLineEdit *m_clientCert = nullptr;
+    QLineEdit *m_clientKey = nullptr;
     QLineEdit *m_username = nullptr;
     QLineEdit *m_password = nullptr;
     QCheckBox *m_showPassword = nullptr;

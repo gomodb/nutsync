@@ -31,6 +31,9 @@ QJsonObject pairToJson(const SyncPair &pair)
     obj.insert(QStringLiteral("remoteUrl"), remoteUrl.toString());
     obj.insert(QStringLiteral("backendType"), pair.backendType);
     obj.insert(QStringLiteral("username"), pair.username);
+    obj.insert(QStringLiteral("authMode"), pair.authMode);
+    obj.insert(QStringLiteral("clientCertificatePath"), pair.clientCertificatePath);
+    obj.insert(QStringLiteral("clientKeyPath"), pair.clientKeyPath);
     obj.insert(QStringLiteral("rememberPassword"), pair.rememberPassword);
     obj.insert(QStringLiteral("excludePatterns"), QJsonArray::fromStringList(pair.excludePatterns));
     obj.insert(QStringLiteral("includePaths"), QJsonArray::fromStringList(pair.includePaths));
@@ -69,6 +72,11 @@ SyncPair pairFromJson(const QJsonObject &obj)
     if (pair.backendType.isEmpty())
         pair.backendType = QStringLiteral("webdav");
     pair.username = obj.value(QStringLiteral("username")).toString();
+    pair.authMode = obj.value(QStringLiteral("authMode")).toString(QStringLiteral("basic"));
+    if (pair.authMode != QLatin1String("digest") && pair.authMode != QLatin1String("bearer"))
+        pair.authMode = QStringLiteral("basic");
+    pair.clientCertificatePath = obj.value(QStringLiteral("clientCertificatePath")).toString();
+    pair.clientKeyPath = obj.value(QStringLiteral("clientKeyPath")).toString();
     QUrl remoteUrl(pair.remoteUrl);
     if (!remoteUrl.userName().isEmpty() || !remoteUrl.password().isEmpty()) {
         if (pair.username.isEmpty())

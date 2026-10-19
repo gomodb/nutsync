@@ -198,6 +198,10 @@ NutSync uses three-way status records for two-way synchronization: when only one
       <translation>Retry failed items</translation>
     </message>
     <message>
+      <source>历史</source>
+      <translation>History</translation>
+    </message>
+    <message>
       <source>活动</source>
       <translation>Activity</translation>
     </message>
@@ -1115,6 +1119,26 @@ Only effective for the current user; unchecking will delete the entry.</translat
       <translation>Enter the full URL of the sync root, not the server home page. NutSync will sync recursively under this directory.</translation>
     </message>
     <message>
+      <source>Basic</source>
+      <translation>Basic</translation>
+    </message>
+    <message>
+      <source>Digest</source>
+      <translation>Digest</translation>
+    </message>
+    <message>
+      <source>Bearer Token</source>
+      <translation>Bearer token</translation>
+    </message>
+    <message>
+      <source>Digest 使用用户名/密码协商；Bearer 使用 OAuth2 访问令牌。</source>
+      <translation>Digest negotiates with username/password; Bearer uses an OAuth2 access token.</translation>
+    </message>
+    <message>
+      <source>认证方式</source>
+      <translation>Authentication</translation>
+    </message>
+    <message>
       <source>留空表示匿名访问</source>
       <translation>Leave empty for anonymous access</translation>
     </message>
@@ -1123,8 +1147,44 @@ Only effective for the current user; unchecking will delete the entry.</translat
       <translation>Username</translation>
     </message>
     <message>
+      <source>可选：客户端证书（PEM/DER）</source>
+      <translation>Optional: client certificate (PEM/DER)</translation>
+    </message>
+    <message>
+      <source>客户端证书</source>
+      <translation>Client certificate</translation>
+    </message>
+    <message>
+      <source>可选：未加密私钥（PEM）</source>
+      <translation>Optional: unencrypted private key (PEM)</translation>
+    </message>
+    <message>
+      <source>客户端私钥</source>
+      <translation>Client private key</translation>
+    </message>
+    <message>
+      <source>选择客户端证书</source>
+      <translation>Select client certificate</translation>
+    </message>
+    <message>
+      <source>证书 (*.pem *.crt *.cer);;所有文件 (*)</source>
+      <translation>Certificates (*.pem *.crt *.cer);;All files (*)</translation>
+    </message>
+    <message>
+      <source>选择客户端私钥</source>
+      <translation>Select client private key</translation>
+    </message>
+    <message>
+      <source>私钥 (*.pem *.key);;所有文件 (*)</source>
+      <translation>Private keys (*.pem *.key);;All files (*)</translation>
+    </message>
+    <message>
       <source>WebDAV 密码或应用专用密码</source>
       <translation>WebDAV password or app password</translation>
+    </message>
+    <message>
+      <source>OAuth2 访问令牌</source>
+      <translation>OAuth2 access token</translation>
     </message>
     <message>
       <source>显示</source>

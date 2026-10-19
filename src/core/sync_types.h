@@ -101,6 +101,9 @@ struct SyncPair
     QString backendType = QStringLiteral("webdav");
     QString username;
     QString password; //!< Transient. Persisted through the credential store.
+    QString authMode = QStringLiteral("basic");
+    QString clientCertificatePath;
+    QString clientKeyPath;
     bool rememberPassword = true;
     QStringList excludePatterns;
     QStringList includePaths;

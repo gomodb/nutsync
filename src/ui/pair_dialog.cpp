@@ -50,7 +50,12 @@ PairDialog::PairDialog(const SyncPair &pair, bool credentialsAvailable, QWidget 
     m_name->setText(pair.name);
     m_localPath->setText(pair.localPath);
     m_remoteUrl->setText(pair.remoteUrl);
+    const int authIndex = m_authMode->findData(pair.authMode);
+    if (authIndex >= 0)
+        m_authMode->setCurrentIndex(authIndex);
     m_username->setText(pair.username);
+    m_clientCert->setText(pair.clientCertificatePath);
+    m_clientKey->setText(pair.clientKeyPath);
     m_password->setText(pair.password);
     m_rememberPassword->setChecked(pair.rememberPassword && credentialsAvailable);
     m_excludes->setPlainText(pair.excludePatterns.join(QLatin1Char('\n')));
@@ -102,7 +107,7 @@ void PairDialog::buildUi(bool credentialsAvailable)
 {
     const bool isNew = m_original.id.isEmpty();
     setWindowTitle(isNew ? tr("添加同步对") : tr("编辑同步对"));
-    resize(700, 780);
+    resize(720, 860);
     setMinimumWidth(620);
     setMinimumHeight(560);
 
@@ -161,9 +166,51 @@ void PairDialog::buildUi(bool credentialsAvailable)
     makeMuted(remoteHint, true);
     form->addRow(QString(), remoteHint);
 
+    m_authMode = new QComboBox(this);
+    m_authMode->addItem(tr("Basic"), QStringLiteral("basic"));
+    m_authMode->addItem(tr("Digest"), QStringLiteral("digest"));
+    m_authMode->addItem(tr("Bearer Token"), QStringLiteral("bearer"));
+    m_authMode->setToolTip(tr("Digest 使用用户名/密码协商；Bearer 使用 OAuth2 访问令牌。"));
+    form->addRow(tr("认证方式"), m_authMode);
+
     m_username = new QLineEdit(this);
     m_username->setPlaceholderText(tr("留空表示匿名访问"));
     form->addRow(tr("用户名"), m_username);
+
+    auto *certRow = new QWidget(this);
+    auto *certLayout = new QHBoxLayout(certRow);
+    certLayout->setContentsMargins(0, 0, 0, 0);
+    certLayout->setSpacing(8);
+    m_clientCert = new QLineEdit(certRow);
+    m_clientCert->setPlaceholderText(tr("可选：客户端证书（PEM/DER）"));
+    auto *browseCert = new QPushButton(tr("浏览…"), certRow);
+    certLayout->addWidget(m_clientCert, 1);
+    certLayout->addWidget(browseCert);
+    form->addRow(tr("客户端证书"), certRow);
+
+    auto *keyRow = new QWidget(this);
+    auto *keyLayout = new QHBoxLayout(keyRow);
+    keyLayout->setContentsMargins(0, 0, 0, 0);
+    keyLayout->setSpacing(8);
+    m_clientKey = new QLineEdit(keyRow);
+    m_clientKey->setPlaceholderText(tr("可选：未加密私钥（PEM）"));
+    auto *browseKey = new QPushButton(tr("浏览…"), keyRow);
+    keyLayout->addWidget(m_clientKey, 1);
+    keyLayout->addWidget(browseKey);
+    form->addRow(tr("客户端私钥"), keyRow);
+
+    connect(browseCert, &QPushButton::clicked, this, [this]() {
+        const QString path = QFileDialog::getOpenFileName(
+            this, tr("选择客户端证书"), QString(), tr("证书 (*.pem *.crt *.cer);;所有文件 (*)"));
+        if (!path.isEmpty())
+            m_clientCert->setText(path);
+    });
+    connect(browseKey, &QPushButton::clicked, this, [this]() {
+        const QString path = QFileDialog::getOpenFileName(this, tr("选择客户端私钥"), QString(),
+                                                          tr("私钥 (*.pem *.key);;所有文件 (*)"));
+        if (!path.isEmpty())
+            m_clientKey->setText(path);
+    });
 
     auto *passwordRow = new QWidget(this);
     auto *passwordLayout = new QHBoxLayout(passwordRow);
@@ -172,6 +219,15 @@ void PairDialog::buildUi(bool credentialsAvailable)
     m_password = new QLineEdit(passwordRow);
     m_password->setEchoMode(QLineEdit::Password);
     m_password->setPlaceholderText(tr("WebDAV 密码或应用专用密码"));
+    auto updateAuthPlaceholder = [this]() {
+        if (m_authMode->currentData().toString() == QLatin1String("bearer"))
+            m_password->setPlaceholderText(tr("OAuth2 访问令牌"));
+        else
+            m_password->setPlaceholderText(tr("WebDAV 密码或应用专用密码"));
+    };
+    connect(m_authMode, &QComboBox::currentIndexChanged, this, [updateAuthPlaceholder](int) {
+        updateAuthPlaceholder();
+    });
     m_showPassword = new QCheckBox(tr("显示"), passwordRow);
     passwordLayout->addWidget(m_password, 1);
     passwordLayout->addWidget(m_showPassword);
@@ -506,6 +562,9 @@ SyncPair PairDialog::syncPair() const
     bool ok = false;
     QUrl url = normalizedRemoteUrl(&ok);
     pair.remoteUrl = ok ? url.toString() : m_remoteUrl->text().trimmed();
+    pair.authMode = m_authMode->currentData().toString();
+    pair.clientCertificatePath = m_clientCert->text().trimmed();
+    pair.clientKeyPath = m_clientKey->text().trimmed();
     pair.username = m_username->text().trimmed();
     pair.password = m_password->text();
     if (ok && (!url.userName().isEmpty() || !url.password().isEmpty())) {

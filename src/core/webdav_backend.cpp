@@ -16,6 +16,10 @@
 #include <QFileInfo>
 #include <QFileInfo>
 #include <QNetworkReply>
+#include <QAuthenticator>
+#include <QSslCertificate>
+#include <QSslConfiguration>
+#include <QSslKey>
 #include <QSaveFile>
 #include <QSet>
 #include <QJsonDocument>
@@ -307,6 +311,47 @@ WebDavBackend::WebDavBackend(WebDavOptions options)
             qWarning() << "NutSync: refusing to send WebDAV credentials over cleartext HTTP";
         }
     }
+
+    if (!m_options.clientCertificatePath.isEmpty()) {
+        QList<QSslCertificate> certificates =
+            QSslCertificate::fromPath(m_options.clientCertificatePath, QSsl::Pem);
+        if (certificates.isEmpty()) {
+            certificates = QSslCertificate::fromPath(m_options.clientCertificatePath, QSsl::Der);
+        }
+        QFile keyFile(m_options.clientKeyPath);
+        QSslKey key;
+        if (keyFile.open(QIODevice::ReadOnly)) {
+            key = QSslKey(&keyFile, QSsl::Rsa);
+            if (key.isNull()) {
+                keyFile.seek(0);
+                key = QSslKey(&keyFile, QSsl::Ec);
+            }
+        }
+        if (certificates.isEmpty() || key.isNull()) {
+            qWarning() << "NutSync: unable to load client certificate or private key";
+        } else {
+            m_sslConfiguration = QSslConfiguration::defaultConfiguration();
+            m_sslConfiguration.setLocalCertificateChain(certificates);
+            m_sslConfiguration.setPrivateKey(key);
+            m_hasClientCertificate = true;
+        }
+    }
+
+    if (m_options.authMode == QLatin1String("digest")) {
+        QObject::connect(
+            &m_network, &QNetworkAccessManager::authenticationRequired,
+            [this](QNetworkReply *reply, QAuthenticator *authenticator) {
+                const QUrl target = reply ? reply->url() : QUrl();
+                const bool sameOrigin = target.scheme() == m_baseUrl.scheme()
+                    && target.host() == m_baseUrl.host()
+                    && target.port(target.scheme() == QLatin1String("https") ? 443 : 80)
+                        == m_baseUrl.port(m_baseUrl.scheme() == QLatin1String("https") ? 443 : 80);
+                if (!sameOrigin)
+                    return;
+                authenticator->setUser(m_options.username);
+                authenticator->setPassword(m_options.password);
+            });
+    }
 }
 
 QString WebDavBackend::typeName() const
@@ -332,9 +377,18 @@ QNetworkRequest WebDavBackend::requestFor(const QString &path) const
     request.setTransferTimeout(m_options.timeoutMs);
     request.setAttribute(QNetworkRequest::RedirectPolicyAttribute,
                          QNetworkRequest::SameOriginRedirectPolicy);
-    if (!m_options.username.isEmpty() && NetworkUtils::allowsCleartextCredentials(m_baseUrl)) {
-        request.setRawHeader("Authorization",
-                             basicAuthValue(m_options.username, m_options.password));
+    if (m_hasClientCertificate)
+        request.setSslConfiguration(m_sslConfiguration);
+    if (NetworkUtils::allowsCleartextCredentials(m_baseUrl)) {
+        if (m_options.authMode == QLatin1String("bearer")) {
+            if (!m_options.password.isEmpty()) {
+                request.setRawHeader("Authorization",
+                                     QByteArrayLiteral("Bearer ") + m_options.password.toUtf8());
+            }
+        } else if (m_options.authMode == QLatin1String("basic") && !m_options.username.isEmpty()) {
+            request.setRawHeader("Authorization",
+                                 basicAuthValue(m_options.username, m_options.password));
+        }
     }
     return request;
 }
