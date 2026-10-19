@@ -23,21 +23,21 @@ source=("$pkgname-$pkgver.tar.gz::https://github.com/gomodb/nutsync/archive/refs
 sha256sums=('fed7030255d3d3289dfa085aef4903d37f08305da39c39395f57f19620beb31b')
 
 build() {
-    cmake -S "$srcdir/$pkgname-$pkgver" -B build \
+    cmake -S "$srcdir/$pkgname-$pkgver" -B "$srcdir/$pkgname-$pkgver/build" \
         -G Ninja \
         -DCMAKE_BUILD_TYPE=None \
         -DCMAKE_INSTALL_PREFIX=/usr \
         -DBUILD_TESTING=ON \
         -Wno-dev
-    cmake --build build
+    cmake --build "$srcdir/$pkgname-$pkgver/build"
 }
 
 check() {
-    ctest --test-dir build --output-on-failure
+    ctest --test-dir "$srcdir/$pkgname-$pkgver/build" --output-on-failure
 }
 
 package() {
-    DESTDIR="$pkgdir" cmake --install build
+    DESTDIR="$pkgdir" cmake --install "$srcdir/$pkgname-$pkgver/build"
     install -Dm644 "$srcdir/$pkgname-$pkgver/LICENSE" \
         "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
 }

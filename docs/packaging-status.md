@@ -4,7 +4,7 @@
 
 - Application version: `0.5.2`
 - GitHub release: <https://github.com/gomodb/nutsync/releases/tag/v0.5.2>
-- AUR repository commit: `af09491 nutsync 0.5.2-1` (local, not pushed)
+- AUR repository commit: `d725578 nutsync 0.5.2-1` (local, not pushed)
 - x86_64 Arch package: `packaging/arch/nutsync-0.5.2-1-x86_64.pkg.tar.zst`
 - x86_64 package SHA-256:
   `e14d2225bbb08ba1364914a039911ffceb5e1a44989bcf941ebca03260d17a62`

@@ -16,6 +16,8 @@ Reviewed for the first `nutsync` AUR push.
 ## Checks
 
 - [x] `makepkg --verifysource -f` passed
+- [x] `makepkg -f` built a local x86_64 package successfully
+- [x] Local package installs to a test root and reports `nutsync 0.5.2`
 - [x] PKGBUILD and generated `.SRCINFO` match
 - [x] `bash -n packaging/arch/PKGBUILD` passed
 - [x] Source tag exists and checksum matches
@@ -31,11 +33,23 @@ Reviewed for the first `nutsync` AUR push.
 
 ```text
 ~/Projects/nutsync-aur
-af09491 nutsync 0.5.2-1
+d725578 nutsync 0.5.2-1
 origin ssh://aur@aur.archlinux.org/nutsync.git
 ```
 
 Files are mode `0644`.
+
+## Local build fix
+
+The first local build exposed a stale-cache bug: the PKGBUILD used a shared
+`$srcdir/build` directory, so a previous version's CMake cache caused:
+
+```text
+CMake Error: The source ... does not match the source ... used to generate cache
+```
+
+The build directory is now inside `$srcdir/$pkgname-$pkgver/build`, and
+`check()`/`package()` use the same path.
 
 ## Blocker
 
