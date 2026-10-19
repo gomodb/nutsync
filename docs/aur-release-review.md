@@ -17,7 +17,7 @@ Reviewed for the first `nutsync` AUR push.
 
 - [x] `makepkg --verifysource -f` passed
 - [x] `makepkg -f` built a local x86_64 package successfully
-- [x] Local package installs to a test root and reports `nutsync 0.5.2`
+- [x] Local package extracts to a test root and reports `nutsync 0.5.2`
 - [x] PKGBUILD and generated `.SRCINFO` match
 - [x] `bash -n packaging/arch/PKGBUILD` passed
 - [x] Source tag exists and checksum matches
