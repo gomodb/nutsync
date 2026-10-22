@@ -376,6 +376,7 @@ jobs:
       - name: Generate coverage report
         run: |
           gcovr -r . --filter 'src/' \
+            --fail-under-line 35 --print-summary \
             --xml-pretty --output coverage.xml \
             --html-details coverage.html
 
