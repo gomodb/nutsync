@@ -26,7 +26,7 @@
       <li>Passwords stored in KWallet / Secret Service</li>
       <li>Exclude patterns for caches, build output, and other local-only data</li>
       <li>Selective sync by per-pair relative paths</li>
-      <li>Per-pair pause, sync history, name-collision protection, and parallel remote scans</li>
+      <li>Per-pair pause, sync history, name-collision protection, parallel scans, and OAuth2/PKCE</li>
       <li>Per-pair automatic synchronization intervals</li>
       <li>Linux inotify monitoring for immediate local-change syncs</li>
       <li>Optional per-pair limits on how often automatic syncs may start</li>

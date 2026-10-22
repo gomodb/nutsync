@@ -10,6 +10,7 @@ url='https://github.com/gomodb/nutsync'
 license=('GPL-3.0-or-later')
 depends=(
     'qt6-base'
+    'qt6-networkauth'
     'qt6-svg'
     'qt6-translations'
     'qtkeychain-qt6'

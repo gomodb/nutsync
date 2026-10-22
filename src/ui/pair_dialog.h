@@ -65,6 +65,11 @@ private:
     QCheckBox *m_chunkedUpload = nullptr;
     QSpinBox *m_chunkSize = nullptr;
     QCheckBox *m_detectNameCollisions = nullptr;
+    QPushButton *m_oauthButton = nullptr;
+    QString m_oauthAuthorizationUrl;
+    QString m_oauthTokenUrl;
+    QString m_oauthClientId;
+    QString m_oauthScope;
     QCheckBox *m_syncOnStartup = nullptr;
     QCheckBox *m_watchLocalChanges = nullptr;
     QCheckBox *m_syncDeletions = nullptr;

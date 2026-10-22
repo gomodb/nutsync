@@ -37,6 +37,10 @@ QJsonObject pairToJson(const SyncPair &pair)
     obj.insert(QStringLiteral("chunkedUpload"), pair.chunkedUpload);
     obj.insert(QStringLiteral("chunkSizeMb"), pair.chunkSizeMb);
     obj.insert(QStringLiteral("detectNameCollisions"), pair.detectNameCollisions);
+    obj.insert(QStringLiteral("oauthAuthorizationUrl"), pair.oauthAuthorizationUrl);
+    obj.insert(QStringLiteral("oauthTokenUrl"), pair.oauthTokenUrl);
+    obj.insert(QStringLiteral("oauthClientId"), pair.oauthClientId);
+    obj.insert(QStringLiteral("oauthScope"), pair.oauthScope);
     obj.insert(QStringLiteral("rememberPassword"), pair.rememberPassword);
     obj.insert(QStringLiteral("excludePatterns"), QJsonArray::fromStringList(pair.excludePatterns));
     obj.insert(QStringLiteral("includePaths"), QJsonArray::fromStringList(pair.includePaths));
@@ -83,6 +87,10 @@ SyncPair pairFromJson(const QJsonObject &obj)
     pair.chunkedUpload = obj.value(QStringLiteral("chunkedUpload")).toBool(false);
     pair.chunkSizeMb = qBound(1, obj.value(QStringLiteral("chunkSizeMb")).toInt(10), 100);
     pair.detectNameCollisions = obj.value(QStringLiteral("detectNameCollisions")).toBool(true);
+    pair.oauthAuthorizationUrl = obj.value(QStringLiteral("oauthAuthorizationUrl")).toString();
+    pair.oauthTokenUrl = obj.value(QStringLiteral("oauthTokenUrl")).toString();
+    pair.oauthClientId = obj.value(QStringLiteral("oauthClientId")).toString();
+    pair.oauthScope = obj.value(QStringLiteral("oauthScope")).toString();
     QUrl remoteUrl(pair.remoteUrl);
     if (!remoteUrl.userName().isEmpty() || !remoteUrl.password().isEmpty()) {
         if (pair.username.isEmpty())

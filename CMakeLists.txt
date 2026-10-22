@@ -43,6 +43,7 @@ endif()
 
 qt_standard_project_setup()
 
+find_package(Qt6 6.4 OPTIONAL_COMPONENTS NetworkAuth)
 find_package(Qt6Keychain QUIET)
 find_package(KF6StatusNotifierItem QUIET)
 find_package(KF6Notifications QUIET)
@@ -115,7 +116,13 @@ else()
     message(WARNING "NutSync: QtKeychain not found; passwords cannot be stored securely")
 endif()
 
-qt_add_executable(nutsync
+if(Qt6NetworkAuth_FOUND)
+    set(NUTSYNC_NETWORKAUTH_SOURCES src/ui/oauth2_dialog.cpp src/ui/oauth2_dialog.h)
+else()
+    set(NUTSYNC_NETWORKAUTH_SOURCES)
+endif()
+
+add_executable(nutsync
     src/main.cpp
     src/ui/main_window.cpp
     src/ui/main_window.h
@@ -123,6 +130,7 @@ qt_add_executable(nutsync
     src/ui/app_icons.h
     src/ui/pair_dialog.cpp
     src/ui/pair_dialog.h
+    ${NUTSYNC_NETWORKAUTH_SOURCES}
     src/ui/tray_controller.cpp
     src/ui/tray_controller.h
 )
@@ -132,6 +140,12 @@ target_link_libraries(nutsync PRIVATE
     Qt6::Gui
     Qt6::Widgets
 )
+
+if(Qt6NetworkAuth_FOUND)
+    target_link_libraries(nutsync PRIVATE Qt6::NetworkAuth)
+    target_compile_definitions(nutsync PRIVATE NUTSYNC_HAVE_NETWORKAUTH=1)
+    message(STATUS "NutSync: OAuth2/PKCE via Qt NetworkAuth")
+endif()
 
 if(KF6StatusNotifierItem_FOUND)
     target_link_libraries(nutsync PRIVATE KF6::StatusNotifierItem)

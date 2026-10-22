@@ -334,7 +334,7 @@ ctest --test-dir build --output-on-failure
 - Local monitoring is suppressed during a sync and for about two seconds afterward so NutSync's own downloads and deletions are not treated as user changes. Changes made during that window are handled by the next scheduled or manual sync.
 - With synchronized deletion disabled, a local deletion is restored by the next sync. If inotify is enabled, this can happen quickly. Enable synchronized deletion to delete both local and remote copies permanently.
 - Uploads and downloads can run sequentially or with 1–4 parallel transfers; very large trees or high-latency servers may still be slow.
-- Digest, Basic, Bearer-token/OAuth2 access token, and client-certificate authentication are supported. Interactive OAuth2 browser authorization is not implemented.
+- Digest, Basic, Bearer-token/OAuth2 access token, client-certificate authentication, and OAuth2 authorization-code + PKCE login are supported. Refresh-token rotation is not implemented yet.
 - Rate limiting counts sync starts, not individual HTTP requests within a sync.
 
 ## License

@@ -3,6 +3,9 @@
 #include "core/network_utils.h"
 #include "core/path_utils.h"
 #include "core/webdav_backend.h"
+#ifdef NUTSYNC_HAVE_NETWORKAUTH
+#include "ui/oauth2_dialog.h"
+#endif
 
 #include <QCheckBox>
 #include <QComboBox>
@@ -56,6 +59,10 @@ PairDialog::PairDialog(const SyncPair &pair, bool credentialsAvailable, QWidget 
     m_username->setText(pair.username);
     m_clientCert->setText(pair.clientCertificatePath);
     m_clientKey->setText(pair.clientKeyPath);
+    m_oauthAuthorizationUrl = pair.oauthAuthorizationUrl;
+    m_oauthTokenUrl = pair.oauthTokenUrl;
+    m_oauthClientId = pair.oauthClientId;
+    m_oauthScope = pair.oauthScope;
     m_chunkedUpload->setChecked(pair.chunkedUpload);
     m_chunkSize->setValue(pair.chunkSizeMb);
     m_detectNameCollisions->setChecked(pair.detectNameCollisions);
@@ -175,6 +182,23 @@ void PairDialog::buildUi(bool credentialsAvailable)
     m_authMode->addItem(tr("Bearer Token"), QStringLiteral("bearer"));
     m_authMode->setToolTip(tr("Digest 使用用户名/密码协商；Bearer 使用 OAuth2 访问令牌。"));
     form->addRow(tr("认证方式"), m_authMode);
+#ifdef NUTSYNC_HAVE_NETWORKAUTH
+    m_oauthButton = new QPushButton(tr("OAuth2 登录…"), this);
+    m_oauthButton->setToolTip(tr("使用授权码 + PKCE 获取 Bearer Token"));
+    form->addRow(QString(), m_oauthButton);
+    connect(m_oauthButton, &QPushButton::clicked, this, [this]() {
+        SyncPair pair = syncPair();
+        OAuth2Dialog dialog(pair, this);
+        if (dialog.exec() != QDialog::Accepted)
+            return;
+        m_oauthAuthorizationUrl = dialog.authorizationUrl();
+        m_oauthTokenUrl = dialog.tokenUrl();
+        m_oauthClientId = dialog.clientId();
+        m_oauthScope = dialog.scope();
+        m_password->setText(dialog.accessToken());
+        m_rememberPassword->setChecked(true);
+    });
+#endif
 
     m_username = new QLineEdit(this);
     m_username->setPlaceholderText(tr("留空表示匿名访问"));
@@ -584,6 +608,10 @@ SyncPair PairDialog::syncPair() const
     pair.authMode = m_authMode->currentData().toString();
     pair.clientCertificatePath = m_clientCert->text().trimmed();
     pair.clientKeyPath = m_clientKey->text().trimmed();
+    pair.oauthAuthorizationUrl = m_oauthAuthorizationUrl;
+    pair.oauthTokenUrl = m_oauthTokenUrl;
+    pair.oauthClientId = m_oauthClientId;
+    pair.oauthScope = m_oauthScope;
     pair.chunkedUpload = m_chunkedUpload->isChecked();
     pair.chunkSizeMb = m_chunkSize->value();
     pair.detectNameCollisions = m_detectNameCollisions->isChecked();

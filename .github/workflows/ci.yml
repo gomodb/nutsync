@@ -29,7 +29,7 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends \
             cmake ninja-build g++ python3 \
-            qt6-base-dev qt6-tools-dev qt6-tools-dev-tools \
+            qt6-base-dev qt6-networkauth-dev qt6-tools-dev qt6-tools-dev-tools \
             libqt6sql6-sqlite appstream desktop-file-utils clang-format
 
       - name: Check formatting
@@ -90,7 +90,7 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends \
             cmake ninja-build g++ python3 \
-            qt6-base-dev qt6-tools-dev qt6-tools-dev-tools \
+            qt6-base-dev qt6-networkauth-dev qt6-tools-dev qt6-tools-dev-tools \
             libqt6sql6-sqlite
 
       - name: Configure
@@ -181,7 +181,7 @@ jobs:
         run: |
           pacman -S --noconfirm --needed \
             base-devel shadow util-linux cmake ninja git python \
-            qt6-base qt6-svg qt6-translations qt6-tools \
+            qt6-base qt6-networkauth qt6-svg qt6-translations qt6-tools \
             qtkeychain-qt6 kstatusnotifieritem knotifications
 
       - name: Build package
@@ -222,7 +222,7 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends \
             build-essential clang cmake ninja-build python3 \
-            qt6-base-dev qt6-tools-dev qt6-tools-dev-tools \
+            qt6-base-dev qt6-networkauth-dev qt6-tools-dev qt6-tools-dev-tools \
             libqt6sql6-sqlite
 
       - name: Configure
@@ -250,7 +250,7 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends \
             build-essential cmake ninja-build python3 clang-tidy \
-            qt6-base-dev qt6-tools-dev qt6-tools-dev-tools \
+            qt6-base-dev qt6-networkauth-dev qt6-tools-dev qt6-tools-dev-tools \
             libqt6sql6-sqlite
 
       - name: Configure for clang-tidy
@@ -305,7 +305,7 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends \
             build-essential cmake ninja-build python3 curl \
-            qt6-base-dev qt6-tools-dev qt6-tools-dev-tools \
+            qt6-base-dev qt6-networkauth-dev qt6-tools-dev qt6-tools-dev-tools \
             libqt6sql6-sqlite
 
       - name: Configure
@@ -348,7 +348,7 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends \
             build-essential cmake ninja-build python3 gcovr \
-            qt6-base-dev qt6-tools-dev qt6-tools-dev-tools \
+            qt6-base-dev qt6-networkauth-dev qt6-tools-dev qt6-tools-dev-tools \
             libqt6sql6-sqlite
 
       - name: Configure with coverage
@@ -391,7 +391,7 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends \
             build-essential cmake ninja-build python3 \
-            qt6-base-dev qt6-tools-dev qt6-tools-dev-tools \
+            qt6-base-dev qt6-networkauth-dev qt6-tools-dev qt6-tools-dev-tools \
             libqt6sql6-sqlite
 
       - name: Configure
@@ -446,7 +446,7 @@ jobs:
         run: |
           pacman -Syu --noconfirm --needed \
             cmake ninja git python fakeroot namcap sudo curl qt6-tools \
-            qt6-base qt6-svg qt6-translations qtkeychain-qt6 \
+            qt6-base qt6-networkauth qt6-svg qt6-translations qtkeychain-qt6 \
             kstatusnotifieritem knotifications \
             appstream desktop-file-utils
 

@@ -51,6 +51,7 @@ void TestConfigStore::stripsCredentialsEmbeddedInUrls()
     QCOMPARE(config.pairs.at(0).chunkedUpload, false);
     QCOMPARE(config.pairs.at(0).chunkSizeMb, 10);
     QCOMPARE(config.pairs.at(0).detectNameCollisions, true);
+    QVERIFY(config.pairs.at(0).oauthAuthorizationUrl.isEmpty());
     QCOMPARE(config.pairs.at(0).syncMode, SyncMode::Bidirectional);
     QVERIFY(config.pairs.at(0).includePaths.isEmpty());
     QCOMPARE(config.pairs.at(0).trashDeletedFiles, true);
@@ -136,6 +137,10 @@ void TestConfigStore::roundTripsPairSettings()
     pair.chunkedUpload = true;
     pair.chunkSizeMb = 20;
     pair.detectNameCollisions = false;
+    pair.oauthAuthorizationUrl = QStringLiteral("https://id.example.com/authorize");
+    pair.oauthTokenUrl = QStringLiteral("https://id.example.com/token");
+    pair.oauthClientId = QStringLiteral("nutsync");
+    pair.oauthScope = QStringLiteral("webdav");
     pair.trashDeletedFiles = false;
     pair.trashRetentionDays = 90;
     pair.enabled = false;
@@ -189,6 +194,10 @@ void TestConfigStore::roundTripsPairSettings()
     QCOMPARE(result.chunkedUpload, true);
     QCOMPARE(result.chunkSizeMb, 20);
     QCOMPARE(result.detectNameCollisions, false);
+    QCOMPARE(result.oauthAuthorizationUrl, QStringLiteral("https://id.example.com/authorize"));
+    QCOMPARE(result.oauthTokenUrl, QStringLiteral("https://id.example.com/token"));
+    QCOMPARE(result.oauthClientId, QStringLiteral("nutsync"));
+    QCOMPARE(result.oauthScope, QStringLiteral("webdav"));
     QCOMPARE(result.trashDeletedFiles, false);
     QCOMPARE(result.trashRetentionDays, 90);
     QCOMPARE(result.enabled, false);

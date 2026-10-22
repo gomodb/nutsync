@@ -107,6 +107,10 @@ struct SyncPair
     bool chunkedUpload = false;
     int chunkSizeMb = 10;
     bool detectNameCollisions = true;
+    QString oauthAuthorizationUrl;
+    QString oauthTokenUrl;
+    QString oauthClientId;
+    QString oauthScope;
     bool rememberPassword = true;
     QStringList excludePatterns;
     QStringList includePaths;
