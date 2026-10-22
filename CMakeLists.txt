@@ -116,7 +116,7 @@ else()
     message(WARNING "NutSync: QtKeychain not found; passwords cannot be stored securely")
 endif()
 
-if(Qt6NetworkAuth_FOUND)
+if(Qt6NetworkAuth_FOUND AND Qt6_VERSION VERSION_GREATER_EQUAL 6.5)
     set(NUTSYNC_NETWORKAUTH_SOURCES src/ui/oauth2_dialog.cpp src/ui/oauth2_dialog.h)
 else()
     set(NUTSYNC_NETWORKAUTH_SOURCES)
@@ -141,7 +141,7 @@ target_link_libraries(nutsync PRIVATE
     Qt6::Widgets
 )
 
-if(Qt6NetworkAuth_FOUND)
+if(Qt6NetworkAuth_FOUND AND Qt6_VERSION VERSION_GREATER_EQUAL 6.5)
     target_link_libraries(nutsync PRIVATE Qt6::NetworkAuth)
     target_compile_definitions(nutsync PRIVATE NUTSYNC_HAVE_NETWORKAUTH=1)
     message(STATUS "NutSync: OAuth2/PKCE via Qt NetworkAuth")
