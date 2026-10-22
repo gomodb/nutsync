@@ -1606,7 +1606,7 @@ void MainWindow::showConflicts()
     QHash<QString, ConflictRecord> recordsByCopy;
     for (const ConflictRecord &record : records) {
         const QString text = record.copyPath.isEmpty()
-            ? tr("冲突：%1").arg(record.path)
+            ? tr("冲突：%1（无副本，需手动处理）").arg(record.path)
             : tr("冲突：%1（副本：%2）").arg(record.path, record.copyPath);
         auto *item = new QListWidgetItem(text, list);
         item->setData(Qt::UserRole, record.copyPath);

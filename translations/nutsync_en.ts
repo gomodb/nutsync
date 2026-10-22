@@ -521,7 +521,7 @@ Only NutSync's configuration and synchronization baseline are deleted, not local
     </message>
     <message>
       <source>冲突：%1</source>
-      <translation>Conflict: %1</translation>
+      <translation type="vanished">Conflict: %1</translation>
     </message>
     <message>
       <source>副本：%1</source>
@@ -610,6 +610,10 @@ Only NutSync's configuration and synchronization baseline are deleted, not local
     <message>
       <source>选择一个冲突副本，然后使用本地版本或远程版本解决冲突。</source>
       <translation>Select a conflict copy, then resolve it with the local or remote version.</translation>
+    </message>
+    <message>
+      <source>冲突：%1（无副本，需手动处理）</source>
+      <translation>Conflict: %1 (no copy; manual action required)</translation>
     </message>
     <message>
       <source>冲突：%1（副本：%2）</source>
@@ -1065,6 +1069,61 @@ Only effective for the current user; unchecking will delete the entry.</translat
     </message>
   </context>
   <context>
+    <name>NutSync::OAuth2Dialog</name>
+    <message>
+      <source>OAuth2 登录</source>
+      <translation type="unfinished" />
+    </message>
+    <message>
+      <source>使用授权码 + PKCE 登录。令牌只写入此同步对的密码/钥匙串字段，不会写入配置文件。</source>
+      <translation type="unfinished" />
+    </message>
+    <message>
+      <source>授权地址</source>
+      <translation type="unfinished" />
+    </message>
+    <message>
+      <source>令牌地址</source>
+      <translation type="unfinished" />
+    </message>
+    <message>
+      <source>客户端 ID</source>
+      <translation type="unfinished" />
+    </message>
+    <message>
+      <source>Scope</source>
+      <translation type="unfinished" />
+    </message>
+    <message>
+      <source>在浏览器中登录</source>
+      <translation type="unfinished" />
+    </message>
+    <message>
+      <source>授权服务器没有返回 access token</source>
+      <translation type="unfinished" />
+    </message>
+    <message>
+      <source>登录成功</source>
+      <translation type="unfinished" />
+    </message>
+    <message>
+      <source>OAuth2 授权失败</source>
+      <translation type="unfinished" />
+    </message>
+    <message>
+      <source>此构建未启用 Qt NetworkAuth，无法执行 OAuth2 登录。</source>
+      <translation type="unfinished" />
+    </message>
+    <message>
+      <source>请填写有效的授权地址、令牌地址和客户端 ID。</source>
+      <translation type="unfinished" />
+    </message>
+    <message>
+      <source>正在打开浏览器，请在浏览器中完成登录…</source>
+      <translation type="unfinished" />
+    </message>
+  </context>
+  <context>
     <name>NutSync::PairDialog</name>
     <message>
       <source>连接成功，WebDAV 目录可访问。</source>
@@ -1141,6 +1200,14 @@ Only effective for the current user; unchecking will delete the entry.</translat
     <message>
       <source>认证方式</source>
       <translation>Authentication</translation>
+    </message>
+    <message>
+      <source>OAuth2 登录…</source>
+      <translation type="unfinished" />
+    </message>
+    <message>
+      <source>使用授权码 + PKCE 获取 Bearer Token</source>
+      <translation type="unfinished" />
     </message>
     <message>
       <source>留空表示匿名访问</source>
