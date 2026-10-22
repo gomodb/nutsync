@@ -238,6 +238,49 @@ jobs:
       - name: Test
         run: ctest --test-dir build --output-on-failure
 
+  coverage:
+    name: Coverage / Ubuntu 24.04
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            build-essential cmake ninja-build python3 gcovr \
+            qt6-base-dev qt6-tools-dev qt6-tools-dev-tools \
+            libqt6sql6-sqlite
+
+      - name: Configure with coverage
+        run: |
+          cmake -S . -B build -G Ninja \
+            -DCMAKE_BUILD_TYPE=Debug \
+            -DNUTSYNC_ENABLE_COVERAGE=ON \
+            -DBUILD_TESTING=ON
+
+      - name: Build
+        run: cmake --build build --parallel
+
+      - name: Test
+        run: ctest --test-dir build --output-on-failure
+
+      - name: Generate coverage report
+        run: |
+          gcovr -r . --filter 'src/' \
+            --xml-pretty --output coverage.xml \
+            --html-details coverage.html
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v7
+        with:
+          name: coverage-report
+          path: |
+            coverage.xml
+            coverage.html
+          if-no-files-found: error
+
   sanitizers:
     name: ASan + UBSan
     runs-on: ubuntu-24.04

@@ -17,6 +17,12 @@ set(CMAKE_INCLUDE_CURRENT_DIR ON)
 include(GNUInstallDirs)
 include(CTest)
 
+option(NUTSYNC_ENABLE_COVERAGE "Build with GCC/Clang coverage instrumentation" OFF)
+if(NUTSYNC_ENABLE_COVERAGE AND CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+    add_compile_options(--coverage -O0 -g)
+    add_link_options(--coverage)
+endif()
+
 if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
     add_compile_options(-Wall -Wextra -Wpedantic)
 endif()
