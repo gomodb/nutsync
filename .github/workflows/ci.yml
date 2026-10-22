@@ -283,6 +283,59 @@ jobs:
           path: clang-tidy.log
           if-no-files-found: error
 
+  nextcloud-integration:
+    name: Nextcloud integration / Ubuntu 24.04
+    runs-on: ubuntu-24.04
+    services:
+      nextcloud:
+        image: nextcloud:apache
+        ports:
+          - 8080:80
+        env:
+          SQLITE_DATABASE: nextcloud.db
+          NEXTCLOUD_ADMIN_USER: admin
+          NEXTCLOUD_ADMIN_PASSWORD: nut-sync-test-password
+          NEXTCLOUD_TRUSTED_DOMAINS: 127.0.0.1 localhost
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            build-essential cmake ninja-build python3 curl \
+            qt6-base-dev qt6-tools-dev qt6-tools-dev-tools \
+            libqt6sql6-sqlite
+
+      - name: Configure
+        run: |
+          cmake -S . -B build -G Ninja \
+            -DCMAKE_BUILD_TYPE=Debug \
+            -DBUILD_TESTING=ON
+
+      - name: Build
+        run: cmake --build build --parallel
+
+      - name: Wait for Nextcloud
+        run: |
+          for attempt in $(seq 1 90); do
+            if curl -fsS http://127.0.0.1:8080/status.php | grep -q '"installed":true'; then
+              echo "Nextcloud ready"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "Nextcloud did not become ready"
+          exit 1
+
+      - name: Run WebDAV integration test
+        env:
+          NUTSYNC_NEXTCLOUD_URL: http://127.0.0.1:8080/remote.php/dav/files/admin/
+          NUTSYNC_NEXTCLOUD_USER: admin
+          NUTSYNC_NEXTCLOUD_PASSWORD: nut-sync-test-password
+        run: ctest --test-dir build --output-on-failure
+
   coverage:
     name: Coverage / Ubuntu 24.04
     runs-on: ubuntu-24.04

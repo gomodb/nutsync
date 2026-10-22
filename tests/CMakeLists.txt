@@ -4,6 +4,8 @@ add_executable(nutsync_tests
     test_autostart.h
     test_config_store.cpp
     test_config_store.h
+    test_nextcloud.cpp
+    test_nextcloud.h
     test_diagnostics.cpp
     test_diagnostics.h
     test_conflict_resolver.cpp
