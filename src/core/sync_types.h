@@ -106,6 +106,7 @@ struct SyncPair
     QString clientKeyPath;
     bool chunkedUpload = false;
     int chunkSizeMb = 10;
+    bool detectNameCollisions = true;
     bool rememberPassword = true;
     QStringList excludePatterns;
     QStringList includePaths;

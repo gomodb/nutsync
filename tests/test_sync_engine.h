@@ -13,6 +13,8 @@ private slots:
     void selectiveSync();
     void parallelTransfers();
     void detectsLocalRename();
+    void detectsNameCaseCollisions();
+    void detectsCrossSideNameCollisions();
     void oneWayModes();
     void detectsSubsequentChanges();
     void sameContentMtimeChangeDoesNotUpload();

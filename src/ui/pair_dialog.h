@@ -64,6 +64,7 @@ private:
     QCheckBox *m_paused = nullptr;
     QCheckBox *m_chunkedUpload = nullptr;
     QSpinBox *m_chunkSize = nullptr;
+    QCheckBox *m_detectNameCollisions = nullptr;
     QCheckBox *m_syncOnStartup = nullptr;
     QCheckBox *m_watchLocalChanges = nullptr;
     QCheckBox *m_syncDeletions = nullptr;

@@ -58,6 +58,7 @@ PairDialog::PairDialog(const SyncPair &pair, bool credentialsAvailable, QWidget 
     m_clientKey->setText(pair.clientKeyPath);
     m_chunkedUpload->setChecked(pair.chunkedUpload);
     m_chunkSize->setValue(pair.chunkSizeMb);
+    m_detectNameCollisions->setChecked(pair.detectNameCollisions);
     m_password->setText(pair.password);
     m_rememberPassword->setChecked(pair.rememberPassword && credentialsAvailable);
     m_excludes->setPlainText(pair.excludePatterns.join(QLatin1Char('\n')));
@@ -210,6 +211,11 @@ void PairDialog::buildUi(bool credentialsAvailable)
     m_chunkSize->setValue(10);
     form->addRow(QString(), m_chunkedUpload);
     form->addRow(tr("分块大小"), m_chunkSize);
+    m_detectNameCollisions = new QCheckBox(tr("拒绝大小写/Unicode 名称冲突"), this);
+    m_detectNameCollisions->setChecked(true);
+    m_detectNameCollisions->setToolTip(
+        tr("发现仅在大小写或 Unicode 规范化后相同的路径时停止同步，避免在大小写不敏感服务器上覆盖文件。"));
+    form->addRow(QString(), m_detectNameCollisions);
 
     connect(browseCert, &QPushButton::clicked, this, [this]() {
         const QString path = QFileDialog::getOpenFileName(
@@ -579,6 +585,7 @@ SyncPair PairDialog::syncPair() const
     pair.clientKeyPath = m_clientKey->text().trimmed();
     pair.chunkedUpload = m_chunkedUpload->isChecked();
     pair.chunkSizeMb = m_chunkSize->value();
+    pair.detectNameCollisions = m_detectNameCollisions->isChecked();
     pair.username = m_username->text().trimmed();
     pair.password = m_password->text();
     if (ok && (!url.userName().isEmpty() || !url.password().isEmpty())) {

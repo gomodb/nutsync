@@ -263,6 +263,32 @@ void TestSyncEngine::oneWayModes()
     QVERIFY(remoteToLocal.existsLocal(QStringLiteral("local.txt")));
 }
 
+void TestSyncEngine::detectsNameCaseCollisions()
+{
+    Harness harness;
+    QVERIFY(harness.writeLocal(QStringLiteral("File.txt"), "upper"));
+    QVERIFY(harness.writeLocal(QStringLiteral("file.txt"), "lower"));
+    const SyncSummary summary = harness.sync(ConflictPolicy::KeepBoth, {}, true);
+    QVERIFY(!summary.success);
+    QVERIFY2(summary.message.contains(QStringLiteral("名称冲突")),
+             qPrintable(harness.diagnostics(summary)));
+    QVERIFY(!harness.existsRemote(QStringLiteral("File.txt")));
+    QVERIFY(!harness.existsRemote(QStringLiteral("file.txt")));
+}
+
+void TestSyncEngine::detectsCrossSideNameCollisions()
+{
+    Harness harness;
+    QVERIFY(harness.writeLocal(QStringLiteral("File.txt"), "local"));
+    QVERIFY(harness.writeRemote(QStringLiteral("file.txt"), "remote"));
+    const SyncSummary summary = harness.sync(ConflictPolicy::KeepBoth, {}, true);
+    QVERIFY(!summary.success);
+    QVERIFY2(summary.message.contains(QStringLiteral("名称冲突")),
+             qPrintable(harness.diagnostics(summary)));
+    QCOMPARE(harness.readLocal(QStringLiteral("File.txt")), QByteArray("local"));
+    QCOMPARE(harness.readRemote(QStringLiteral("file.txt")), QByteArray("remote"));
+}
+
 void TestSyncEngine::detectsLocalRename()
 {
     Harness harness;

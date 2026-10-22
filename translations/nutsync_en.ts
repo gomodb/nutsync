@@ -1183,6 +1183,14 @@ Only effective for the current user; unchecking will delete the entry.</translat
       <translation>Chunk size</translation>
     </message>
     <message>
+      <source>拒绝大小写/Unicode 名称冲突</source>
+      <translation>Reject case/Unicode name collisions</translation>
+    </message>
+    <message>
+      <source>发现仅在大小写或 Unicode 规范化后相同的路径时停止同步，避免在大小写不敏感服务器上覆盖文件。</source>
+      <translation>Stop syncing when paths differ only by case or Unicode normalization, avoiding overwrites on case-insensitive servers.</translation>
+    </message>
+    <message>
       <source>选择客户端证书</source>
       <translation>Select client certificate</translation>
     </message>
@@ -1591,6 +1599,14 @@ Projects/notes.md</translation>
     <message>
       <source>操作成功，但写入同步状态失败：%1</source>
       <translation>The operation was successful, but writing synchronization status failed: %1</translation>
+    </message>
+    <message>
+      <source>检测到大小写或 Unicode 规范化名称冲突，已停止同步以避免覆盖：
+%1
+请在“编辑同步对”中重命名冲突项，或关闭名称冲突检测。</source>
+      <translation>Detected case or Unicode normalization name collisions; sync stopped to avoid overwrites:
+%1
+Rename the conflicting items in the sync-pair editor, or disable name-collision detection.</translation>
     </message>
     <message>
       <source>远程条目类型在同步期间发生了变化</source>

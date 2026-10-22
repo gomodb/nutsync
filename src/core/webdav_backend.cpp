@@ -734,6 +734,17 @@ bool WebDavBackend::scan(QList<RemoteEntry> *entries, QString *error,
             *error = QObject::tr("WebDAV 地址无效");
         return false;
     }
+    const auto inScope = [this](const QString &path) {
+        if (m_options.includePaths.isEmpty())
+            return true;
+        for (const QString &include : m_options.includePaths) {
+            if (PathUtils::isSameOrChild(path, include)
+                || PathUtils::isSameOrChild(include, path)) {
+                return true;
+            }
+        }
+        return false;
+    };
     QStringList directories{QString()};
     QSet<QString> seen;
     for (int index = 0; index < directories.size(); ++index) {
@@ -755,7 +766,7 @@ bool WebDavBackend::scan(QList<RemoteEntry> *entries, QString *error,
             return false;
         }
         for (const RemoteEntry &entry : children) {
-            if (entry.path.isEmpty() || seen.contains(entry.path))
+            if (entry.path.isEmpty() || seen.contains(entry.path) || !inScope(entry.path))
                 continue;
             seen.insert(entry.path);
             entries->append(entry);

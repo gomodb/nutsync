@@ -176,6 +176,7 @@ std::unique_ptr<RemoteBackend> SyncEngine::createBackend(QString *error) const
     options.clientKeyPath = m_pair.clientKeyPath;
     options.chunkedUpload = m_pair.chunkedUpload;
     options.chunkSizeMb = m_pair.chunkSizeMb;
+    options.includePaths = m_pair.includePaths;
     options.retryCount = m_retryCount;
     options.retryBaseDelayMs = m_retryBaseDelayMs;
     options.retryMaxDelayMs = m_retryMaxDelayMs;
@@ -484,8 +485,15 @@ void SyncEngine::run()
             }
             emitLog(tr("选择性同步：远程范围 %1 个条目").arg(remoteSnapshot.size()));
         }
-        emitLog(tr("远程扫描完成：%1 个条目").arg(remoteSnapshot.size()));
         m_remoteSnapshot = remoteSnapshot;
+        if (m_pair.detectNameCollisions) {
+            QString collisionError;
+            if (!detectNameCollisions(&collisionError)) {
+                fatalError = collisionError;
+                break;
+            }
+        }
+        emitLog(tr("远程扫描完成：%1 个条目").arg(remoteSnapshot.size()));
         if (m_cancelled.loadRelaxed()) {
             summary.cancelled = true;
             break;
@@ -661,6 +669,9 @@ bool SyncEngine::scanLocalDirectory(const QString &relativeDir, QMap<QString, Lo
             *error = tr("同步已取消");
         return false;
     }
+
+    if (!relativeDir.isEmpty() && !includedInScope(relativeDir))
+        return true;
 
     const QString absoluteDir = PathUtils::localFilePath(m_pair.localPath, relativeDir);
     QDir dir(absoluteDir);
@@ -950,6 +961,36 @@ bool SyncEngine::doDownload(const SyncAction &action, const QString &remotePath,
         return false;
     Q_UNUSED(action)
     return true;
+}
+
+bool SyncEngine::detectNameCollisions(QString *error) const
+{
+    QHash<QString, QSet<QString>> groups;
+    auto add = [&groups](const QString &path) {
+        groups[PathUtils::normalizedCollisionKey(path)].insert(path);
+    };
+    for (auto it = m_localSnapshot.constBegin(); it != m_localSnapshot.constEnd(); ++it)
+        add(it.key());
+    for (auto it = m_remoteSnapshot.constBegin(); it != m_remoteSnapshot.constEnd(); ++it)
+        add(it.key());
+
+    QStringList collisions;
+    for (auto it = groups.constBegin(); it != groups.constEnd(); ++it) {
+        if (it.value().size() <= 1)
+            continue;
+        QStringList paths = it.value().values();
+        paths.sort();
+        collisions.append(paths.join(QStringLiteral("  ⇄  ")));
+    }
+    if (collisions.isEmpty())
+        return true;
+    collisions.sort();
+    if (error) {
+        *error = tr("检测到大小写或 Unicode 规范化名称冲突，已停止同步以避免覆盖：\n%1\n"
+                    "请在“编辑同步对”中重命名冲突项，或关闭名称冲突检测。")
+                     .arg(collisions.join(QLatin1Char('\n')));
+    }
+    return false;
 }
 
 void SyncEngine::detectLocalMoves(SyncPlan *plan, const QHash<QString, StateEntry> &state) const

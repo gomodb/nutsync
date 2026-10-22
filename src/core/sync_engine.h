@@ -68,6 +68,7 @@ private:
     bool includedInScope(const QString &path) const;
     void filterActionsForMode(SyncPlan *plan) const;
     void detectLocalMoves(SyncPlan *plan, const QHash<QString, StateEntry> &state) const;
+    bool detectNameCollisions(QString *error) const;
     bool moveRemote(const SyncAction &action, QString *error);
     std::unique_ptr<RemoteBackend> createBackend(QString *error) const;
     bool prepareTransferJob(const SyncAction &action, int index, TransferJob *job, bool *skipped,

@@ -177,4 +177,9 @@ QString nativePath(const QString &path)
     return QDir::toNativeSeparators(path);
 }
 
+QString normalizedCollisionKey(const QString &path)
+{
+    return path.normalized(QString::NormalizationForm_C).toCaseFolded();
+}
+
 } // namespace NutSync::PathUtils

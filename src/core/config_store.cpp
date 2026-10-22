@@ -36,6 +36,7 @@ QJsonObject pairToJson(const SyncPair &pair)
     obj.insert(QStringLiteral("clientKeyPath"), pair.clientKeyPath);
     obj.insert(QStringLiteral("chunkedUpload"), pair.chunkedUpload);
     obj.insert(QStringLiteral("chunkSizeMb"), pair.chunkSizeMb);
+    obj.insert(QStringLiteral("detectNameCollisions"), pair.detectNameCollisions);
     obj.insert(QStringLiteral("rememberPassword"), pair.rememberPassword);
     obj.insert(QStringLiteral("excludePatterns"), QJsonArray::fromStringList(pair.excludePatterns));
     obj.insert(QStringLiteral("includePaths"), QJsonArray::fromStringList(pair.includePaths));
@@ -81,6 +82,8 @@ SyncPair pairFromJson(const QJsonObject &obj)
     pair.clientKeyPath = obj.value(QStringLiteral("clientKeyPath")).toString();
     pair.chunkedUpload = obj.value(QStringLiteral("chunkedUpload")).toBool(false);
     pair.chunkSizeMb = qBound(1, obj.value(QStringLiteral("chunkSizeMb")).toInt(10), 100);
+    pair.detectNameCollisions =
+        obj.value(QStringLiteral("detectNameCollisions")).toBool(true);
     QUrl remoteUrl(pair.remoteUrl);
     if (!remoteUrl.userName().isEmpty() || !remoteUrl.password().isEmpty()) {
         if (pair.username.isEmpty())

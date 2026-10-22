@@ -18,6 +18,7 @@ QString conflictRelativePath(const QString &relativePath, const QDateTime &times
                              int attempt = 0);
 QDateTime parseHttpDate(const QString &value);
 QString normalizeEtag(const QString &value);
+QString normalizedCollisionKey(const QString &path);
 QString formatBytes(qint64 bytes);
 QString nativePath(const QString &path);
 
