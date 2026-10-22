@@ -16,6 +16,8 @@
 #include <QFileInfo>
 #include <QFileInfo>
 #include <QNetworkReply>
+#include <QThreadPool>
+#include <QtConcurrent>
 #include <QAuthenticator>
 #include <QBuffer>
 #include <QSslCertificate>
@@ -734,6 +736,7 @@ bool WebDavBackend::scan(QList<RemoteEntry> *entries, QString *error,
             *error = QObject::tr("WebDAV 地址无效");
         return false;
     }
+
     const auto inScope = [this](const QString &path) {
         if (m_options.includePaths.isEmpty())
             return true;
@@ -745,34 +748,62 @@ bool WebDavBackend::scan(QList<RemoteEntry> *entries, QString *error,
         }
         return false;
     };
-    QStringList directories{QString()};
+
+    struct DirectoryScanResult
+    {
+        QString path;
+        QList<RemoteEntry> entries;
+        bool success = false;
+        QString error;
+        RemoteErrorClass errorClass = RemoteErrorClass::None;
+    };
+
+    QStringList level{QString()};
     QSet<QString> seen;
-    for (int index = 0; index < directories.size(); ++index) {
+    QThreadPool pool;
+    pool.setMaxThreadCount(4);
+    while (!level.isEmpty()) {
         if (cancelled && cancelled()) {
             m_lastErrorClass = RemoteErrorClass::Cancelled;
             if (error)
                 *error = QObject::tr("同步已取消");
             return false;
         }
-        const QString directory = directories.at(index);
-        QList<RemoteEntry> children;
-        QString listError;
-        if (!listDirectory(directory, &children, &listError, cancelled)) {
-            if (error) {
-                *error = directory.isEmpty()
-                    ? listError
-                    : QObject::tr("列远程目录“%1”失败：%2").arg(directory, listError);
+        level.sort();
+        QFuture<DirectoryScanResult> future =
+            QtConcurrent::mapped(&pool, level, [this, cancelled](const QString &directory) {
+                DirectoryScanResult result;
+                result.path = directory;
+                WebDavBackend worker(m_options);
+                result.success =
+                    worker.listDirectory(directory, &result.entries, &result.error, cancelled);
+                result.errorClass = worker.lastErrorClass();
+                return result;
+            });
+        future.waitForFinished();
+        const QList<DirectoryScanResult> results = future.results();
+        QStringList nextLevel;
+        for (const DirectoryScanResult &result : results) {
+            if (!result.success) {
+                m_lastErrorClass = result.errorClass;
+                if (error) {
+                    *error = result.path.isEmpty()
+                        ? result.error
+                        : QObject::tr("列远程目录“%1”失败：%2").arg(result.path, result.error);
+                }
+                return false;
             }
-            return false;
+            for (const RemoteEntry &entry : result.entries) {
+                if (entry.path.isEmpty() || seen.contains(entry.path) || !inScope(entry.path))
+                    continue;
+                seen.insert(entry.path);
+                entries->append(entry);
+                if (entry.type == EntryType::Directory)
+                    nextLevel.append(entry.path);
+            }
         }
-        for (const RemoteEntry &entry : children) {
-            if (entry.path.isEmpty() || seen.contains(entry.path) || !inScope(entry.path))
-                continue;
-            seen.insert(entry.path);
-            entries->append(entry);
-            if (entry.type == EntryType::Directory)
-                directories.append(entry.path);
-        }
+        nextLevel.removeDuplicates();
+        level = nextLevel;
     }
     return true;
 }
