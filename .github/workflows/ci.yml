@@ -238,6 +238,51 @@ jobs:
       - name: Test
         run: ctest --test-dir build --output-on-failure
 
+  clang-tidy:
+    name: clang-tidy / Ubuntu 24.04
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            build-essential cmake ninja-build python3 clang-tidy \
+            qt6-base-dev qt6-tools-dev qt6-tools-dev-tools \
+            libqt6sql6-sqlite
+
+      - name: Configure for clang-tidy
+        run: |
+          cmake -S . -B build -G Ninja \
+            -DCMAKE_BUILD_TYPE=Debug \
+            -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
+            -DBUILD_TESTING=OFF
+          sed -i 's/ -mno-direct-extern-access//g' build/compile_commands.json
+
+      - name: Run clang-tidy
+        run: |
+          : > clang-tidy.log
+          for file in src/core/*.cpp; do
+            clang-tidy -p build \
+              -checks='-*,bugprone-*,performance-*' \
+              "$file" >> clang-tidy.log 2>&1 || true
+          done
+          if grep -q 'clang-diagnostic-error' clang-tidy.log; then
+            cat clang-tidy.log
+            exit 1
+          fi
+          echo "clang-tidy completed"
+
+      - name: Upload clang-tidy report
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: clang-tidy-report
+          path: clang-tidy.log
+          if-no-files-found: error
+
   coverage:
     name: Coverage / Ubuntu 24.04
     runs-on: ubuntu-24.04

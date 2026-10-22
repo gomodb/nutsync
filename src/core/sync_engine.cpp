@@ -250,14 +250,24 @@ void SyncEngine::executeTransferBatch(const QList<TransferJob> &jobs, SyncSummar
     pool.setMaxThreadCount(qMin(m_parallelTransfers, jobs.size()));
     std::atomic<qint64> transferred{0};
     std::atomic<int> finished{0};
-    QFuture<TransferOutcome> future =
-        QtConcurrent::mapped(&pool, jobs, [this, &transferred, &finished](const TransferJob &job) {
+    QThreadStorage<std::unique_ptr<RemoteBackend> *> backendStorage;
+    QFuture<TransferOutcome> future = QtConcurrent::mapped(
+        &pool, jobs, [this, &transferred, &finished, &backendStorage](const TransferJob &job) {
             TransferOutcome outcome;
             outcome.index = job.index;
             QString error;
-            std::unique_ptr<RemoteBackend> backend = createBackend(&error);
+            if (!backendStorage.localData()) {
+                auto created =
+                    std::make_unique<std::unique_ptr<RemoteBackend>>(createBackend(&error));
+                if (!*created) {
+                    outcome.error = error;
+                    return outcome;
+                }
+                backendStorage.setLocalData(created.release());
+            }
+            RemoteBackend *backend = backendStorage.localData()->get();
             if (!backend) {
-                outcome.error = error;
+                outcome.error = tr("无法创建远程后端");
                 return outcome;
             }
             backend->setTransferProgress([&transferred](qint64 received, qint64) {
