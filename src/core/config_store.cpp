@@ -82,8 +82,7 @@ SyncPair pairFromJson(const QJsonObject &obj)
     pair.clientKeyPath = obj.value(QStringLiteral("clientKeyPath")).toString();
     pair.chunkedUpload = obj.value(QStringLiteral("chunkedUpload")).toBool(false);
     pair.chunkSizeMb = qBound(1, obj.value(QStringLiteral("chunkSizeMb")).toInt(10), 100);
-    pair.detectNameCollisions =
-        obj.value(QStringLiteral("detectNameCollisions")).toBool(true);
+    pair.detectNameCollisions = obj.value(QStringLiteral("detectNameCollisions")).toBool(true);
     QUrl remoteUrl(pair.remoteUrl);
     if (!remoteUrl.userName().isEmpty() || !remoteUrl.password().isEmpty()) {
         if (pair.username.isEmpty())

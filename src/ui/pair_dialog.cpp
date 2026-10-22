@@ -214,7 +214,8 @@ void PairDialog::buildUi(bool credentialsAvailable)
     m_detectNameCollisions = new QCheckBox(tr("拒绝大小写/Unicode 名称冲突"), this);
     m_detectNameCollisions->setChecked(true);
     m_detectNameCollisions->setToolTip(
-        tr("发现仅在大小写或 Unicode 规范化后相同的路径时停止同步，避免在大小写不敏感服务器上覆盖文件。"));
+        tr("发现仅在大小写或 Unicode "
+           "规范化后相同的路径时停止同步，避免在大小写不敏感服务器上覆盖文件。"));
     form->addRow(QString(), m_detectNameCollisions);
 
     connect(browseCert, &QPushButton::clicked, this, [this]() {
