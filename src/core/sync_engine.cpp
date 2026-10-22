@@ -110,6 +110,11 @@ void SyncEngine::setParallelTransfers(int count)
     m_parallelTransfers = qBound(1, count, 4);
 }
 
+void SyncEngine::setScanConcurrency(int count)
+{
+    m_scanConcurrency = qBound(1, count, 8);
+}
+
 void SyncEngine::requestCancel()
 {
     m_cancelled.storeRelaxed(1);
@@ -177,6 +182,7 @@ std::unique_ptr<RemoteBackend> SyncEngine::createBackend(QString *error) const
     options.chunkedUpload = m_pair.chunkedUpload;
     options.chunkSizeMb = m_pair.chunkSizeMb;
     options.includePaths = m_pair.includePaths;
+    options.scanConcurrency = m_scanConcurrency;
     options.retryCount = m_retryCount;
     options.retryBaseDelayMs = m_retryBaseDelayMs;
     options.retryMaxDelayMs = m_retryMaxDelayMs;

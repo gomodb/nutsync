@@ -761,7 +761,7 @@ bool WebDavBackend::scan(QList<RemoteEntry> *entries, QString *error,
     QStringList level{QString()};
     QSet<QString> seen;
     QThreadPool pool;
-    pool.setMaxThreadCount(4);
+    pool.setMaxThreadCount(qBound(1, m_options.scanConcurrency, 8));
     while (!level.isEmpty()) {
         if (cancelled && cancelled()) {
             m_lastErrorClass = RemoteErrorClass::Cancelled;

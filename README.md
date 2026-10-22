@@ -268,7 +268,7 @@ Network options are available in **Preferences → Network**:
 - **Network recovery**: optionally start a sync of all enabled pairs when the network becomes online again.
 - **Transfer speed limit**: optional per-transfer byte limit for downloads and uploads; `0` means unlimited.
 - **Parallel transfers**: 1–4 concurrent file uploads/downloads with live aggregate byte progress, while state writes remain serialized.
-- **Parallel remote scan**: WebDAV directory listings are fetched in concurrent BFS levels, with selective-sync pruning.
+- **Parallel remote scan**: WebDAV directory listings are fetched in concurrent BFS levels, with configurable concurrency and selective-sync pruning.
 - **Move/rename detection**: a local rename with unchanged size/mtime is sent as a WebDAV MOVE instead of delete+re-upload.
 
 Proxy and CA changes take effect after restart. The log level is applied immediately.

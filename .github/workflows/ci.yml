@@ -261,7 +261,16 @@ jobs:
             -DBUILD_TESTING=OFF
           sed -i 's/ -mno-direct-extern-access//g' build/compile_commands.json
 
-      - name: Run clang-tidy
+      - name: Gate high-confidence checks
+        run: |
+          for file in src/core/*.cpp; do
+            clang-tidy -p build \
+              -checks='-*,bugprone-use-after-move' \
+              -warnings-as-errors='bugprone-use-after-move' \
+              "$file"
+          done
+
+      - name: Run clang-tidy report
         run: |
           : > clang-tidy.log
           for file in src/core/*.cpp; do

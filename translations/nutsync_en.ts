@@ -924,6 +924,14 @@ Only NutSync's configuration and synchronization baseline are deleted, not local
       <translation>Concurrent transfers</translation>
     </message>
     <message>
+      <source>远程目录扫描同时进行的 PROPFIND 数量。</source>
+      <translation>Number of simultaneous PROPFIND requests during remote scanning.</translation>
+    </message>
+    <message>
+      <source>并行扫描数</source>
+      <translation>Concurrent directory scans</translation>
+    </message>
+    <message>
       <source>失败重试次数</source>
       <translation>Retry attempts</translation>
     </message>
@@ -1072,55 +1080,55 @@ Only effective for the current user; unchecking will delete the entry.</translat
     <name>NutSync::OAuth2Dialog</name>
     <message>
       <source>OAuth2 登录</source>
-      <translation type="unfinished" />
+      <translation>OAuth2 login</translation>
     </message>
     <message>
       <source>使用授权码 + PKCE 登录。令牌只写入此同步对的密码/钥匙串字段，不会写入配置文件。</source>
-      <translation type="unfinished" />
+      <translation>Sign in with authorization code + PKCE. The token is stored only in this sync pair's password/keychain field, not in the configuration file.</translation>
     </message>
     <message>
       <source>授权地址</source>
-      <translation type="unfinished" />
+      <translation>Authorization URL</translation>
     </message>
     <message>
       <source>令牌地址</source>
-      <translation type="unfinished" />
+      <translation>Token URL</translation>
     </message>
     <message>
       <source>客户端 ID</source>
-      <translation type="unfinished" />
+      <translation>Client ID</translation>
     </message>
     <message>
       <source>Scope</source>
-      <translation type="unfinished" />
+      <translation>Scope</translation>
     </message>
     <message>
       <source>在浏览器中登录</source>
-      <translation type="unfinished" />
+      <translation>Sign in with browser</translation>
     </message>
     <message>
       <source>授权服务器没有返回 access token</source>
-      <translation type="unfinished" />
+      <translation>The authorization server did not return an access token</translation>
     </message>
     <message>
       <source>登录成功</source>
-      <translation type="unfinished" />
+      <translation>Login successful</translation>
     </message>
     <message>
       <source>OAuth2 授权失败</source>
-      <translation type="unfinished" />
+      <translation>OAuth2 authorization failed</translation>
     </message>
     <message>
       <source>此构建未启用 Qt NetworkAuth，无法执行 OAuth2 登录。</source>
-      <translation type="unfinished" />
+      <translation>This build does not include Qt NetworkAuth; OAuth2 login is unavailable.</translation>
     </message>
     <message>
       <source>请填写有效的授权地址、令牌地址和客户端 ID。</source>
-      <translation type="unfinished" />
+      <translation>Enter a valid authorization URL, token URL, and client ID.</translation>
     </message>
     <message>
       <source>正在打开浏览器，请在浏览器中完成登录…</source>
-      <translation type="unfinished" />
+      <translation>Opening the browser. Complete the login there…</translation>
     </message>
   </context>
   <context>
@@ -1203,11 +1211,11 @@ Only effective for the current user; unchecking will delete the entry.</translat
     </message>
     <message>
       <source>OAuth2 登录…</source>
-      <translation type="unfinished" />
+      <translation>OAuth2 login…</translation>
     </message>
     <message>
       <source>使用授权码 + PKCE 获取 Bearer Token</source>
-      <translation type="unfinished" />
+      <translation>Obtain a Bearer token with authorization code + PKCE</translation>
     </message>
     <message>
       <source>留空表示匿名访问</source>

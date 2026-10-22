@@ -2132,6 +2132,11 @@ void MainWindow::openSettings()
     parallelTransfers->setValue(m_config.settings.parallelTransfers);
     parallelTransfers->setToolTip(tr("同时进行的文件上传/下载数量；状态写入仍按顺序执行。"));
     networkForm->addRow(tr("并行传输数"), parallelTransfers);
+    auto *scanConcurrency = new QSpinBox(networkGroup);
+    scanConcurrency->setRange(1, 8);
+    scanConcurrency->setValue(m_config.settings.scanConcurrency);
+    scanConcurrency->setToolTip(tr("远程目录扫描同时进行的 PROPFIND 数量。"));
+    networkForm->addRow(tr("并行扫描数"), scanConcurrency);
     networkForm->addRow(tr("失败重试次数"), retryCount);
     networkForm->addRow(tr("重试最大间隔"), retryDelay);
     layout->addWidget(networkGroup);
@@ -2244,6 +2249,7 @@ void MainWindow::openSettings()
     m_config.settings.retryDelaySeconds = retryDelay->value();
     m_config.settings.transferLimitKbps = transferLimit->value();
     m_config.settings.parallelTransfers = parallelTransfers->value();
+    m_config.settings.scanConcurrency = scanConcurrency->value();
     m_config.settings.notifications = notifications->isChecked();
     m_config.settings.syncOnNetworkRecovery = networkSync->isChecked();
     m_config.settings.closeToTray = closeToTray->isChecked();

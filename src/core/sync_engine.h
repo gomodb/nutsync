@@ -45,6 +45,7 @@ public:
     void setRetryPolicy(int retryCount, int maxDelayMs);
     void setTransferLimit(int kbps);
     void setParallelTransfers(int count);
+    void setScanConcurrency(int count);
     void requestCancel();
     SyncSummary lastSummary() const;
 
@@ -103,6 +104,7 @@ private:
     int m_retryMaxDelayMs = 30000;
     int m_transferLimitKbps = 0;
     int m_parallelTransfers = 1;
+    int m_scanConcurrency = 4;
     QAtomicInt m_cancelled{0};
     QMap<QString, LocalEntry> m_localSnapshot;
     std::unique_ptr<RemoteBackend> m_backend;

@@ -20,6 +20,7 @@ struct WebDavOptions
     bool chunkedUpload = false;
     int chunkSizeMb = 10;
     QStringList includePaths;
+    int scanConcurrency = 4;
     int timeoutMs = 120000;
     int retryCount = 3;
     int retryBaseDelayMs = 500;

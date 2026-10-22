@@ -160,6 +160,7 @@ QJsonObject settingsToJson(const AppSettings &settings)
     obj.insert(QStringLiteral("retryDelaySeconds"), settings.retryDelaySeconds);
     obj.insert(QStringLiteral("transferLimitKbps"), settings.transferLimitKbps);
     obj.insert(QStringLiteral("parallelTransfers"), settings.parallelTransfers);
+    obj.insert(QStringLiteral("scanConcurrency"), settings.scanConcurrency);
     obj.insert(QStringLiteral("notifications"), settings.notifications);
     obj.insert(QStringLiteral("closeToTray"), settings.closeToTray);
     obj.insert(QStringLiteral("autoSyncOnStartup"), settings.autoSyncOnStartup);
@@ -199,6 +200,7 @@ AppSettings settingsFromJson(const QJsonObject &obj)
         qBound(0, obj.value(QStringLiteral("transferLimitKbps")).toInt(0), 102400);
     settings.parallelTransfers =
         qBound(1, obj.value(QStringLiteral("parallelTransfers")).toInt(1), 4);
+    settings.scanConcurrency = qBound(1, obj.value(QStringLiteral("scanConcurrency")).toInt(4), 8);
     settings.notifications = obj.value(QStringLiteral("notifications")).toBool(true);
     settings.closeToTray = obj.value(QStringLiteral("closeToTray")).toBool(true);
     settings.autoSyncOnStartup = obj.value(QStringLiteral("autoSyncOnStartup")).toBool(true);

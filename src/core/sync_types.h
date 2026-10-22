@@ -153,6 +153,7 @@ struct AppSettings
     int retryDelaySeconds = 30;
     int transferLimitKbps = 0;
     int parallelTransfers = 1;
+    int scanConcurrency = 4;
     bool notifications = true;
     bool closeToTray = true;
     bool autoSyncOnStartup = true;

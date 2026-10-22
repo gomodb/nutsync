@@ -120,6 +120,7 @@ void SyncController::startNext()
     engine->setRetryPolicy(m_settings.retryCount, m_settings.retryDelaySeconds * 1000);
     engine->setTransferLimit(m_settings.transferLimitKbps);
     engine->setParallelTransfers(m_settings.parallelTransfers);
+    engine->setScanConcurrency(m_settings.scanConcurrency);
     m_engine = engine;
     connect(engine, &SyncEngine::logMessage, this, [this](const QString &message) {
         emit logMessage(m_currentPairId, message);
