@@ -59,7 +59,9 @@ OAuth2Dialog::OAuth2Dialog(const SyncPair &pair, QWidget *parent)
     m_replyHandler = new QOAuthHttpServerReplyHandler(0, this);
     m_replyHandler->setCallbackHost(QStringLiteral("127.0.0.1"));
     m_oauth->setReplyHandler(m_replyHandler);
+#if QT_VERSION >= QT_VERSION_CHECK(6, 5, 0)
     m_oauth->setPkceMethod(QOAuth2AuthorizationCodeFlow::PkceMethod::S256);
+#endif
     connect(m_oauth, &QOAuth2AuthorizationCodeFlow::granted, this, [this]() {
         m_accessToken = m_oauth->token();
         if (m_accessToken.isEmpty()) {
