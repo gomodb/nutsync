@@ -3,6 +3,7 @@
 #include "core/webdav_backend.h"
 
 #include <QFile>
+#include <algorithm>
 #include <QTemporaryDir>
 #include <QTest>
 #include <QUuid>
@@ -37,7 +38,8 @@ void TestNextcloud::webdavRoundTrip()
     const QString source = local.filePath(QStringLiteral("source.txt"));
     QFile sourceFile(source);
     QVERIFY(sourceFile.open(QIODevice::WriteOnly));
-    QCOMPARE(sourceFile.write("nextcloud integration"), qint64(19));
+    const QByteArray content("nextcloud integration");
+    QCOMPARE(sourceFile.write(content), qint64(content.size()));
     sourceFile.close();
 
     const QString remotePath = directory + QStringLiteral("/source.txt");
