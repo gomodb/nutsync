@@ -15,6 +15,7 @@ private slots:
     void detectsLocalRename();
     void detectsNameCaseCollisions();
     void detectsCrossSideNameCollisions();
+    void detectsRemoteRename();
     void oneWayModes();
     void detectsSubsequentChanges();
     void sameContentMtimeChangeDoesNotUpload();

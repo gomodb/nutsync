@@ -289,6 +289,24 @@ void TestSyncEngine::detectsCrossSideNameCollisions()
     QCOMPARE(harness.readRemote(QStringLiteral("file.txt")), QByteArray("remote"));
 }
 
+void TestSyncEngine::detectsRemoteRename()
+{
+    Harness harness;
+    QVERIFY(harness.writeLocal(QStringLiteral("old.txt"), "rename me"));
+    const SyncSummary first = harness.sync(ConflictPolicy::KeepBoth, {}, true);
+    QVERIFY2(first.success, qPrintable(harness.diagnostics(first)));
+
+    QVERIFY(QFile::rename(harness.remotePath(QStringLiteral("old.txt")),
+                          harness.remotePath(QStringLiteral("new.txt"))));
+    const SyncSummary second = harness.sync(ConflictPolicy::KeepBoth, {}, true);
+    QVERIFY2(second.success, qPrintable(harness.diagnostics(second)));
+    QCOMPARE(second.moved, 1);
+    QCOMPARE(second.downloaded, 0);
+    QCOMPARE(second.deletedLocal, 0);
+    QVERIFY(!harness.existsLocal(QStringLiteral("old.txt")));
+    QCOMPARE(harness.readLocal(QStringLiteral("new.txt")), QByteArray("rename me"));
+}
+
 void TestSyncEngine::detectsLocalRename()
 {
     Harness harness;

@@ -115,6 +115,8 @@ QString actionKindToString(ActionKind kind)
         return QStringLiteral("resolve-conflict");
     case ActionKind::MoveRemote:
         return QStringLiteral("move-remote");
+    case ActionKind::MoveLocal:
+        return QStringLiteral("move-local");
     }
     return QStringLiteral("unknown");
 }

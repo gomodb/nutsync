@@ -1684,6 +1684,22 @@ Projects/notes.md</translation>
 Rename the conflicting items in the sync-pair editor, or disable name-collision detection.</translation>
     </message>
     <message>
+      <source>本地重命名源不存在：%1</source>
+      <translation>Local rename source does not exist: %1</translation>
+    </message>
+    <message>
+      <source>本地重命名目标已存在：%1</source>
+      <translation>Local rename destination already exists: %1</translation>
+    </message>
+    <message>
+      <source>无法创建本地重命名目标目录</source>
+      <translation>Could not create local rename destination directory</translation>
+    </message>
+    <message>
+      <source>本地重命名失败：%1</source>
+      <translation>Local rename failed: %1</translation>
+    </message>
+    <message>
       <source>远程条目类型在同步期间发生了变化</source>
       <translation>The remote entry type changed during synchronization</translation>
     </message>
@@ -1874,6 +1890,10 @@ Rename the conflicting items in the sync-pair editor, or disable name-collision 
     <message>
       <source>移动远程文件</source>
       <translation>Move remote file</translation>
+    </message>
+    <message>
+      <source>本地重命名</source>
+      <translation>Local rename</translation>
     </message>
     <message>
       <source>未知操作类型</source>

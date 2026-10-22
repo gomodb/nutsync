@@ -523,6 +523,8 @@ void SyncEngine::run()
             summary.conflictRecords.append({path, {}});
         if (m_pair.syncMode != SyncMode::RemoteToLocal)
             detectLocalMoves(&plan, state);
+        if (m_pair.syncMode != SyncMode::LocalToRemote)
+            detectRemoteMoves(&plan, state);
         filterActionsForMode(&plan);
         emitLog(tr("同步计划：上传 %1，下载 %2，删除 %3，冲突 %4")
                     .arg(plan.uploads)
@@ -1073,6 +1075,100 @@ void SyncEngine::detectLocalMoves(SyncPlan *plan, const QHash<QString, StateEntr
     plan->actions = ordered;
 }
 
+void SyncEngine::detectRemoteMoves(SyncPlan *plan, const QHash<QString, StateEntry> &state) const
+{
+    QHash<QString, SyncAction> deletes;
+    QHash<QString, SyncAction> downloads;
+    for (const SyncAction &action : std::as_const(plan->actions)) {
+        if (action.kind == ActionKind::DeleteLocal && action.local.type == EntryType::File
+            && !action.remote.isValid()) {
+            deletes.insert(action.path, action);
+        } else if (action.kind == ActionKind::Download && action.remote.type == EntryType::File
+                   && !action.local.isValid()) {
+            downloads.insert(action.path, action);
+        }
+    }
+    QSet<QString> consumedDeletes;
+    QSet<QString> consumedDownloads;
+    QList<SyncAction> moves;
+    for (auto deleteIt = deletes.constBegin(); deleteIt != deletes.constEnd(); ++deleteIt) {
+        const StateEntry previous = state.value(deleteIt.key());
+        if (previous.type != EntryType::File || previous.remoteEtag.isEmpty())
+            continue;
+        for (auto downloadIt = downloads.constBegin(); downloadIt != downloads.constEnd();
+             ++downloadIt) {
+            if (consumedDownloads.contains(downloadIt.key()))
+                continue;
+            const RemoteEntry &candidate = downloadIt.value().remote;
+            if (candidate.size != previous.remoteSize
+                || PathUtils::normalizeEtag(candidate.etag) != previous.remoteEtag) {
+                continue;
+            }
+            SyncAction move;
+            move.kind = ActionKind::MoveLocal;
+            move.path = downloadIt.key();
+            move.fromPath = deleteIt.key();
+            move.local = deleteIt.value().local;
+            move.remote = candidate;
+            move.state = previous;
+            move.stateExists = true;
+            moves.append(move);
+            consumedDeletes.insert(deleteIt.key());
+            consumedDownloads.insert(downloadIt.key());
+            break;
+        }
+    }
+    if (moves.isEmpty())
+        return;
+
+    QList<SyncAction> ordered;
+    int movePosition = -1;
+    for (const SyncAction &action : std::as_const(plan->actions)) {
+        if (consumedDeletes.contains(action.path) && action.kind == ActionKind::DeleteLocal)
+            continue;
+        if (consumedDownloads.contains(action.path) && action.kind == ActionKind::Download)
+            continue;
+        if (movePosition < 0 && action.kind == ActionKind::DeleteLocal)
+            movePosition = ordered.size();
+        ordered.append(action);
+    }
+    if (movePosition < 0)
+        movePosition = ordered.size();
+    for (int index = 0; index < moves.size(); ++index)
+        ordered.insert(movePosition + index, moves.at(index));
+    plan->actions = ordered;
+}
+
+bool SyncEngine::moveLocal(const SyncAction &action, QString *error)
+{
+    const QString source = PathUtils::localFilePath(m_pair.localPath, action.fromPath);
+    const QString destination = PathUtils::localFilePath(m_pair.localPath, action.path);
+    QFileInfo sourceInfo(source);
+    if (!sourceInfo.exists() || !sourceInfo.isFile()) {
+        if (error)
+            *error = tr("本地重命名源不存在：%1").arg(source);
+        return false;
+    }
+    if (QFileInfo::exists(destination)) {
+        if (error)
+            *error = tr("本地重命名目标已存在：%1").arg(destination);
+        return false;
+    }
+    if (!QDir().mkpath(QFileInfo(destination).absolutePath())) {
+        if (error)
+            *error = tr("无法创建本地重命名目标目录");
+        return false;
+    }
+    if (!QFile::rename(source, destination)) {
+        if (error)
+            *error = tr("本地重命名失败：%1").arg(action.path);
+        return false;
+    }
+    if (m_stateStore && !m_stateStore->removePath(m_pair.id, action.fromPath, error))
+        return false;
+    return recordSynced(action.path, error);
+}
+
 bool SyncEngine::moveRemote(const SyncAction &action, QString *error)
 {
     SyncAction previous;
@@ -1120,6 +1216,10 @@ void SyncEngine::filterActionsForMode(SyncPlan *plan) const
             break;
         case ActionKind::MoveRemote:
             if (localToRemote)
+                filtered.append(action);
+            break;
+        case ActionKind::MoveLocal:
+            if (!localToRemote)
                 filtered.append(action);
             break;
         }
@@ -1771,6 +1871,14 @@ bool SyncEngine::executeAction(const SyncAction &action, SyncSummary *summary)
         QString error;
         emitLog(tr("移动远程文件"), action.fromPath + QStringLiteral(" → ") + action.path);
         if (!moveRemote(action, &error))
+            return failed(error);
+        ++summary->moved;
+        return true;
+    }
+    case ActionKind::MoveLocal: {
+        QString error;
+        emitLog(tr("本地重命名"), action.fromPath + QStringLiteral(" → ") + action.path);
+        if (!moveLocal(action, &error))
             return failed(error);
         ++summary->moved;
         return true;

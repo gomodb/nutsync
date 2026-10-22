@@ -176,6 +176,7 @@ enum class ActionKind {
     DeleteLocal,
     ResolveConflict,
     MoveRemote,
+    MoveLocal,
 };
 
 QString actionKindToString(ActionKind kind);

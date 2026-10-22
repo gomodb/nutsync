@@ -269,7 +269,7 @@ Network options are available in **Preferences → Network**:
 - **Transfer speed limit**: optional per-transfer byte limit for downloads and uploads; `0` means unlimited.
 - **Parallel transfers**: 1–4 concurrent file uploads/downloads with live aggregate byte progress, while state writes remain serialized.
 - **Parallel remote scan**: WebDAV directory listings are fetched in concurrent BFS levels, with configurable concurrency and selective-sync pruning.
-- **Move/rename detection**: a local rename with unchanged size/mtime is sent as a WebDAV MOVE instead of delete+re-upload.
+- **Move/rename detection**: local renames use WebDAV MOVE; remote renames with matching ETag/size are applied as local renames instead of delete+re-download.
 
 Proxy and CA changes take effect after restart. The log level is applied immediately.
 
