@@ -16,6 +16,7 @@ private slots:
     void detectsNameCaseCollisions();
     void detectsCrossSideNameCollisions();
     void detectsRemoteRename();
+    void detectsRemoteDirectoryRename();
     void oneWayModes();
     void detectsSubsequentChanges();
     void sameContentMtimeChangeDoesNotUpload();

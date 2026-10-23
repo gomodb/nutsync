@@ -307,6 +307,24 @@ void TestSyncEngine::detectsRemoteRename()
     QCOMPARE(harness.readLocal(QStringLiteral("new.txt")), QByteArray("rename me"));
 }
 
+void TestSyncEngine::detectsRemoteDirectoryRename()
+{
+    Harness harness;
+    QVERIFY(harness.writeLocal(QStringLiteral("old/inside.txt"), "directory rename"));
+    const SyncSummary first = harness.sync(ConflictPolicy::KeepBoth, {}, true);
+    QVERIFY2(first.success, qPrintable(harness.diagnostics(first)));
+
+    QVERIFY(QDir().rename(harness.remotePath(QStringLiteral("old")),
+                          harness.remotePath(QStringLiteral("new"))));
+    const SyncSummary second = harness.sync(ConflictPolicy::KeepBoth, {}, true);
+    QVERIFY2(second.success, qPrintable(harness.diagnostics(second)));
+    QCOMPARE(second.moved, 1);
+    QCOMPARE(second.downloaded, 0);
+    QCOMPARE(second.deletedLocal, 0);
+    QVERIFY(!harness.existsLocal(QStringLiteral("old")));
+    QCOMPARE(harness.readLocal(QStringLiteral("new/inside.txt")), QByteArray("directory rename"));
+}
+
 void TestSyncEngine::detectsLocalRename()
 {
     Harness harness;

@@ -71,6 +71,7 @@ private:
     void filterActionsForMode(SyncPlan *plan) const;
     void detectLocalMoves(SyncPlan *plan, const QHash<QString, StateEntry> &state) const;
     void detectRemoteMoves(SyncPlan *plan, const QHash<QString, StateEntry> &state) const;
+    void detectRemoteDirectoryMoves(SyncPlan *plan, const QHash<QString, StateEntry> &state) const;
     bool detectNameCollisions(QString *error) const;
     bool moveRemote(const SyncAction &action, QString *error);
     bool moveLocal(const SyncAction &action, QString *error);

@@ -535,8 +535,10 @@ void SyncEngine::run()
             summary.conflictRecords.append({path, {}});
         if (m_pair.syncMode != SyncMode::RemoteToLocal)
             detectLocalMoves(&plan, state);
-        if (m_pair.syncMode != SyncMode::LocalToRemote)
+        if (m_pair.syncMode != SyncMode::LocalToRemote) {
+            detectRemoteDirectoryMoves(&plan, state);
             detectRemoteMoves(&plan, state);
+        }
         filterActionsForMode(&plan);
         emitLog(tr("同步计划：上传 %1，下载 %2，删除 %3，冲突 %4")
                     .arg(plan.uploads)
@@ -1087,6 +1089,111 @@ void SyncEngine::detectLocalMoves(SyncPlan *plan, const QHash<QString, StateEntr
     plan->actions = ordered;
 }
 
+void SyncEngine::detectRemoteDirectoryMoves(SyncPlan *plan,
+                                            const QHash<QString, StateEntry> &state) const
+{
+    QHash<QString, SyncAction> oldDirectories;
+    QHash<QString, SyncAction> newDirectories;
+    for (const SyncAction &action : std::as_const(plan->actions)) {
+        if (action.kind == ActionKind::DeleteLocal && action.local.type == EntryType::Directory
+            && !action.remote.isValid()) {
+            oldDirectories.insert(action.path, action);
+        } else if (action.kind == ActionKind::CreateLocalDir
+                   && action.remote.type == EntryType::Directory && !action.local.isValid()) {
+            newDirectories.insert(action.path, action);
+        }
+    }
+    QSet<QString> consumedOld;
+    QSet<QString> consumedNew;
+    QList<SyncAction> moves;
+    for (auto oldIt = oldDirectories.constBegin(); oldIt != oldDirectories.constEnd(); ++oldIt) {
+        const StateEntry previous = state.value(oldIt.key());
+        if (previous.type != EntryType::Directory)
+            continue;
+        for (auto newIt = newDirectories.constBegin(); newIt != newDirectories.constEnd();
+             ++newIt) {
+            if (consumedNew.contains(newIt.key()))
+                continue;
+            const QString oldPath = oldIt.key();
+            const QString newPath = newIt.key();
+            QSet<QString> remoteChildren;
+            for (auto remoteIt = m_remoteSnapshot.constBegin();
+                 remoteIt != m_remoteSnapshot.constEnd(); ++remoteIt) {
+                if (remoteIt.key() != newPath
+                    && PathUtils::isSameOrChild(remoteIt.key(), newPath)) {
+                    remoteChildren.insert(remoteIt.key().mid(newPath.size() + 1));
+                }
+            }
+            int matched = 0;
+            bool match = true;
+            for (auto stateIt = state.constBegin(); stateIt != state.constEnd(); ++stateIt) {
+                if (stateIt.key() == oldPath || !PathUtils::isSameOrChild(stateIt.key(), oldPath)) {
+                    continue;
+                }
+                const QString relative = stateIt.key().mid(oldPath.size() + 1);
+                const auto remoteIt =
+                    m_remoteSnapshot.constFind(newPath + QLatin1Char('/') + relative);
+                if (remoteIt == m_remoteSnapshot.constEnd()
+                    || remoteIt.value().type != stateIt.value().type) {
+                    match = false;
+                    break;
+                }
+                if (stateIt.value().type == EntryType::File
+                    && (remoteIt.value().size != stateIt.value().remoteSize
+                        || PathUtils::normalizeEtag(remoteIt.value().etag)
+                            != stateIt.value().remoteEtag)) {
+                    match = false;
+                    break;
+                }
+                if (!remoteChildren.contains(relative)) {
+                    match = false;
+                    break;
+                }
+                ++matched;
+            }
+            if (!match || matched != remoteChildren.size())
+                continue;
+            SyncAction move;
+            move.kind = ActionKind::MoveLocal;
+            move.path = newPath;
+            move.fromPath = oldPath;
+            move.local = oldIt.value().local;
+            move.remote = newIt.value().remote;
+            move.state = previous;
+            move.stateExists = true;
+            moves.append(move);
+            consumedOld.insert(oldPath);
+            consumedNew.insert(newPath);
+            break;
+        }
+    }
+    if (moves.isEmpty())
+        return;
+
+    QList<SyncAction> ordered;
+    int movePosition = -1;
+    for (const SyncAction &action : std::as_const(plan->actions)) {
+        const bool removeOld =
+            std::any_of(consumedOld.cbegin(), consumedOld.cend(), [&action](const QString &path) {
+                return PathUtils::isSameOrChild(action.path, path);
+            });
+        const bool removeNew =
+            std::any_of(consumedNew.cbegin(), consumedNew.cend(), [&action](const QString &path) {
+                return PathUtils::isSameOrChild(action.path, path);
+            });
+        if (removeOld || removeNew)
+            continue;
+        if (movePosition < 0 && action.kind == ActionKind::DeleteLocal)
+            movePosition = ordered.size();
+        ordered.append(action);
+    }
+    if (movePosition < 0)
+        movePosition = ordered.size();
+    for (int index = 0; index < moves.size(); ++index)
+        ordered.insert(movePosition + index, moves.at(index));
+    plan->actions = ordered;
+}
+
 void SyncEngine::detectRemoteMoves(SyncPlan *plan, const QHash<QString, StateEntry> &state) const
 {
     QHash<QString, SyncAction> deletes;
@@ -1156,7 +1263,7 @@ bool SyncEngine::moveLocal(const SyncAction &action, QString *error)
     const QString source = PathUtils::localFilePath(m_pair.localPath, action.fromPath);
     const QString destination = PathUtils::localFilePath(m_pair.localPath, action.path);
     QFileInfo sourceInfo(source);
-    if (!sourceInfo.exists() || !sourceInfo.isFile()) {
+    if (!sourceInfo.exists() || (!sourceInfo.isFile() && !sourceInfo.isDir())) {
         if (error)
             *error = tr("本地重命名源不存在：%1").arg(source);
         return false;
@@ -1171,12 +1278,14 @@ bool SyncEngine::moveLocal(const SyncAction &action, QString *error)
             *error = tr("无法创建本地重命名目标目录");
         return false;
     }
-    if (!QFile::rename(source, destination)) {
+    const bool moved = sourceInfo.isDir() ? QDir().rename(source, destination)
+                                          : QFile::rename(source, destination);
+    if (!moved) {
         if (error)
             *error = tr("本地重命名失败：%1").arg(action.path);
         return false;
     }
-    if (m_stateStore && !m_stateStore->removePath(m_pair.id, action.fromPath, error))
+    if (m_stateStore && !m_stateStore->removePrefix(m_pair.id, action.fromPath, error))
         return false;
     return recordSynced(action.path, error);
 }

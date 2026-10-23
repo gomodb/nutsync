@@ -265,8 +265,8 @@ jobs:
         run: |
           for file in src/core/*.cpp; do
             clang-tidy -p build \
-              -checks='-*,bugprone-use-after-move,bugprone-dangling-handle' \
-              -warnings-as-errors='bugprone-use-after-move,bugprone-dangling-handle' \
+              -checks='-*,bugprone-use-after-move,bugprone-dangling-handle,bugprone-sizeof-expression,bugprone-macro-parentheses,bugprone-undefined-memory-manipulation' \
+              -warnings-as-errors='bugprone-use-after-move,bugprone-dangling-handle,bugprone-sizeof-expression,bugprone-macro-parentheses,bugprone-undefined-memory-manipulation' \
               "$file"
           done
 
@@ -346,19 +346,18 @@ jobs:
         run: ctest --test-dir build --output-on-failure
 
   coverage:
-    name: Coverage / Ubuntu 24.04
+    name: Coverage / Arch Linux
     runs-on: ubuntu-24.04
+    container: archlinux:base-devel
+    timeout-minutes: 30
     steps:
       - name: Checkout
         uses: actions/checkout@v7
 
       - name: Install dependencies
         run: |
-          sudo apt-get update
-          sudo apt-get install -y --no-install-recommends \
-            build-essential cmake ninja-build python3 gcovr \
-            qt6-base-dev qt6-networkauth-dev qt6-tools-dev qt6-tools-dev-tools \
-            libqt6sql6-sqlite
+          pacman -Syu --noconfirm --needed \
+            cmake ninja gcc python gcovr qt6-base qt6-networkauth qt6-tools
 
       - name: Configure with coverage
         run: |
