@@ -2,10 +2,10 @@
 
 ## Current artifacts
 
-- Application version: `0.6.1`
-- GitHub release: <https://github.com/gomodb/nutsync/releases/tag/v0.6.1>
-- x86_64 Arch package: `nutsync-0.6.1-1-x86_64.pkg.tar.zst`
-- aarch64 Arch package: `nutsync-0.6.1-1-aarch64.pkg.tar.xz`
+- Application version: `0.6.2`
+- GitHub release: <https://github.com/gomodb/nutsync/releases/tag/v0.6.2>
+- x86_64 Arch package: `nutsync-0.6.2-1-x86_64.pkg.tar.zst`
+- aarch64 Arch package: `nutsync-0.6.2-1-aarch64.pkg.tar.xz`
 - Source archive SHA-256:
   `63de1f16321815494360b589e5113da3ecf4d5a3962144b6641bc20f47571119`
 
