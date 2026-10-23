@@ -64,6 +64,9 @@ OAuth2Dialog::OAuth2Dialog(const SyncPair &pair, QWidget *parent)
 #endif
     connect(m_oauth, &QOAuth2AuthorizationCodeFlow::granted, this, [this]() {
         m_accessToken = m_oauth->token();
+        m_refreshToken = m_oauth->refreshToken();
+        m_expiresAtMs =
+            m_oauth->expirationAt().isValid() ? m_oauth->expirationAt().toMSecsSinceEpoch() : 0;
         if (m_accessToken.isEmpty()) {
             setStatus(tr("授权服务器没有返回 access token"), true);
             return;

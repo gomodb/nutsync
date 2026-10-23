@@ -183,6 +183,10 @@ std::unique_ptr<RemoteBackend> SyncEngine::createBackend(QString *error) const
     options.chunkSizeMb = m_pair.chunkSizeMb;
     options.includePaths = m_pair.includePaths;
     options.scanConcurrency = m_scanConcurrency;
+    options.oauthRefreshToken = m_pair.oauthRefreshToken;
+    options.oauthTokenUrl = m_pair.oauthTokenUrl;
+    options.oauthClientId = m_pair.oauthClientId;
+    options.oauthExpiresAtMs = m_pair.oauthExpiresAtMs;
     options.retryCount = m_retryCount;
     options.retryBaseDelayMs = m_retryBaseDelayMs;
     options.retryMaxDelayMs = m_retryMaxDelayMs;
@@ -431,6 +435,11 @@ void SyncEngine::run()
         if (!m_backend) {
             if (fatalError.isEmpty())
                 fatalError = tr("无法创建远程后端");
+            break;
+        }
+
+        if (!m_backend->refreshAccessTokenIfNeeded(&settingsError)) {
+            fatalError = settingsError;
             break;
         }
 

@@ -52,6 +52,13 @@ void SyncController::enqueue(const SyncPair &pair)
         if (!error.isEmpty())
             qWarning().noquote() << "[sync-controller]" << error;
     }
+    if (copy.rememberPassword && copy.oauthRefreshToken.isEmpty()) {
+        QString error;
+        copy.oauthRefreshToken =
+            m_credentials.readPassword(copy.id + QStringLiteral(":oauth-refresh"), &error);
+        if (!error.isEmpty())
+            qWarning().noquote() << "[sync-controller]" << error;
+    }
     if (copy.name.isEmpty())
         copy.name = copy.localPath;
     m_queue.enqueue(copy);

@@ -23,6 +23,8 @@ public:
     explicit OAuth2Dialog(const SyncPair &pair, QWidget *parent = nullptr);
 
     QString accessToken() const { return m_accessToken; }
+    QString refreshToken() const { return m_refreshToken; }
+    qint64 expiresAtMs() const { return m_expiresAtMs; }
     QString authorizationUrl() const;
     QString tokenUrl() const;
     QString clientId() const;
@@ -38,6 +40,8 @@ private:
     QLineEdit *m_scope = nullptr;
     QLabel *m_status = nullptr;
     QString m_accessToken;
+    QString m_refreshToken;
+    qint64 m_expiresAtMs = 0;
 #ifdef NUTSYNC_HAVE_NETWORKAUTH
     QOAuth2AuthorizationCodeFlow *m_oauth = nullptr;
     QOAuthHttpServerReplyHandler *m_replyHandler = nullptr;

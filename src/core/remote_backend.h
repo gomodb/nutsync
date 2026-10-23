@@ -50,6 +50,12 @@ public:
     virtual bool remove(const QString &path, bool recursive, const QString &expectedEtag,
                         QString *error, const CancelledCallback &cancelled) = 0;
 
+    virtual bool refreshAccessTokenIfNeeded(QString *error)
+    {
+        Q_UNUSED(error)
+        return true;
+    }
+
     void setTransferProgress(TransferProgressCallback callback)
     {
         m_transferProgress = std::move(callback);

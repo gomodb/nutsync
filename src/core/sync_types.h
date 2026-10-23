@@ -111,6 +111,8 @@ struct SyncPair
     QString oauthTokenUrl;
     QString oauthClientId;
     QString oauthScope;
+    QString oauthRefreshToken; //!< Transient. Persisted through the credential store.
+    qint64 oauthExpiresAtMs = 0;
     bool rememberPassword = true;
     QStringList excludePatterns;
     QStringList includePaths;

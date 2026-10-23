@@ -20,6 +20,10 @@ struct WebDavOptions
     bool chunkedUpload = false;
     int chunkSizeMb = 10;
     QStringList includePaths;
+    QString oauthRefreshToken;
+    QString oauthTokenUrl;
+    QString oauthClientId;
+    qint64 oauthExpiresAtMs = 0;
     int scanConcurrency = 4;
     int timeoutMs = 120000;
     int retryCount = 3;
@@ -36,6 +40,7 @@ public:
     QString typeName() const override;
     QString endpointDescription() const override;
     RemoteErrorClass lastErrorClass() const override;
+    bool refreshAccessTokenIfNeeded(QString *error) override;
 
     bool testConnection(QString *error) override;
     bool scan(QList<RemoteEntry> *entries, QString *error,

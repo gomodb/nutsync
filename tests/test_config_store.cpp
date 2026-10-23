@@ -142,6 +142,7 @@ void TestConfigStore::roundTripsPairSettings()
     pair.oauthTokenUrl = QStringLiteral("https://id.example.com/token");
     pair.oauthClientId = QStringLiteral("nutsync");
     pair.oauthScope = QStringLiteral("webdav");
+    pair.oauthExpiresAtMs = 123456789;
     pair.trashDeletedFiles = false;
     pair.trashRetentionDays = 90;
     pair.enabled = false;
@@ -199,6 +200,7 @@ void TestConfigStore::roundTripsPairSettings()
     QCOMPARE(result.oauthTokenUrl, QStringLiteral("https://id.example.com/token"));
     QCOMPARE(result.oauthClientId, QStringLiteral("nutsync"));
     QCOMPARE(result.oauthScope, QStringLiteral("webdav"));
+    QCOMPARE(result.oauthExpiresAtMs, qint64(123456789));
     QCOMPARE(result.trashDeletedFiles, false);
     QCOMPARE(result.trashRetentionDays, 90);
     QCOMPARE(result.enabled, false);

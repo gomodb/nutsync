@@ -159,6 +159,11 @@ QString statusIcon(const SyncPair &pair, bool current, bool queued)
     return QStringLiteral("folder-sync");
 }
 
+QString oauthRefreshKey(const QString &pairId)
+{
+    return pairId + QStringLiteral(":oauth-refresh");
+}
+
 QString summaryCounts(const SyncSummary &summary)
 {
     QStringList parts;
@@ -900,8 +905,10 @@ void MainWindow::selectPair(const QString &id)
 bool MainWindow::storeCredentials(SyncPair &pair, bool showError)
 {
     QString error;
+    const QString refreshKey = oauthRefreshKey(pair.id);
     if (!pair.rememberPassword) {
         m_credentials.deletePassword(pair.id, &error);
+        m_credentials.deletePassword(refreshKey, &error);
         if (!error.isEmpty() && showError)
             QMessageBox::warning(this, tr("钥匙串"), error);
         return true;
@@ -917,13 +924,17 @@ bool MainWindow::storeCredentials(SyncPair &pair, bool showError)
     }
     if (pair.password.isEmpty()) {
         m_credentials.deletePassword(pair.id, &error);
-        return true;
-    }
-    if (!m_credentials.writePassword(pair.id, pair.password, &error)) {
+    } else if (!m_credentials.writePassword(pair.id, pair.password, &error)) {
         pair.rememberPassword = false;
         if (showError)
             QMessageBox::warning(this, tr("无法保存密码"), error);
         return false;
+    }
+    if (pair.oauthRefreshToken.isEmpty())
+        m_credentials.deletePassword(refreshKey, &error);
+    else if (!m_credentials.writePassword(refreshKey, pair.oauthRefreshToken, &error)) {
+        if (showError)
+            QMessageBox::warning(this, tr("无法保存 OAuth2 refresh token"), error);
     }
     return true;
 }
@@ -979,6 +990,12 @@ void MainWindow::editCurrentPair(const QString &id)
         editing.password = m_credentials.readPassword(editing.id, &error);
         if (!error.isEmpty())
             appendSystemStatus(tr("读取密码失败：%1").arg(error));
+    }
+    if (editing.rememberPassword && editing.oauthRefreshToken.isEmpty()) {
+        QString error;
+        editing.oauthRefreshToken = m_credentials.readPassword(oauthRefreshKey(editing.id), &error);
+        if (!error.isEmpty())
+            appendSystemStatus(tr("读取 OAuth2 refresh token 失败：%1").arg(error));
     }
 
     PairDialog dialog(editing, m_credentials.isAvailable(), this);

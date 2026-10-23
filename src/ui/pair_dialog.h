@@ -70,6 +70,8 @@ private:
     QString m_oauthTokenUrl;
     QString m_oauthClientId;
     QString m_oauthScope;
+    QString m_oauthRefreshToken;
+    qint64 m_oauthExpiresAtMs = 0;
     QCheckBox *m_syncOnStartup = nullptr;
     QCheckBox *m_watchLocalChanges = nullptr;
     QCheckBox *m_syncDeletions = nullptr;

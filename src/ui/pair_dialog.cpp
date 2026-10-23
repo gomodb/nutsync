@@ -63,6 +63,8 @@ PairDialog::PairDialog(const SyncPair &pair, bool credentialsAvailable, QWidget 
     m_oauthTokenUrl = pair.oauthTokenUrl;
     m_oauthClientId = pair.oauthClientId;
     m_oauthScope = pair.oauthScope;
+    m_oauthRefreshToken = pair.oauthRefreshToken;
+    m_oauthExpiresAtMs = pair.oauthExpiresAtMs;
     m_chunkedUpload->setChecked(pair.chunkedUpload);
     m_chunkSize->setValue(pair.chunkSizeMb);
     m_detectNameCollisions->setChecked(pair.detectNameCollisions);
@@ -195,6 +197,8 @@ void PairDialog::buildUi(bool credentialsAvailable)
         m_oauthTokenUrl = dialog.tokenUrl();
         m_oauthClientId = dialog.clientId();
         m_oauthScope = dialog.scope();
+        m_oauthRefreshToken = dialog.refreshToken();
+        m_oauthExpiresAtMs = dialog.expiresAtMs();
         m_password->setText(dialog.accessToken());
         m_rememberPassword->setChecked(true);
     });
@@ -612,6 +616,8 @@ SyncPair PairDialog::syncPair() const
     pair.oauthTokenUrl = m_oauthTokenUrl;
     pair.oauthClientId = m_oauthClientId;
     pair.oauthScope = m_oauthScope;
+    pair.oauthRefreshToken = m_oauthRefreshToken;
+    pair.oauthExpiresAtMs = m_oauthExpiresAtMs;
     pair.chunkedUpload = m_chunkedUpload->isChecked();
     pair.chunkSizeMb = m_chunkSize->value();
     pair.detectNameCollisions = m_detectNameCollisions->isChecked();

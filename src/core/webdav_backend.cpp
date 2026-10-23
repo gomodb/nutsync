@@ -357,6 +357,73 @@ WebDavBackend::WebDavBackend(WebDavOptions options)
     }
 }
 
+bool WebDavBackend::refreshAccessTokenIfNeeded(QString *error)
+{
+    if (m_options.oauthRefreshToken.isEmpty() || m_options.oauthTokenUrl.isEmpty()
+        || m_options.oauthClientId.isEmpty()) {
+        return true;
+    }
+    if (m_options.oauthExpiresAtMs > 0
+        && m_options.oauthExpiresAtMs > QDateTime::currentMSecsSinceEpoch() + 60000) {
+        return true;
+    }
+    const QUrl tokenUrl(m_options.oauthTokenUrl);
+    if (!tokenUrl.isValid() || tokenUrl.host().isEmpty()) {
+        if (error)
+            *error = QObject::tr("OAuth2 令牌地址无效");
+        return false;
+    }
+    QUrlQuery form;
+    form.addQueryItem(QStringLiteral("grant_type"), QStringLiteral("refresh_token"));
+    form.addQueryItem(QStringLiteral("refresh_token"), m_options.oauthRefreshToken);
+    form.addQueryItem(QStringLiteral("client_id"), m_options.oauthClientId);
+    QNetworkRequest request(tokenUrl);
+    request.setHeader(QNetworkRequest::ContentTypeHeader,
+                      QStringLiteral("application/x-www-form-urlencoded"));
+    request.setHeader(QNetworkRequest::UserAgentHeader, QString::fromLatin1(kUserAgent));
+    request.setTransferTimeout(m_options.timeoutMs);
+    QNetworkReply *reply = m_network.post(request, form.query(QUrl::FullyEncoded).toUtf8());
+    QEventLoop loop;
+    QObject::connect(reply, &QNetworkReply::finished, &loop, &QEventLoop::quit);
+    loop.exec();
+    const int status = statusCode(reply);
+    const QByteArray body = reply->readAll();
+    const QString networkError = reply->errorString();
+    reply->deleteLater();
+    if (status < 200 || status >= 300) {
+        m_lastErrorClass = classifyReply(status, reply->error());
+        if (error) {
+            *error = QObject::tr("OAuth2 刷新令牌失败：%1")
+                         .arg(status == 0 ? networkError : QString::number(status));
+        }
+        return false;
+    }
+    QJsonParseError parseError;
+    const QJsonDocument document = QJsonDocument::fromJson(body, &parseError);
+    if (parseError.error != QJsonParseError::NoError || !document.isObject()) {
+        m_lastErrorClass = RemoteErrorClass::Protocol;
+        if (error)
+            *error = QObject::tr("OAuth2 刷新响应不是有效 JSON");
+        return false;
+    }
+    const QJsonObject object = document.object();
+    const QString accessToken = object.value(QStringLiteral("access_token")).toString();
+    if (accessToken.isEmpty()) {
+        m_lastErrorClass = RemoteErrorClass::Protocol;
+        if (error)
+            *error = QObject::tr("OAuth2 刷新响应缺少 access_token");
+        return false;
+    }
+    m_options.password = accessToken;
+    const QString refreshToken = object.value(QStringLiteral("refresh_token")).toString();
+    if (!refreshToken.isEmpty())
+        m_options.oauthRefreshToken = refreshToken;
+    const int expiresIn = object.value(QStringLiteral("expires_in")).toInt(0);
+    m_options.oauthExpiresAtMs =
+        expiresIn > 0 ? QDateTime::currentMSecsSinceEpoch() + qint64(expiresIn) * 1000 : 0;
+    return true;
+}
+
 QString WebDavBackend::typeName() const
 {
     return QStringLiteral("WebDAV");

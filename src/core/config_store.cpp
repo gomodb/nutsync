@@ -41,6 +41,7 @@ QJsonObject pairToJson(const SyncPair &pair)
     obj.insert(QStringLiteral("oauthTokenUrl"), pair.oauthTokenUrl);
     obj.insert(QStringLiteral("oauthClientId"), pair.oauthClientId);
     obj.insert(QStringLiteral("oauthScope"), pair.oauthScope);
+    obj.insert(QStringLiteral("oauthExpiresAtMs"), pair.oauthExpiresAtMs);
     obj.insert(QStringLiteral("rememberPassword"), pair.rememberPassword);
     obj.insert(QStringLiteral("excludePatterns"), QJsonArray::fromStringList(pair.excludePatterns));
     obj.insert(QStringLiteral("includePaths"), QJsonArray::fromStringList(pair.includePaths));
@@ -91,6 +92,7 @@ SyncPair pairFromJson(const QJsonObject &obj)
     pair.oauthTokenUrl = obj.value(QStringLiteral("oauthTokenUrl")).toString();
     pair.oauthClientId = obj.value(QStringLiteral("oauthClientId")).toString();
     pair.oauthScope = obj.value(QStringLiteral("oauthScope")).toString();
+    pair.oauthExpiresAtMs = obj.value(QStringLiteral("oauthExpiresAtMs")).toVariant().toLongLong();
     QUrl remoteUrl(pair.remoteUrl);
     if (!remoteUrl.userName().isEmpty() || !remoteUrl.password().isEmpty()) {
         if (pair.username.isEmpty())
