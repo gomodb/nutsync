@@ -265,8 +265,8 @@ jobs:
         run: |
           for file in src/core/*.cpp; do
             clang-tidy -p build \
-              -checks='-*,bugprone-use-after-move' \
-              -warnings-as-errors='bugprone-use-after-move' \
+              -checks='-*,bugprone-use-after-move,bugprone-dangling-handle' \
+              -warnings-as-errors='bugprone-use-after-move,bugprone-dangling-handle' \
               "$file"
           done
 
