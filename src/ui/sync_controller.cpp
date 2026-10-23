@@ -138,6 +138,10 @@ void SyncController::startNext()
             emit progress(m_currentPairId, completed, total, bytesDone, bytesTotal, path);
         });
     connect(engine, &SyncEngine::finished, this, &SyncController::onEngineFinished);
+    connect(engine, &SyncEngine::oauthTokensRefreshed, this,
+            [this](const QString &refreshToken, qint64 expiresAtMs) {
+                emit oauthTokensRefreshed(m_currentPairId, refreshToken, expiresAtMs);
+            });
 
     m_watcher.setFuture(QtConcurrent::run([engine]() {
         engine->run();

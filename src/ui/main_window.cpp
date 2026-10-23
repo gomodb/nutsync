@@ -222,6 +222,8 @@ MainWindow::MainWindow(QWidget *parent)
     connect(m_controller, &SyncController::pairFinished, this, &MainWindow::onPairFinished);
     connect(m_controller, &SyncController::busyChanged, this, &MainWindow::onBusyChanged);
     connect(m_controller, &SyncController::queueChanged, this, &MainWindow::onQueueChanged);
+    connect(m_controller, &SyncController::oauthTokensRefreshed, this,
+            &MainWindow::onOauthTokensRefreshed);
 
     buildActions();
     buildUi();
@@ -1372,6 +1374,19 @@ void MainWindow::appendLog(const QString &pairId, const QString &message)
     if (selectedPairId() == pairId)
         m_activity->appendPlainText(line);
     Logger::log(QStringLiteral("activity"), QStringLiteral("%1: %2").arg(pairId, message));
+}
+
+void MainWindow::onOauthTokensRefreshed(const QString &pairId, const QString &refreshToken,
+                                        qint64 expiresAtMs)
+{
+    SyncPair *pair = findPair(pairId);
+    if (!pair || refreshToken.isEmpty())
+        return;
+    pair->oauthRefreshToken = refreshToken;
+    pair->oauthExpiresAtMs = expiresAtMs;
+    storeCredentials(*pair, false);
+    saveConfig(false);
+    updateDetails();
 }
 
 void MainWindow::onProgress(const QString &pairId, int completed, int total, qint64 bytesDone,

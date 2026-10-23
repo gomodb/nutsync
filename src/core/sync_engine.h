@@ -58,6 +58,7 @@ signals:
     void progress(int completed, int total, qint64 bytesDone, qint64 bytesTotal,
                   const QString &path);
     void finished(const NutSync::SyncSummary &summary);
+    void oauthTokensRefreshed(const QString &refreshToken, qint64 expiresAtMs);
 
 private:
     bool scanLocal(QMap<QString, LocalEntry> *entries, QString *error);
@@ -73,7 +74,7 @@ private:
     bool detectNameCollisions(QString *error) const;
     bool moveRemote(const SyncAction &action, QString *error);
     bool moveLocal(const SyncAction &action, QString *error);
-    std::unique_ptr<RemoteBackend> createBackend(QString *error) const;
+    std::unique_ptr<RemoteBackend> createBackend(QString *error);
     bool prepareTransferJob(const SyncAction &action, int index, TransferJob *job, bool *skipped,
                             QString *error);
     void executeTransferBatch(const QList<TransferJob> &jobs, SyncSummary *summary);

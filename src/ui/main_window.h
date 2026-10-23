@@ -83,6 +83,8 @@ private:
     void onProgress(const QString &pairId, int completed, int total, qint64 bytesDone,
                     qint64 bytesTotal, const QString &path);
     void onPairFinished(const SyncSummary &summary);
+    void onOauthTokensRefreshed(const QString &pairId, const QString &refreshToken,
+                                qint64 expiresAtMs);
     void onBusyChanged(bool busy);
     void onQueueChanged(int pending);
 

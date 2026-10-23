@@ -148,7 +148,7 @@ void SyncEngine::addError(SyncSummary *summary, const QString &message)
     emit logMessage(QStringLiteral("错误：%1").arg(message));
 }
 
-std::unique_ptr<RemoteBackend> SyncEngine::createBackend(QString *error) const
+std::unique_ptr<RemoteBackend> SyncEngine::createBackend(QString *error)
 {
     if (m_backendFactory) {
         try {
@@ -187,6 +187,9 @@ std::unique_ptr<RemoteBackend> SyncEngine::createBackend(QString *error) const
     options.oauthTokenUrl = m_pair.oauthTokenUrl;
     options.oauthClientId = m_pair.oauthClientId;
     options.oauthExpiresAtMs = m_pair.oauthExpiresAtMs;
+    options.tokenRefreshCallback = [this](const QString &refreshToken, qint64 expiresAtMs) {
+        emit oauthTokensRefreshed(refreshToken, expiresAtMs);
+    };
     options.retryCount = m_retryCount;
     options.retryBaseDelayMs = m_retryBaseDelayMs;
     options.retryMaxDelayMs = m_retryMaxDelayMs;

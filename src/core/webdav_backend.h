@@ -24,6 +24,7 @@ struct WebDavOptions
     QString oauthTokenUrl;
     QString oauthClientId;
     qint64 oauthExpiresAtMs = 0;
+    std::function<void(const QString &, qint64)> tokenRefreshCallback;
     int scanConcurrency = 4;
     int timeoutMs = 120000;
     int retryCount = 3;

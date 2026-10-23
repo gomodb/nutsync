@@ -421,6 +421,9 @@ bool WebDavBackend::refreshAccessTokenIfNeeded(QString *error)
     const int expiresIn = object.value(QStringLiteral("expires_in")).toInt(0);
     m_options.oauthExpiresAtMs =
         expiresIn > 0 ? QDateTime::currentMSecsSinceEpoch() + qint64(expiresIn) * 1000 : 0;
+    if (m_options.tokenRefreshCallback) {
+        m_options.tokenRefreshCallback(m_options.oauthRefreshToken, m_options.oauthExpiresAtMs);
+    }
     return true;
 }
 

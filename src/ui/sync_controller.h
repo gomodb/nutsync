@@ -39,6 +39,8 @@ signals:
     void pairFinished(const NutSync::SyncSummary &summary);
     void busyChanged(bool busy);
     void queueChanged(int pending);
+    void oauthTokensRefreshed(const QString &pairId, const QString &refreshToken,
+                              qint64 expiresAtMs);
 
 private:
     void startNext();

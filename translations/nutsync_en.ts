@@ -316,6 +316,10 @@ NutSync will start with empty configuration.</translation>
       <translation>The current build does not have system keychain enabled. Passwords will not be saved and automatic synchronization may not pass authentication.</translation>
     </message>
     <message>
+      <source>无法保存 OAuth2 refresh token</source>
+      <translation>Could not save OAuth2 refresh token</translation>
+    </message>
+    <message>
       <source>密码未保存</source>
       <translation>Password not saved</translation>
     </message>
@@ -338,6 +342,10 @@ NutSync will start with empty configuration.</translation>
     <message>
       <source>读取密码失败：%1</source>
       <translation>Failed to read password: %1</translation>
+    </message>
+    <message>
+      <source>读取 OAuth2 refresh token 失败：%1</source>
+      <translation>Could not read OAuth2 refresh token: %1</translation>
     </message>
     <message>
       <source>同步位置已更改</source>
@@ -2248,6 +2256,22 @@ Rename the conflicting items in the sync-pair editor, or disable name-collision 
     <message>
       <source>同步已取消</source>
       <translation>Sync cancelled</translation>
+    </message>
+    <message>
+      <source>OAuth2 令牌地址无效</source>
+      <translation>Invalid OAuth2 token URL</translation>
+    </message>
+    <message>
+      <source>OAuth2 刷新令牌失败：%1</source>
+      <translation>OAuth2 token refresh failed: %1</translation>
+    </message>
+    <message>
+      <source>OAuth2 刷新响应不是有效 JSON</source>
+      <translation>OAuth2 refresh response is not valid JSON</translation>
+    </message>
+    <message>
+      <source>OAuth2 刷新响应缺少 access_token</source>
+      <translation>OAuth2 refresh response is missing access_token</translation>
     </message>
     <message>
       <source>列远程目录“%1”失败：%2</source>
