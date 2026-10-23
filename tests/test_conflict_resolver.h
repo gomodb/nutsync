@@ -10,5 +10,7 @@ class TestConflictResolver : public QObject
 private slots:
     void keepsRemoteVersion();
     void keepsLocalVersion();
+    void resolvesTypeConflictWithLocal();
+    void resolvesTypeConflictWithRemote();
 };
 } // namespace NutSync::Test

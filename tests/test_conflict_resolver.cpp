@@ -2,6 +2,7 @@
 
 #include "core/conflict_resolver.h"
 #include "core/sync_state_store.h"
+#include "core/trash_manager.h"
 
 #include "mock_remote_backend.h"
 
@@ -74,6 +75,52 @@ void TestConflictResolver::keepsRemoteVersion()
     QVERIFY(store.load(pair.id, &state, &error));
     QVERIFY(state.contains(QStringLiteral("doc.txt")));
     QVERIFY(!state.contains(QStringLiteral("doc.conflict.txt")));
+}
+
+void TestConflictResolver::resolvesTypeConflictWithLocal()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    const QString local = directory.filePath(QStringLiteral("local"));
+    const QString remote = directory.filePath(QStringLiteral("remote"));
+    QVERIFY(QDir().mkpath(local + QStringLiteral("/item")));
+    QVERIFY(!writeFile(local + QStringLiteral("/item/local.txt"), "local").isEmpty());
+    MockRemoteBackend backend(remote);
+    QString error;
+    QVERIFY(backend.writeFile(QStringLiteral("item"), "remote file", &error));
+
+    SyncPair pair = makePair(local, remote);
+    const ConflictRecord record{QStringLiteral("item"), {}};
+    const ConflictResolutionResult result =
+        resolveTypeConflict(pair, record, ConflictResolution::KeepLocal, backend,
+                            directory.filePath(QStringLiteral("state.db")));
+    QVERIFY2(result.success, qPrintable(result.error));
+    QVERIFY(QFileInfo::exists(local + QStringLiteral("/item/local.txt")));
+    QVERIFY(!QFileInfo::exists(remote + QStringLiteral("/item")));
+    QDir(TrashManager::pairDir(pair.id)).removeRecursively();
+}
+
+void TestConflictResolver::resolvesTypeConflictWithRemote()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    const QString local = directory.filePath(QStringLiteral("local"));
+    const QString remote = directory.filePath(QStringLiteral("remote"));
+    QVERIFY(QDir().mkpath(local + QStringLiteral("/item")));
+    QVERIFY(!writeFile(local + QStringLiteral("/item/local.txt"), "local").isEmpty());
+    MockRemoteBackend backend(remote);
+    QString error;
+    QVERIFY(backend.writeFile(QStringLiteral("item"), "remote file", &error));
+
+    SyncPair pair = makePair(local, remote);
+    const ConflictRecord record{QStringLiteral("item"), {}};
+    const ConflictResolutionResult result =
+        resolveTypeConflict(pair, record, ConflictResolution::KeepRemote, backend,
+                            directory.filePath(QStringLiteral("state.db")));
+    QVERIFY2(result.success, qPrintable(result.error));
+    QVERIFY(!QFileInfo::exists(local + QStringLiteral("/item")));
+    QCOMPARE(backend.readFile(QStringLiteral("item")), QByteArray("remote file"));
+    QDir(TrashManager::pairDir(pair.id)).removeRecursively();
 }
 
 void TestConflictResolver::keepsLocalVersion()

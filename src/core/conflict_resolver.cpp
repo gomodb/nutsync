@@ -2,8 +2,10 @@
 
 #include "core/path_utils.h"
 #include "core/sync_state_store.h"
+#include "core/trash_manager.h"
 
 #include <QDateTime>
+#include <QDir>
 #include <QFile>
 #include <QFileInfo>
 #include <QObject>
@@ -137,6 +139,109 @@ ConflictResolutionResult resolveConflict(const SyncPair &pair, const ConflictRec
         || !store.removeConflict(pair.id, record.path, record.copyPath, &error)) {
         result.error = error;
         return result;
+    }
+    result.success = true;
+    return result;
+}
+
+ConflictResolutionResult resolveTypeConflict(const SyncPair &pair, const ConflictRecord &record,
+                                             ConflictResolution resolution, RemoteBackend &backend,
+                                             const QString &stateDatabasePath)
+{
+    ConflictResolutionResult result;
+    if (record.path.isEmpty()) {
+        result.error = QObject::tr("冲突记录缺少路径");
+        return result;
+    }
+    SyncStateStore store(stateDatabasePath);
+    QString error;
+    if (!store.open(&error)) {
+        result.error = error;
+        return result;
+    }
+
+    if (resolution == ConflictResolution::KeepLocal) {
+        if (!pair.trashDeletedFiles) {
+            result.error = QObject::tr("保留本地版本需要启用回收站备份");
+            return result;
+        }
+        const QString batch = TrashManager::createBatch(pair.id, pair.trashRetentionDays, &error);
+        if (batch.isEmpty()) {
+            result.error = error;
+            return result;
+        }
+        RemoteEntry entry;
+        bool exists = false;
+        if (!backend.stat(record.path, &entry, &exists, &error)) {
+            result.error = error;
+            return result;
+        }
+        if (exists) {
+            if (entry.type == EntryType::Directory) {
+                QList<RemoteEntry> entries;
+                if (!backend.scan(&entries, &error, {})) {
+                    result.error = error;
+                    return result;
+                }
+                for (const RemoteEntry &child : entries) {
+                    if (!PathUtils::isSameOrChild(child.path, record.path))
+                        continue;
+                    const QString destination = QDir(batch).filePath(child.path);
+                    if (child.type == EntryType::Directory) {
+                        if (!QDir().mkpath(destination)) {
+                            result.error = QObject::tr("无法创建回收站目录：%1").arg(destination);
+                            return result;
+                        }
+                    } else if (!TrashManager::downloadRemoteFile(backend, child.path, batch,
+                                                                 child.path, {}, &error)) {
+                        result.error = error;
+                        return result;
+                    }
+                }
+            } else if (!TrashManager::downloadRemoteFile(backend, record.path, batch, record.path,
+                                                         {}, &error)) {
+                result.error = error;
+                return result;
+            }
+            if (!backend.remove(record.path, true, {}, &error, {})) {
+                result.error = error;
+                return result;
+            }
+        }
+        if (!store.removePrefix(pair.id, record.path, &error)
+            || !store.removeConflict(pair.id, record.path, {}, &error)) {
+            result.error = error;
+            return result;
+        }
+    } else {
+        if (!pair.trashDeletedFiles) {
+            result.error = QObject::tr("保留远程版本需要启用回收站备份");
+            return result;
+        }
+        const QString batch = TrashManager::createBatch(pair.id, pair.trashRetentionDays, &error);
+        if (batch.isEmpty()) {
+            result.error = error;
+            return result;
+        }
+        const QString local = PathUtils::localFilePath(pair.localPath, record.path);
+        if (QFileInfo::exists(local)) {
+            if (!TrashManager::copyLocalPath(local, batch, record.path, &error)) {
+                result.error = error;
+                return result;
+            }
+            const QFileInfo info(local);
+            const bool removed =
+                info.isDir() ? QDir(local).removeRecursively() : QFile::remove(local);
+            if (!removed && QFileInfo::exists(local)) {
+                result.error = QObject::tr("无法删除本地冲突路径：%1").arg(local);
+                return result;
+            }
+        }
+        if (!store.removePrefix(pair.id, record.path, &error)
+            || !store.removeConflict(pair.id, record.path, {}, &error)) {
+            result.error = error;
+            return result;
+        }
     }
     result.success = true;
     return result;

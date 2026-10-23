@@ -532,6 +532,18 @@ Only NutSync's configuration and synchronization baseline are deleted, not local
       <translation>Open containing folder</translation>
     </message>
     <message>
+      <source>远程冲突项</source>
+      <translation>remote conflict item</translation>
+    </message>
+    <message>
+      <source>本地冲突项</source>
+      <translation>local conflict item</translation>
+    </message>
+    <message>
+      <source>使用%1版本，备份并删除%2？</source>
+      <translation>Keep the %1 version, back up and remove the %2?</translation>
+    </message>
+    <message>
       <source>导出配置</source>
       <translation>Export configuration</translation>
     </message>
@@ -2276,6 +2288,26 @@ Rename the conflicting items in the sync-pair editor, or disable name-collision 
     <message>
       <source>无法读取远程文件状态</source>
       <translation>Could not read remote file state</translation>
+    </message>
+    <message>
+      <source>冲突记录缺少路径</source>
+      <translation>The conflict record is missing a path</translation>
+    </message>
+    <message>
+      <source>保留本地版本需要启用回收站备份</source>
+      <translation>Keeping the local version requires recycle-bin backups</translation>
+    </message>
+    <message>
+      <source>无法创建回收站目录：%1</source>
+      <translation>Could not create recycle-bin directory: %1</translation>
+    </message>
+    <message>
+      <source>保留远程版本需要启用回收站备份</source>
+      <translation>Keeping the remote version requires recycle-bin backups</translation>
+    </message>
+    <message>
+      <source>无法删除本地冲突路径：%1</source>
+      <translation>Could not remove local conflict path: %1</translation>
     </message>
     <message>
       <source>无法创建下载临时文件：%1</source>

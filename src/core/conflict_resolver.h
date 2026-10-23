@@ -21,5 +21,8 @@ struct ConflictResolutionResult
 ConflictResolutionResult resolveConflict(const SyncPair &pair, const ConflictRecord &record,
                                          ConflictResolution resolution, RemoteBackend &backend,
                                          const QString &stateDatabasePath);
+ConflictResolutionResult resolveTypeConflict(const SyncPair &pair, const ConflictRecord &record,
+                                             ConflictResolution resolution, RemoteBackend &backend,
+                                             const QString &stateDatabasePath);
 
 } // namespace NutSync

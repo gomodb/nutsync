@@ -1604,6 +1604,7 @@ void MainWindow::showConflicts()
 
     auto *list = new QListWidget(&dialog);
     QHash<QString, ConflictRecord> recordsByCopy;
+    QHash<QString, ConflictRecord> recordsByPath;
     for (const ConflictRecord &record : records) {
         const QString text = record.copyPath.isEmpty()
             ? tr("冲突：%1（无副本，需手动处理）").arg(record.path)
@@ -1613,6 +1614,8 @@ void MainWindow::showConflicts()
         item->setData(Qt::UserRole + 1, record.path);
         if (!record.copyPath.isEmpty())
             recordsByCopy.insert(record.copyPath, record);
+        else
+            recordsByPath.insert(record.path, record);
     }
     layout->addWidget(list, 1);
 
@@ -1632,9 +1635,8 @@ void MainWindow::showConflicts()
 
     auto updateActions = [&]() {
         QListWidgetItem *item = list->currentItem();
-        const bool hasCopy = item && !item->data(Qt::UserRole).toString().isEmpty();
-        keepLocal->setEnabled(hasCopy);
-        keepRemote->setEnabled(hasCopy);
+        keepLocal->setEnabled(item != nullptr);
+        keepRemote->setEnabled(item != nullptr);
     };
     connect(list, &QListWidget::currentItemChanged, &dialog,
             [&updateActions](QListWidgetItem *, QListWidgetItem *) {
@@ -1657,10 +1659,10 @@ void MainWindow::showConflicts()
         if (!item)
             return;
         const QString copyPath = item->data(Qt::UserRole).toString();
-        if (copyPath.isEmpty())
-            return;
-        const ConflictRecord record = recordsByCopy.value(copyPath);
-        if (record.copyPath.isEmpty())
+        const QString originalPath = item->data(Qt::UserRole + 1).toString();
+        const ConflictRecord record =
+            copyPath.isEmpty() ? recordsByPath.value(originalPath) : recordsByCopy.value(copyPath);
+        if (record.path.isEmpty())
             return;
 
         if (m_controller->contains(pair->id)) {
@@ -1668,12 +1670,18 @@ void MainWindow::showConflicts()
                                      tr("此同步对正在同步，无法解决冲突。"));
             return;
         }
-        const QString target =
-            resolution == ConflictResolution::KeepLocal ? tr("远程冲突副本") : tr("本地文件");
+        const QString target = record.copyPath.isEmpty()
+            ? (resolution == ConflictResolution::KeepLocal ? tr("远程冲突项") : tr("本地冲突项"))
+            : (resolution == ConflictResolution::KeepLocal ? tr("远程冲突副本") : tr("本地文件"));
         const auto answer = QMessageBox::question(
             &dialog, tr("解决冲突"),
-            tr("使用%1版本覆盖%2？")
-                .arg(resolution == ConflictResolution::KeepLocal ? tr("本地") : tr("远程"), target),
+            record.copyPath.isEmpty()
+                ? tr("使用%1版本，备份并删除%2？")
+                      .arg(resolution == ConflictResolution::KeepLocal ? tr("本地") : tr("远程"),
+                           target)
+                : tr("使用%1版本覆盖%2？")
+                      .arg(resolution == ConflictResolution::KeepLocal ? tr("本地") : tr("远程"),
+                           target),
             QMessageBox::Yes | QMessageBox::No, QMessageBox::No);
         if (answer != QMessageBox::Yes)
             return;
@@ -1708,8 +1716,11 @@ void MainWindow::showConflicts()
 
         QApplication::setOverrideCursor(Qt::WaitCursor);
         WebDavBackend backend(options);
-        const ConflictResolutionResult result =
-            NutSync::resolveConflict(*pair, record, resolution, backend, AppPaths::stateDatabase());
+        const ConflictResolutionResult result = record.copyPath.isEmpty()
+            ? NutSync::resolveTypeConflict(*pair, record, resolution, backend,
+                                           AppPaths::stateDatabase())
+            : NutSync::resolveConflict(*pair, record, resolution, backend,
+                                       AppPaths::stateDatabase());
         QApplication::restoreOverrideCursor();
 
         if (!result.success) {
@@ -1719,16 +1730,21 @@ void MainWindow::showConflicts()
 
         QList<ConflictRecord> remaining;
         for (const ConflictRecord &candidate : records) {
-            if (candidate.copyPath != record.copyPath)
+            if (candidate.path != record.path || candidate.copyPath != record.copyPath)
                 remaining.append(candidate);
         }
         m_conflictRecords.insert(pair->id, remaining);
-        recordsByCopy.remove(record.copyPath);
+        if (record.copyPath.isEmpty())
+            recordsByPath.remove(record.path);
+        else
+            recordsByCopy.remove(record.copyPath);
         rebuildConflictMaps(pair->id);
         delete item;
         status->setText(tr("已解决：%1").arg(record.path));
         updateDetails();
         updateActions();
+        if (record.copyPath.isEmpty())
+            requestSync(pair->id, true);
     };
 
     connect(keepLocal, &QPushButton::clicked, &dialog, [&resolve]() {
