@@ -135,7 +135,7 @@ node_modules
 包源码直接取自 GitHub tag：
 
 ```text
-https://github.com/gomodb/nutsync/archive/refs/tags/v0.6.1.tar.gz
+https://github.com/gomodb/nutsync/archive/refs/tags/v0.6.2.tar.gz
 ```
 
 从项目内构建：

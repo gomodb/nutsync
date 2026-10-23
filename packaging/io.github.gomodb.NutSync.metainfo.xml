@@ -49,6 +49,14 @@
     <name>NutSync contributors</name>
   </developer>
   <releases>
+    <release version="0.6.2" date="2026-10-23">
+      <description>
+        <p>NutSync 0.6.2 adds case/Unicode collision protection, parallel
+        WebDAV scans with configurable concurrency, reusable transfer
+        connections, OAuth2/PKCE, remote-rename detection, type-conflict
+        resolution with trash backups, and broader CI quality gates.</p>
+      </description>
+    </release>
     <release version="0.6.1" date="2026-10-19">
       <description>
         <p>Maintenance release: AUR publishing has been removed. The project
