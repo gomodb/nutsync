@@ -2377,7 +2377,9 @@ void MainWindow::quitApplication()
     }
     saveConfig(false);
     m_quitting = true;
-    qApp->quit();
+    // Never tear down the window and tray menu from inside a QAction signal.
+    // The tray context menu is still unwinding its own event handling here.
+    QTimer::singleShot(0, qApp, &QCoreApplication::quit);
 }
 
 void MainWindow::showAndRaise()

@@ -78,7 +78,11 @@ TrayController::~TrayController()
     if (m_tray)
         m_tray->setContextMenu(nullptr);
 #endif
-    delete m_menu;
+    if (m_menu) {
+        m_menu->hide();
+        delete m_menu;
+        m_menu = nullptr;
+    }
 }
 
 bool TrayController::isAvailable() const
