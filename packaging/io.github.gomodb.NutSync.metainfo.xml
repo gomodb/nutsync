@@ -49,6 +49,12 @@
     <name>NutSync contributors</name>
   </developer>
   <releases>
+    <release version="0.6.3" date="2026-10-24">
+      <description>
+        <p>Fixes a crash when quitting from the system-tray menu by deferring
+        application shutdown until the tray QAction has finished unwinding.</p>
+      </description>
+    </release>
     <release version="0.6.2" date="2026-10-23">
       <description>
         <p>NutSync 0.6.2 adds case/Unicode collision protection, parallel
