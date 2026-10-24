@@ -72,17 +72,19 @@ TrayController::TrayController(bool notificationsEnabled, QObject *parent)
 TrayController::~TrayController()
 {
 #ifdef NUTSYNC_HAVE_KSTATUSNOTIFIER
-    if (m_item)
-        m_item->setContextMenu(nullptr);
+    // KStatusNotifierItem takes ownership of the context menu and deletes it
+    // when the item is destroyed. Deleting it here causes a double free during
+    // application shutdown (and especially when quitting from the tray menu).
+    m_menu = nullptr;
 #else
     if (m_tray)
         m_tray->setContextMenu(nullptr);
-#endif
     if (m_menu) {
         m_menu->hide();
         delete m_menu;
         m_menu = nullptr;
     }
+#endif
 }
 
 bool TrayController::isAvailable() const

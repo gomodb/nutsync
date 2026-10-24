@@ -49,6 +49,13 @@
     <name>NutSync contributors</name>
   </developer>
   <releases>
+    <release version="0.6.4" date="2026-10-24">
+      <description>
+        <p>Fixes a double free when quitting from the system-tray menu.
+        KStatusNotifierItem owns the context menu and deletes it; NutSync no
+        longer deletes the same menu again during shutdown.</p>
+      </description>
+    </release>
     <release version="0.6.3" date="2026-10-24">
       <description>
         <p>Fixes a crash when quitting from the system-tray menu by deferring
