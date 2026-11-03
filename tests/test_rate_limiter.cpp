@@ -48,7 +48,7 @@ void TestRateLimiter::enforcesWindowAndPersists()
     const QString path = dir.filePath(QStringLiteral("rate.json"));
     SyncRateLimiter limiter(path);
     SyncPair pair = limitedPair(60, 2);
-    const QDateTime start(QDate(2026, 10, 18), QTime(2, 0), QTimeZone::utc());
+    const QDateTime start = QDateTime::currentDateTimeUtc().addDays(-1);
 
     QVERIFY(limiter.isAllowed(pair, start));
     QString error;
